@@ -8,7 +8,7 @@ ___
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Ejecución Local](#ejecución-local)
 - [Calidad de código (Backend)](#calidad-de-código-backend)
-- [Calidad de código (Fontend)](#calidad-de-código-frontend)
+- [Calidad de código (Frontend)](#calidad-de-código-frontend)
 - [Convención de Ramas](#convención-de-ramas)
 - [Flujo de Trabajo](#flujo-de-trabajo)
 - [Convención de Pull Requests](#convención-de-pull-requests)
