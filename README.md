@@ -15,10 +15,10 @@ ___
 - [Estado del Proyecto](#estado-del-proyecto)
 ___
 ## Equipo
-- Daniel Castillo Villamarín
-- Valentina Nitola Alarcón
-- Juan José Bolaños Delgado
-- Juan José Cortés Rodriguez
+- Daniel Castillo Villamarín - 1727303
+- Valentina Nitola Alarcón - 2360231
+- Juan José Bolaños Delgado - 2617324
+- Juan José Cortés Rodriguez - 2325109
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
@@ -38,6 +38,7 @@ UniTasker/
 ├── backend/      # API (Django Rest Framework)
 ├── frontend/     # Cliente web (React)
 ├── .gitignore
+├── pull_request_template.md
 └── README.md
 ```
 
@@ -156,7 +157,7 @@ ___
 # Convención de Pull Requests
 Todos los cambios deben realizarse mediante Pull Request hacia la rama develop.  
   
-**Reglas**:
+**Reglas**: 
 - El título del PR debe seguir el formato:
     ```bash
     tipo: descripción breve
@@ -182,6 +183,9 @@ Desde backend/ ejecutar:
     black .
     flake8 .
     ```
+
+[Plantilla de Pull Request](pull_request_template.md)
+
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
