@@ -42,27 +42,39 @@ UniTasker/
 └── README.md
 ```
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Ejecución local
+### Estructura interna del Frontend
+
+``` bash
+frontend/
+├── src/
+│   ├── views/        # Vistas principales de la aplicación
+│   ├── layout/       # Layouts y estructura general
+│   ├── App.jsx       # Configuración principal de rutas
+│   │── main.jsx      # Punto de entrada de React
+├── package.json
+└── vite.config.js
+```
+
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_ \# Ejecución local
 
 ## Backend:
 
-**Variables de Entorno:**
-El proyecto utiliza variables de entorno para configuración sensible.
-El archivo .env real no debe subirse al repositorio.
-Para configurar el entorno local:
+**Variables de Entorno:** El proyecto utiliza variables de entorno para
+configuración sensible. El archivo .env real no debe subirse al
+repositorio. Para configurar el entorno local:
 
-1. Copiar el archivo de ejemplo:
-```bash
+1.  Copiar el archivo de ejemplo:
+
+``` bash
 cp .env.example .env
 # (En Windows puedes duplicarlo manualmente.)
 ```
-2. Completar las variables con los valores correspondientes.
 
+2.  Completar las variables con los valores correspondientes.
 
 **Configuración del entorno**
-```bash
+
+``` bash
 cd backend
 python -m venv venv
 
@@ -81,19 +93,45 @@ python manage.py migrate
 # Ejecutar servidor:
 python manage.py runserver
 ```
-**Servidor disponible en:**
-http://127.0.0.1:8000/
 
-
+**Servidor disponible en:** http://127.0.0.1:8000/
 
 ## Frontend:
-```bash
+
+El frontend está desarrollado con **React + Vite**.
+
+``` bash
 cd frontend
 ```
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Calidad de código (Backend)
+### Instalación de dependencias
+
+``` bash
+npm install
+```
+
+### Ejecutar servidor de desarrollo
+
+``` bash
+npm run dev
+```
+
+Servidor disponible en: http://localhost:5173/
+
+### Build para producción
+
+``` bash
+npm run build
+```
+
+### Vista previa del build
+
+``` bash
+npm run preview
+```
+
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_ \# Calidad de código
+(Backend)
 
 El backend utiliza herramientas de estandarización y control de calidad:
 
@@ -102,96 +140,95 @@ El backend utiliza herramientas de estandarización y control de calidad:
 `Flake8` → Linter para detección de errores y validación de estilo.
 
 Configuración ubicada en:
-```bash
+
+``` bash
 backend/pyproject.toml
 ```
 
 ### Formatear código:
+
 Desde la carpeta backend:
-```bash
+
+``` bash
 black .
 ```
+
 Verificar errores de estilo:
-```bash
+
+``` bash
 flake8 .
 ```
-Antes de crear un Pull Request, el código debe estar correctamente formateado y no presentar errores de linting.
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Calidad de código (Frontend)
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Convención de Ramas
+Antes de crear un Pull Request, el código debe estar correctamente
+formateado y no presentar errores de linting.
 
-- `main` → Rama estable y lista para producción.
-- `develop` → Rama de integración del sprint.
-- `feature/<ID-JIRA>-descripcion-corta` → Nuevas funcionalidades.
-- `fix/<ID-JIRA>-descripcion-corta` → Correcciones de errores.
-- `hotfix/<ID-JIRA>-descripcion-corta` → Correcciones urgentes en producción.
-- `chore/<ID-JIRA>-descripcion-corta` → Configuración o tareas técnicas.
-- `refactor/<ID-JIRA>-descripcion-corta` → Mejoras de código sin cambiar funcionalidad.
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_ \# Calidad de código
+(Frontend)
+
+El frontend utiliza buenas prácticas modernas con React:
+
+-   Componentes funcionales con Hooks.
+-   Estructura modular por carpetas (`views/`, `layout/`).
+-   Uso de archivos `.jsx` para componentes con JSX.
+-   Arquitectura preparada para SPA con React Router.
+-   Código limpio y organizado.
+
+Antes de crear un Pull Request:
+
+-   Verificar que el proyecto compile correctamente (`npm run dev`).
+-   Confirmar que no existan errores en consola.
+-   Ejecutar build si es necesario (`npm run build`).
+
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_ \# Convención de Ramas
+
+-   `main` → Rama estable y lista para producción.
+-   `develop` → Rama de integración del sprint.
+-   `feature/<ID-JIRA>-descripcion-corta` → Nuevas funcionalidades.
+-   `fix/<ID-JIRA>-descripcion-corta` → Correcciones de errores.
+-   `hotfix/<ID-JIRA>-descripcion-corta` → Correcciones urgentes en
+    producción.
+-   `chore/<ID-JIRA>-descripcion-corta` → Configuración o tareas
+    técnicas.
+-   `refactor/<ID-JIRA>-descripcion-corta` → Mejoras de código sin
+    cambiar funcionalidad.
 
 **Ejemplos:**
-```bash
+
+``` bash
 feature/US-05 — Filtros básicos en “Hoy” (T2)
 fix/US-03 — Editar/eliminar actividad y subtareas
 chore/TS-01 — Base técnica y estándares del repositorio
 ```
 
-No se permite push directo a `main`.  
+No se permite push directo a `main`.\
 Todos los cambios deben realizarse mediante Pull Request.
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Flujo de Trabajo
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_ \# Flujo de Trabajo
 
-1. Crear rama desde `develop`.
-2. Desarrollar funcionalidad.
-3. Crear Pull Request hacia `develop`.
-4. Revisión y aprobación.
-5. Al finalizar el sprint: `develop` → `main`.
+1.  Crear rama desde `develop`.
+2.  Desarrollar funcionalidad.
+3.  Crear Pull Request hacia `develop`.
+4.  Revisión y aprobación.
+5.  Al finalizar el sprint: `develop` → `main`.
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Convención de Pull Requests
-Todos los cambios deben realizarse mediante Pull Request hacia la rama develop.  
-  
-**Reglas**: 
-- El título del PR debe seguir el formato:
-    ```bash
-    tipo: descripción breve
-    ```
-- Tipos permitidos:
-    - `feature` → Nueva funcionalidad
-    - `fix` → Corrección de errores
-    - `chore` → Configuración o tareas técnicas
-    - `hotfix` → Correcciones urgentes
-    - `refactor` → Mejora de código sin cambiar funcionalidad
-- Ejemplos:
-    ```bash
-    feature: creación modelo Task
-    fix: validación de email en registro
-    chore: configuración inicial del proyecto
-    refactor: reorganización de serializers
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_ \# Convención de Pull
+Requests Todos los cambios deben realizarse mediante Pull Request hacia
+la rama develop.
 
-    ```
+**Reglas**: - El título del PR debe seguir el formato:
+`bash     tipo: descripción breve` - Tipos permitidos: - `feature` →
+Nueva funcionalidad - `fix` → Corrección de errores - `chore` →
+Configuración o tareas técnicas - `hotfix` → Correcciones urgentes -
+`refactor` → Mejora de código sin cambiar funcionalidad - Ejemplos:
+`bash     feature: creación modelo Task     fix: validación de email en registro     chore: configuración inicial del proyecto     refactor: reorganización de serializers`
 
-- Antes de enviar un PR:
-Desde backend/ ejecutar:
-    ```bash
-    black .
-    flake8 .
-    ```
+-   Antes de enviar un PR: Desde backend/ ejecutar:
+    `bash     black .     flake8 .`
 
 [Plantilla de Pull Request](pull_request_template.md)
 
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_ \# Estado del Proyecto
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Estado del Proyecto
+🟢 Sprint 0 --- Configuración inicial del entorno y flujo de trabajo.
 
-🟢 Sprint 0 — Configuración inicial del entorno y flujo de trabajo.
-
-[Tabla de Contenido](#tabla-de-contenido) 
-___
+[Tabla de Contenido](#tabla-de-contenido) \_\_\_
