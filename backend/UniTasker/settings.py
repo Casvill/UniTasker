@@ -32,6 +32,13 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
+CORS_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+
+DRF_PERMISSION_CLASS = os.environ.get(
+    "DRF_PERMISSION_CLASS",
+    "rest_framework.permissions.IsAuthenticated"
+)
+
 
 # Application definition
 
@@ -48,9 +55,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "usuarios",
     "planner",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -59,6 +69,14 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in CORS_ORIGINS.split(",")
+    if origin.strip()
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = "UniTasker.urls"
 
@@ -82,7 +100,7 @@ WSGI_APPLICATION = "UniTasker.wsgi.application"
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        DRF_PERMISSION_CLASS,
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
