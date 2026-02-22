@@ -1,7 +1,15 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App' // Make sure this points to your App.jsx file
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <App />
-)
+const container = document.getElementById('root');
+
+// La aserción "!" le dice a TS que confíe en que el elemento existe
+if (container) {
+  createRoot(container).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+}
