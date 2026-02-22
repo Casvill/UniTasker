@@ -34,6 +34,11 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 CORS_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "")
 
+DRF_PERMISSION_CLASS = os.environ.get(
+    "DRF_PERMISSION_CLASS",
+    "rest_framework.permissions.IsAuthenticated"
+)
+
 
 # Application definition
 
@@ -95,7 +100,7 @@ WSGI_APPLICATION = "UniTasker.wsgi.application"
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        DRF_PERMISSION_CLASS,
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
