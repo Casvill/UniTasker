@@ -19,7 +19,7 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
     try {
         const { path } = await ctx.params
 
-        const base = must(API_URL, "API_URL").replace(/\/+$/, "") // quita / al final
+        const base = must(API_URL, "API_URL").replace(/\/+$/, "")
         const joinedPath = path.join("/") // ej "actividades"
         const url = `${base}/${path.join("/")}/${req.nextUrl.search ?? ""}`
 
@@ -37,7 +37,7 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
             method,
             headers: {
                 Authorization: basicAuth(),
-                // ✅ Solo fuerza JSON si el request realmente manda JSON
+
                 ...(hasBody ? { "Content-Type": req.headers.get("content-type") || "application/json" } : {}),
             },
             body,
@@ -46,10 +46,6 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
         const contentType = upstream.headers.get("content-type") || ""
         const raw = await upstream.text()
 
-        // ✅ LOG del resultado upstream
-        console.log("[proxy] upstream status:", upstream.status)
-        console.log("[proxy] upstream content-type:", contentType)
-        console.log("[proxy] upstream body:", raw?.slice(0, 300)) // recorta para que no sea enorme
 
         if (upstream.status === 204) return new NextResponse(null, { status: 204 })
         if (!raw) return new NextResponse(null, { status: upstream.status })
