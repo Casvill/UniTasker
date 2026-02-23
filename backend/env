@@ -1,0 +1,11 @@
+# SUPABASE:---------------------------------
+DB_NAME=postgres
+DB_USER=postgres.taifgydeqjndubvzrzvh
+DB_PASSWORD=g-VLJB_PW9R94Pi
+DB_HOST=aws-0-us-west-2.pooler.supabase.com
+DB_PORT=6543
+#-------------------------------------------
+
+ALLOWED_HOSTS=unitasker-johw.onrender.com/,localhost,127.0.0.1
+SECRET_KEY=34=moerzj&ac-866cf5g!*f&=8bsnueyswc0y&3ch8_3#z6#y7
+DEBUG=True
