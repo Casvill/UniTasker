@@ -29,10 +29,10 @@ import {
 
 const TaskSchema = z.object({
     title: z.string().min(2, "El título es obligatorio (mínimo 2 caracteres)."),
-    type: z.enum(["examen", "quiz", "taller", "proyecto", "otro"]),
+    type: z.enum(["examen", "quiz", "taller", "proyecto", "otro"]).default("otro"),
     course: z.string().min(2, "El curso es obligatorio (mínimo 2 caracteres)."),
-    eventDateTime: z.string().optional(), // datetime-local string o vacío
-    dueDateTime: z.string().optional(),   // datetime-local string o vacío
+    dueDate: z.string().min(1, "La fecha de entrega es obligatoria."), // YYYY-MM-DD
+    description: z.string().optional(),
 })
 
 type TaskFormValues = z.infer<typeof TaskSchema>
@@ -46,35 +46,23 @@ export function CreateTaskDialog() {
             title: "",
             type: "otro",
             course: "",
-            eventDateTime: "",
-            dueDateTime: "",
+            dueDate: "",
+            description: "",
         },
         mode: "onTouched",
     })
 
     const { register, handleSubmit, setValue, watch, formState, reset } = form
     const { errors, isSubmitting } = formState
-
     const selectedType = watch("type")
-
-    function normalizeOptional(v: string | undefined) {
-        const trimmed = (v ?? "").trim()
-        return trimmed.length ? trimmed : undefined
-    }
-
-    function toISOIfPresent(v?: string) {
-        const t = (v ?? "").trim()
-        return t ? new Date(t).toISOString() : undefined
-    }
 
     const onSubmit = async (values: TaskFormValues) => {
         const payload = {
-            title: values.title,
-            type: values.type,
-            course: values.course,
-            // ⚠️ Ajusta estos nombres si tu backend usa otros:
-            event_datetime: toISOIfPresent(values.eventDateTime),
-            due_datetime: toISOIfPresent(values.dueDateTime),
+            titulo: values.title.trim(),
+            tipo: values.type,
+            curso: values.course.trim(),
+            fecha_entrega: values.dueDate, // DateField => "YYYY-MM-DD"
+            descripcion: (values.description ?? "").trim(),
         }
 
         try {
@@ -83,11 +71,11 @@ export function CreateTaskDialog() {
                 body: JSON.stringify(payload),
             })
 
-            toast.success("Tarea creada exitosamente.")
+            toast.success("Actividad creada exitosamente.")
             reset()
             setOpen(false)
         } catch (e: any) {
-            toast.error(e?.message ?? "No se pudo crear la tarea.")
+            toast.error(e?.message ?? "No se pudo crear la actividad.")
         }
     }
 
@@ -95,13 +83,13 @@ export function CreateTaskDialog() {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
-                    + Crear Tarea
+                    + Crear Actividad
                 </Button>
             </DialogTrigger>
 
             <DialogContent className="sm:max-w-[520px]">
                 <DialogHeader>
-                    <DialogTitle>Nueva tarea</DialogTitle>
+                    <DialogTitle>Nueva actividad</DialogTitle>
                     <DialogDescription>
                         Completa los campos mínimos para registrar tu actividad evaluativa.
                     </DialogDescription>
@@ -111,16 +99,26 @@ export function CreateTaskDialog() {
                     {/* Título */}
                     <div className="space-y-1.5">
                         <Label htmlFor="title">Título de actividad *</Label>
-                        <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} />
-                        {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                        <Input
+                            id="title"
+                            placeholder="Ej: Parcial de Cálculo"
+                            {...register("title")}
+                        />
+                        {errors.title && (
+                            <p className="text-sm text-destructive">{errors.title.message}</p>
+                        )}
                     </div>
 
                     {/* Tipo */}
                     <div className="space-y-1.5">
-                        <Label>¿Como te van a evaluar? *</Label>
+                        <Label>¿Cómo te van a evaluar? *</Label>
                         <Select
                             value={selectedType}
-                            onValueChange={(v) => setValue("type", v as TaskFormValues["type"], { shouldValidate: true })}
+                            onValueChange={(v) =>
+                                setValue("type", v as TaskFormValues["type"], {
+                                    shouldValidate: true,
+                                })
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un tipo" />
@@ -133,26 +131,41 @@ export function CreateTaskDialog() {
                                 <SelectItem value="otro">Otro</SelectItem>
                             </SelectContent>
                         </Select>
-                        {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                        {errors.type && (
+                            <p className="text-sm text-destructive">{errors.type.message}</p>
+                        )}
                     </div>
 
                     {/* Curso */}
                     <div className="space-y-1.5">
                         <Label htmlFor="course">Curso *</Label>
-                        <Input id="course" placeholder="Ej: Matemáticas II" {...register("course")} />
-                        {errors.course && <p className="text-sm text-destructive">{errors.course.message}</p>}
+                        <Input
+                            id="course"
+                            placeholder="Ej: Matemáticas II"
+                            {...register("course")}
+                        />
+                        {errors.course && (
+                            <p className="text-sm text-destructive">{errors.course.message}</p>
+                        )}
                     </div>
 
-                    {/* Fecha/hora del evento */}
+                    {/* Fecha de entrega (DateField => date) */}
                     <div className="space-y-1.5">
-                        <Label htmlFor="eventDateTime">Fecha/hora del evento (opcional)</Label>
-                        <Input id="eventDateTime" type="datetime-local" {...register("eventDateTime")} />
+                        <Label htmlFor="dueDate">Fecha de entrega *</Label>
+                        <Input id="dueDate" type="date" {...register("dueDate")} />
+                        {errors.dueDate && (
+                            <p className="text-sm text-destructive">{errors.dueDate.message}</p>
+                        )}
                     </div>
 
-                    {/* Fecha límite */}
+                    {/* Descripción (opcional) */}
                     <div className="space-y-1.5">
-                        <Label htmlFor="dueDateTime">Fecha límite (opcional)</Label>
-                        <Input id="dueDateTime" type="datetime-local" {...register("dueDateTime")} />
+                        <Label htmlFor="description">Descripción (opcional)</Label>
+                        <Input
+                            id="description"
+                            placeholder="Ej: Temas 1-3, llevar calculadora"
+                            {...register("description")}
+                        />
                     </div>
 
                     <DialogFooter className="gap-2 sm:gap-0">
