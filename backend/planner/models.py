@@ -8,8 +8,19 @@ class Actividad(models.Model):
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="actividades"
     )
+
+    TIPOS = [
+        ("examen", "Examen"),
+        ("quiz", "Quiz"),
+        ("taller", "Taller"),
+        ("proyecto", "Proyecto"),
+        ("otro", "Otro"),
+    ]
+
     titulo = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True)
+    tipo = models.CharField(max_length=20, choices=TIPOS, default="otro")
+    curso = models.CharField(max_length=255)
     fecha_entrega = models.DateField()
     creada_en = models.DateTimeField(auto_now_add=True)
 

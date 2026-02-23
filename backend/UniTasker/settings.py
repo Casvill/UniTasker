@@ -35,8 +35,7 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 CORS_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "")
 
 DRF_PERMISSION_CLASS = os.environ.get(
-    "DRF_PERMISSION_CLASS",
-    "rest_framework.permissions.IsAuthenticated"
+    "DRF_PERMISSION_CLASS", "rest_framework.permissions.IsAuthenticated"
 )
 
 
@@ -71,9 +70,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in CORS_ORIGINS.split(",")
-    if origin.strip()
+    origin.strip() for origin in CORS_ORIGINS.split(",") if origin.strip()
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

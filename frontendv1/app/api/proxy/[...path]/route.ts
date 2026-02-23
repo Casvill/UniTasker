@@ -15,45 +15,61 @@ function basicAuth() {
     return `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`
 }
 
-async function handler(
-    req: NextRequest,
-    ctx: { params: Promise<{ path: string[] }> }
-) {
-    const { path } = await ctx.params
-    const base = must(API_URL, "API_URL").replace(/\/$/, "")
+async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+    try {
+        const { path } = await ctx.params
 
-    const url = `${base}/${path.join("/")}${req.nextUrl.search}`
+        const base = must(API_URL, "API_URL").replace(/\/+$/, "") // quita / al final
+        const joinedPath = path.join("/") // ej "actividades"
+        const url = `${base}/${path.join("/")}/${req.nextUrl.search ?? ""}`
 
-    const method = req.method
-    const hasBody = !["GET", "HEAD"].includes(method)
-    const body = hasBody ? await req.text() : undefined
 
-    const upstream = await fetch(url, {
-        method,
-        headers: {
-            Authorization: basicAuth(),
-            ...(hasBody ? { "Content-Type": "application/json" } : {}),
-        },
-        body,
-    })
+        console.log("[proxy] base:", base)
+        console.log("[proxy] path:", joinedPath)
+        console.log("[proxy] url:", url)
+        console.log("[proxy] method:", req.method)
 
-    if (upstream.status === 204) return new NextResponse(null, { status: 204 })
+        const method = req.method
+        const hasBody = !["GET", "HEAD"].includes(method)
+        const body = hasBody ? await req.text() : undefined
 
-    const contentType = upstream.headers.get("content-type") || ""
-    const raw = await upstream.text()
+        const upstream = await fetch(url, {
+            method,
+            headers: {
+                Authorization: basicAuth(),
+                // ✅ Solo fuerza JSON si el request realmente manda JSON
+                ...(hasBody ? { "Content-Type": req.headers.get("content-type") || "application/json" } : {}),
+            },
+            body,
+        })
 
-    if (!raw) return new NextResponse(null, { status: upstream.status })
+        const contentType = upstream.headers.get("content-type") || ""
+        const raw = await upstream.text()
 
-    if (contentType.includes("application/json")) {
-        try {
-            return NextResponse.json(JSON.parse(raw), { status: upstream.status })
-        } catch {
+        // ✅ LOG del resultado upstream
+        console.log("[proxy] upstream status:", upstream.status)
+        console.log("[proxy] upstream content-type:", contentType)
+        console.log("[proxy] upstream body:", raw?.slice(0, 300)) // recorta para que no sea enorme
 
-            return new NextResponse(raw, { status: upstream.status })
+        if (upstream.status === 204) return new NextResponse(null, { status: 204 })
+        if (!raw) return new NextResponse(null, { status: upstream.status })
+
+        if (contentType.includes("application/json")) {
+            try {
+                return NextResponse.json(JSON.parse(raw), { status: upstream.status })
+            } catch {
+                return new NextResponse(raw, { status: upstream.status })
+            }
         }
-    }
 
-    return new NextResponse(raw, { status: upstream.status })
+        return new NextResponse(raw, { status: upstream.status })
+    } catch (error: any) {
+        console.error("[proxy] ERROR:", error)
+        return NextResponse.json(
+            { message: "Proxy error", error: String(error?.message || error) },
+            { status: 500 }
+        )
+    }
 }
 
 export const GET = handler
