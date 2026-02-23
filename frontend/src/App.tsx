@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react'
 
 
+interface ApiResponse {
+  usuarios: string;
+  actividades: string;
+  tareas: string;
+  registros: string;
+}
+
 function App() {
 
-const [data, setData] = useState([]);
+const [data, setData] = useState<ApiResponse | null>(null)
 useEffect(() => {
   async function fetchData() {
     console.log(import.meta.env.VITE_API_URL)

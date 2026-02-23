@@ -1,7 +1,16 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App' // Make sure this points to your App.jsx file
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <App />
-)
+const container = document.getElementById('root');
+
+// Verificamos que container no sea null antes de crear el root
+if (container) {
+  const root = createRoot(container);
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+}
