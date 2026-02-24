@@ -39,12 +39,20 @@ class TareaSerializer(serializers.ModelSerializer):
         model = Tarea
         fields = "__all__"
         read_only_fields = ["creada_en", "actualizada_en"]
-
-    #  Validar nombre no vacío
-    def validate_nombre(self, value):
-        if not value or not value.strip():
-            raise serializers.ValidationError("El nombre es obligatorio.")
-        return value
+        extra_kwargs = {
+            "nombre": {
+                "error_messages": {
+                    "blank": "El nombre es obligatorio.",
+                    "required": "El nombre es obligatorio.",
+                }
+            },
+            "fecha_objetivo": {
+                "error_messages": {
+                    "invalid": "La fecha debe tener formato YYYY-MM-DD.",
+                    "required": "La fecha objetivo es obligatoria.",
+                }
+            },
+        }
 
     # Validar horas_estimadas > 0
     def validate_horas_estimadas(self, value):
@@ -58,6 +66,7 @@ class TareaSerializer(serializers.ModelSerializer):
     def validate_fecha_objetivo(self, value):
         if not value:
             raise serializers.ValidationError("La fecha objetivo es obligatoria.")
+        return value
 
 
 # ------------------------------------------------------------------------------------

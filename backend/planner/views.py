@@ -31,14 +31,14 @@ class TareaViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
 
-        # 🔴 Si no mandan actividad
+        # Si no mandan actividad
         if not actividad_id:
             return Response(
                 {"actividad": ["Este campo es obligatorio."]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 🔴 Si actividad no existe → 404
+        # Si actividad no existe → 404
         actividad = get_object_or_404(
             Actividad, id=actividad_id, usuario=request.user  # seguridad extra 🔥
         )
