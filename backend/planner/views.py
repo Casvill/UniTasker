@@ -26,7 +26,17 @@ class TareaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Tarea.objects.filter(actividad__usuario=self.request.user)
+        actividad_id = self.request.query_params.get("actividad")
+
+        queryset = Tarea.objects.filter(actividad__usuario=self.request.user)
+
+        if actividad_id:
+            # Validamos que la actividad exista y sea del usuario
+            get_object_or_404(Actividad, id=actividad_id, usuario=self.request.user)
+
+            queryset = queryset.filter(actividad_id=actividad_id)
+
+        return queryset.order_by("fecha_objetivo")  # 👈 orden estable
 
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
