@@ -73,7 +73,6 @@ CORS_ALLOWED_ORIGINS = [
     origin.strip() for origin in CORS_ORIGINS.split(",") if origin.strip()
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = "UniTasker.urls"
 

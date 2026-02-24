@@ -31,12 +31,45 @@ class ActividadSerializer(serializers.ModelSerializer):
 
 
 # ------------------------------------------------------------------------------------
+
+
 class TareaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tarea
         fields = "__all__"
-        read_only_fields = ["creada_en"]
+        read_only_fields = ["creada_en", "actualizada_en"]
+        extra_kwargs = {
+            "nombre": {
+                "error_messages": {
+                    "blank": "El nombre es obligatorio.",
+                    "required": "El nombre es obligatorio.",
+                }
+            },
+            "fecha_objetivo": {
+                "error_messages": {
+                    "invalid": "La fecha debe tener formato YYYY-MM-DD.",
+                    "required": "La fecha objetivo es obligatoria.",
+                }
+            },
+        }
+
+    # Validar horas_estimadas > 0
+    def validate_horas_estimadas(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(
+                "Las horas estimadas deben ser mayores a 0."
+            )
+        return value
+
+    # Validar fecha válida (DRF ya valida formato automáticamente)
+    def validate_fecha_objetivo(self, value):
+        if not value:
+            raise serializers.ValidationError("La fecha objetivo es obligatoria.")
+        return value
+
+
+# ------------------------------------------------------------------------------------
 
 
 class RegistroAvanceSerializer(serializers.ModelSerializer):
@@ -45,3 +78,6 @@ class RegistroAvanceSerializer(serializers.ModelSerializer):
         model = RegistroAvance
         fields = "__all__"
         read_only_fields = ["creada_en"]
+
+
+# ------------------------------------------------------------------------------------
