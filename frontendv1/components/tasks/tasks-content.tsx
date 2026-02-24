@@ -17,6 +17,7 @@ type Task = {
   dueDate: string
   completed: boolean
   tags: string[]
+  subtasks: any[] // <--- Agrega esta línea
 }
 
 type TasksContentProps = {
@@ -62,13 +63,14 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
 
         const mapped: Task[] = list.map((item: any) => ({
           id: item.id,
-          title: item.titulo ?? item.title ?? "Sin título",
-          project: item.curso ?? item.project ?? "Sin curso",
-          priority: normalizePriority(item.prioridad ?? item.priority),
-
-          dueDate: formatDueDate(item.fecha_entrega ?? item.fecha_limite ?? item.dueDate),
-          completed: Boolean(item.completada ?? item.completed ?? false),
-          tags: Array.isArray(item.tags) ? item.tags : [],
+          title: item.titulo ?? "Sin título",
+          project: item.curso ?? "Sin curso",
+          priority: normalizePriority(item.prioridad),
+          dueDate: formatDueDate(item.fecha_entrega),
+          // Una actividad está completada si todas sus tareas están "hecha"
+          completed: item.tareas?.length > 0 && item.tareas.every((t: any) => t.estado === "hecha"),
+          tags: [item.tipo], // Usamos el tipo como tag
+          subtasks: item.tareas ?? [], // <--- Guardamos las tareas de la actividad aquí
         }))
 
         setTasks(mapped)
@@ -207,6 +209,31 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
                         {tag}
                       </Badge>
                     ))}
+                  </div>
+                  <div className="mt-3 space-y-2 border-t pt-3">
+                    {task.subtasks?.map((sub: any) => (
+                      <div key={sub.id} className="flex items-center justify-between group/sub">
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            checked={sub.estado === "hecha"} 
+                            className="h-3.5 w-3.5"
+                          />
+                          <span className={`text-xs ${sub.estado === "hecha" ? "line-through opacity-50" : "text-foreground/80"}`}>
+                            {sub.titulo}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground opacity-0 group-hover/sub:opacity-100 transition-opacity">
+                          {sub.horas_estimadas}h
+                        </span>
+                      </div>
+                    ))}
+                    
+                    {/* Validación para cuando no hay tareas */}
+                    {(!task.subtasks || task.subtasks.length === 0) && (
+                      <p className="text-[10px] italic text-muted-foreground">
+                        Sin tareas asignadas
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
