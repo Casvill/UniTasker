@@ -26,7 +26,11 @@ class TareaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Tarea.objects.filter(actividad__usuario=self.request.user)
+        queryset = Tarea.objects.filter(actividad__usuario=self.request.user)
+        actividad_id = self.request.query_params.get("actividad")
+        if actividad_id:
+            queryset = queryset.filter(actividad_id=actividad_id)
+        return queryset
 
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")

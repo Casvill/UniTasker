@@ -18,7 +18,8 @@ import {
 import { 
   PlusCircle, 
   Trash2, 
-  Clock 
+  Clock,
+  CheckCircle2
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -107,11 +108,26 @@ const handleCreateSubtask = async () => {
     });
 
     if (response) {
-      // 4. Actualizamos la vista para que la nueva tarea aparezca en la lista del Dialog
+      // 4. Actualizamos el Dialog (selectedActivity)
       setSelectedActivity((prev: any) => ({
         ...prev,
         subtasks: [...(prev.subtasks || []), response]
       }));
+
+      // 4.1 Actualizamos la lista principal (tasks)
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => {
+          if (task.id === selectedActivity.id) {
+            const updatedSubtasks = [...(task.subtasks || []), response];
+            return {
+              ...task,
+              subtasks: updatedSubtasks,
+              completed: updatedSubtasks.length > 0 && updatedSubtasks.every((t: any) => t.estado === "hecha"),
+            };
+          }
+          return task;
+        })
+      );
 
       // 5. Limpiamos los campos del formulario
       setNewSubtask({ nombre: "", fecha: "", horas: "" });
@@ -124,14 +140,191 @@ const handleCreateSubtask = async () => {
   
 
 // 3. Función para ELIMINAR la subtarea
-const handleDeleteSubtask = (id: string | number) => {
-  console.log("Eliminando subtarea con ID:", id);
-  // Aquí tu lógica de filtrado o borrado en API
+const handleDeleteSubtask = async (id: string | number) => {
+  if (!confirm("¿Estás seguro de que deseas eliminar esta tarea?")) return;
+
+  try {
+    await apiFetch(`/tareas/${id}/`, {
+      method: "DELETE",
+    });
+
+    // 1. Actualizar el Dialog (selectedActivity)
+    setSelectedActivity((prev: any) => {
+      if (!prev) return prev;
+      const updatedSubtasks = (prev.subtasks || []).filter((s: any) => s.id !== id);
+      return {
+        ...prev,
+        subtasks: updatedSubtasks,
+      };
+    });
+
+    // 2. Actualizar la lista principal (tasks)
+    setTasks((prevTasks) =>
+      prevTasks.map((task) => {
+        if (task.subtasks.some((s) => s.id === id)) {
+          const updatedSubtasks = task.subtasks.filter((s) => s.id !== id);
+          return {
+            ...task,
+            subtasks: updatedSubtasks,
+            completed: updatedSubtasks.length > 0 && updatedSubtasks.every((t: any) => t.estado === "hecha"),
+          };
+        }
+        return task;
+      })
+    );
+  } catch (error) {
+    console.error("Error al eliminar la subtarea:", error);
+    alert("No se pudo eliminar la tarea.");
+  }
 };
 
-// 4. Función para cambiar ESTADO (opcional, pero recomendada para el Checkbox)
-const handleToggleSubtask = (id: string | number) => {
-  console.log("Cambiando estado de:", id);
+// 4. Función para cambiar ESTADO
+const handleToggleSubtask = async (id: string | number) => {
+  try {
+    let subtask: any = null;
+    
+    if (selectedActivity?.subtasks) {
+      subtask = selectedActivity.subtasks.find((s: any) => s.id === id);
+    }
+    
+    if (!subtask) {
+      for (const t of tasks) {
+        const found = t.subtasks.find((s: any) => s.id === id);
+        if (found) {
+          subtask = found;
+          break;
+        }
+      }
+    }
+
+    if (!subtask) return;
+
+    const newEstado = subtask.estado === "hecha" ? "pendiente" : "hecha";
+
+    const response = await apiFetch(`/tareas/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ estado: newEstado }),
+    });
+
+    if (response) {
+      setSelectedActivity((prev: any) => {
+        if (!prev) return prev;
+        const updatedSubtasks = (prev.subtasks || []).map((s: any) =>
+          s.id === id ? response : s
+        );
+        return {
+          ...prev,
+          subtasks: updatedSubtasks,
+        };
+      });
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => {
+          if (task.subtasks.some((s) => s.id === id)) {
+            const updatedSubtasks = task.subtasks.map((s) =>
+              s.id === id ? response : s
+            );
+            return {
+              ...task,
+              subtasks: updatedSubtasks,
+              completed: updatedSubtasks.length > 0 && updatedSubtasks.every((t: any) => t.estado === "hecha"),
+            };
+          }
+          return task;
+        })
+      );
+    }
+  } catch (error) {
+    console.error("Error al cambiar el estado de la tarea:", error);
+  }
+};
+
+// 5. Función para marcar todas las subtareas como hechas
+const handleMarkAllAsDone = async () => {
+  if (!selectedActivity || !selectedActivity.subtasks) return;
+
+  const pendingSubtasks = selectedActivity.subtasks.filter((s: any) => s.estado !== "hecha");
+  if (pendingSubtasks.length === 0) return;
+
+  try {
+    const updatedSubtasksPromises = pendingSubtasks.map((s: any) =>
+      apiFetch(`/tareas/${s.id}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ estado: "hecha" }),
+      })
+    );
+
+    const responses = await Promise.all(updatedSubtasksPromises);
+
+    // 1. Actualizar el Dialog (selectedActivity)
+    setSelectedActivity((prev: any) => {
+      const updatedSubtasks = (prev.subtasks || []).map((s: any) => {
+        const found = responses.find((r: any) => r.id === s.id);
+        return found || s;
+      });
+      return { ...prev, subtasks: updatedSubtasks };
+    });
+
+    // 2. Actualizar la lista principal (tasks)
+    setTasks((prevTasks) =>
+      prevTasks.map((task) => {
+        if (task.id === selectedActivity.id) {
+          const updatedSubtasks = task.subtasks.map((s) => {
+            const found = responses.find((r: any) => r.id === s.id);
+            return found || s;
+          });
+          return {
+            ...task,
+            subtasks: updatedSubtasks,
+            completed: true,
+          };
+        }
+        return task;
+      })
+    );
+  } catch (error) {
+    console.error("Error al marcar todas las tareas como hechas:", error);
+  }
+};
+
+// 6. Función para alternar el estado de toda una actividad (y todas sus subtasks)
+const handleToggleActivity = async (task: Task) => {
+  const newCompleted = !task.completed;
+  const newEstado = newCompleted ? "hecha" : "pendiente";
+
+  try {
+    // Si la actividad no tiene subtasks, no hay nada que marcar en el backend (por ahora)
+    // pero actualizamos el estado local para consistencia visual si fuera necesario.
+    if (task.subtasks.length === 0) return;
+
+    const updatedSubtasksPromises = task.subtasks.map((s: any) =>
+      apiFetch(`/tareas/${s.id}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ estado: newEstado }),
+      })
+    );
+
+    const responses = await Promise.all(updatedSubtasksPromises);
+
+    setTasks((prevTasks) =>
+      prevTasks.map((t) => {
+        if (t.id === task.id) {
+          const updatedSubtasks = t.subtasks.map((s) => {
+            const found = responses.find((r: any) => r.id === s.id);
+            return found || { ...s, estado: newEstado }; // Fallback
+          });
+          return {
+            ...t,
+            subtasks: updatedSubtasks,
+            completed: newCompleted,
+          };
+        }
+        return t;
+      })
+    );
+  } catch (error) {
+    console.error("Error al cambiar el estado de la actividad:", error);
+  }
 };
 
   useEffect(() => {
@@ -265,7 +458,12 @@ const handleToggleSubtask = (id: string | number) => {
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-start gap-4">
-                <Checkbox checked={task.completed} className="mt-1" />
+                <Checkbox 
+                  checked={task.completed} 
+                  onCheckedChange={() => handleToggleActivity(task)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-1" 
+                />
                 <div className="flex-1 space-y-2">
                   <div className="flex items-start justify-between gap-4">
                     <h3 className={`font-semibold text-foreground ${task.completed ? "line-through opacity-60" : ""}`}>
@@ -305,6 +503,8 @@ const handleToggleSubtask = (id: string | number) => {
                         <div className="flex items-center gap-2">
                           <Checkbox 
                             checked={sub.estado === "hecha"} 
+                            onCheckedChange={() => handleToggleSubtask(sub.id)}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-3.5 w-3.5"
                           />
                           <span className={`text-xs ${sub.estado === "hecha" ? "line-through opacity-50" : "text-foreground/80"}`}>
@@ -336,9 +536,20 @@ const handleToggleSubtask = (id: string | number) => {
     
     {/* CABECERA */}
     <DialogHeader className="p-6 pb-0">
-      <DialogTitle className="text-2xl font-bold text-slate-800">
-        Gestionar Tareas
-      </DialogTitle>
+      <div className="flex items-center justify-between">
+        <DialogTitle className="text-2xl font-bold text-slate-800">
+          Gestionar Tareas
+        </DialogTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2 text-[#00682b] border-[#00682b] hover:bg-[#00682b] hover:text-white transition-all"
+          onClick={handleMarkAllAsDone}
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          Marcar todo como hecho
+        </Button>
+      </div>
       <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
         <p className="font-bold text-slate-700">{selectedActivity?.title}</p>
         <p className="text-sm text-muted-foreground">{selectedActivity?.project}</p>

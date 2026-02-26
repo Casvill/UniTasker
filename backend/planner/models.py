@@ -37,9 +37,15 @@ class Tarea(models.Model):
         Actividad, on_delete=models.CASCADE, related_name="tareas"
     )
 
+    ESTADOS = [
+        ("pendiente", "Pendiente"),
+        ("hecha", "Hecha"),
+    ]
+
     nombre = models.CharField(max_length=255)
     fecha_objetivo = models.DateField()
     horas_estimadas = models.DecimalField(max_digits=5, decimal_places=2)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="pendiente")
     creada_en = models.DateTimeField(auto_now_add=True)
     actualizada_en = models.DateTimeField(auto_now=True)
 
