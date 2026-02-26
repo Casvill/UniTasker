@@ -397,6 +397,8 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
         </DialogHeader>
 
         <div className="p-4 pt-0 space-y-2"> 
+          <h3 className="text-lg font-semibold text-slate-800 mb-5" >Agregar tarea</h3>
+
           <section className="space-y-1 -mt-2"> 
             <div className="grid gap-2 p-2 rounded-xl bg-white border border-slate-200 shadow-sm">
               <Input
