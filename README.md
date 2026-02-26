@@ -89,6 +89,8 @@ http://127.0.0.1:8000/
 ## Frontend:
 ```bash
 cd frontend
+npm install
+npm run dev
 ```
 
 [Tabla de Contenido](#tabla-de-contenido) 
@@ -120,6 +122,31 @@ Antes de crear un Pull Request, el código debe estar correctamente formateado y
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Calidad de código (Frontend)
+
+El frontend de UniTasker está desarrollado con **React 19** y **Vite** para una experiencia de desarrollo rápida y moderna. Utiliza **TypeScript** para asegurar la calidad y robustez del código.
+
+### Iniciar el Frontend:
+Desde la carpeta raíz del proyecto:
+1. Navegar al directorio del frontend:
+   ```bash
+   cd frontend
+   ```
+2. Instalar las dependencias (solo la primera vez):
+   ```bash
+   npm install
+   ```
+3. Iniciar el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+
+El servidor estará disponible usualmente en `http://localhost:5173/`.
+
+### Linter:
+Para mantener el estándar de código se utiliza **ESLint**:
+```bash
+npm run lint
+```
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Convención de Ramas

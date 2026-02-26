@@ -333,6 +333,8 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
 
     if (newEstado === "hecha") {
       toast.success("Tarea completada", { duration: 2000 });
+    } else {
+      toast.info("Tarea marcada como pendiente", { duration: 2000 });
     }
 
     try {

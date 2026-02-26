@@ -8,7 +8,8 @@ import {
   Tag, 
   AlertCircle,
   Pencil,
-  Settings2
+  Settings2,
+  Trash2
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -118,6 +119,22 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     setIsEditActivityOpen(true);
   };
 
+  const handleDeleteActivity = async (e: React.MouseEvent, taskId: number) => {
+    e.stopPropagation();
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad?")) return;
+
+    try {
+      await apiFetch(`/actividades/${taskId}/`, {
+        method: "DELETE",
+      });
+      toast.success("Actividad eliminada");
+      loadTasks();
+    } catch (error) {
+      console.error("Error al eliminar actividad:", error);
+      toast.error("No se pudo eliminar la actividad");
+    }
+  };
+
 // Función para cambiar ESTADO de subtarea desde la lista principal
 const handleToggleSubtask = async (activityId: number, subtaskId: string | number) => {
   const targetTask = tasks.find(t => t.id === activityId);
@@ -151,6 +168,8 @@ const handleToggleSubtask = async (activityId: number, subtaskId: string | numbe
 
   if (newEstado === "hecha") {
     toast.success("Tarea completada", { duration: 2000 });
+  } else {
+    toast.info("Tarea marcada como pendiente", { duration: 2000 });
   }
 
   try {
@@ -345,6 +364,14 @@ const handleToggleActivity = async (task: Task) => {
                         onClick={(e) => handleOpenEditActivity(e, task)}
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => handleDeleteActivity(e, task.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                       <Badge
                         variant={
