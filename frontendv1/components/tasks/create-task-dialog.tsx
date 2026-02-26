@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Trash2, CheckCircle2 } from "lucide-react"
+import { Calendar, Clock, Trash2, CheckCircle2, Pencil } from "lucide-react"
 
 const TaskSchema = z.object({
     title: z.string().min(2, "El título es obligatorio (mínimo 2 caracteres)."),
@@ -35,19 +35,24 @@ type TaskFormValues = z.infer<typeof TaskSchema>
 
 type CreateTaskDialogProps = {
     onCreated?: () => void
+    activity?: any
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function CreateTaskDialog({ onCreated }: CreateTaskDialogProps) {
-    const [open, setOpen] = React.useState(false)
+export function CreateTaskDialog({ onCreated, activity, open: controlledOpen, onOpenChange }: CreateTaskDialogProps) {
+    const [internalOpen, setInternalOpen] = React.useState(false)
+    const open = controlledOpen ?? internalOpen
+    const setOpen = onOpenChange ?? setInternalOpen
 
     const form = useForm<TaskFormValues>({
         resolver: zodResolver(TaskSchema),
         defaultValues: {
-            title: "",
-            type: "otro",
-            course: "",
-            dueDate: "",
-            description: "",
+            title: activity?.title || "",
+            type: activity?.tags?.[0] || "otro",
+            course: activity?.project || "",
+            dueDate: activity?.dueDate ? (activity.dueDate.includes('/') ? activity.dueDate.split('/').reverse().join('-') : activity.dueDate) : "",
+            description: activity?.description || "",
         },
         mode: "onTouched",
     })
@@ -55,6 +60,19 @@ export function CreateTaskDialog({ onCreated }: CreateTaskDialogProps) {
     const { register, handleSubmit, setValue, watch, formState, reset } = form
     const { errors, isSubmitting } = formState
     const selectedType = watch("type")
+
+    // Update form when activity changes
+    React.useEffect(() => {
+        if (activity) {
+            reset({
+                title: activity.title,
+                type: activity.tags?.[0] || "otro",
+                course: activity.project,
+                dueDate: activity.dueDate ? (activity.dueDate.includes('/') ? activity.dueDate.split('/').reverse().join('-') : activity.dueDate) : "",
+                description: activity.description || "",
+            })
+        }
+    }, [activity, reset])
 
     const onSubmit = async (values: TaskFormValues) => {
         const payload = {
@@ -66,33 +84,44 @@ export function CreateTaskDialog({ onCreated }: CreateTaskDialogProps) {
         }
 
         try {
-            await apiFetch("/actividades/", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            })
-
-            toast.success("Actividad creada exitosamente.")
+            if (activity?.id) {
+                await apiFetch(`/actividades/${activity.id}/`, {
+                    method: "PATCH",
+                    body: JSON.stringify(payload),
+                })
+                toast.success("Actividad actualizada exitosamente.")
+            } else {
+                await apiFetch("/actividades/", {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                })
+                toast.success("Actividad creada exitosamente.")
+            }
             onCreated?.()
 
             reset()
             setOpen(false)
         } catch (e: any) {
-            toast.error(e?.message ?? "No se pudo crear la actividad.")
+            toast.error(e?.message ?? "No se pudo guardar la actividad.")
         }
     }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
-                    + Crear Actividad
-                </Button>
-            </DialogTrigger>
+            {!activity && (
+                <DialogTrigger asChild>
+                    <Button className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
+                        + Crear Actividad
+                    </Button>
+                </DialogTrigger>
+            )}
 
             <DialogContent className="sm:max-w-[520px]">
                 <DialogHeader>
-                    <DialogTitle>Nueva actividad</DialogTitle>
-                    <DialogDescription>Completa los campos mínimos para registrar tu actividad evaluativa.</DialogDescription>
+                    <DialogTitle>{activity ? "Editar actividad" : "Nueva actividad"}</DialogTitle>
+                    <DialogDescription>
+                        {activity ? "Modifica los campos de tu actividad." : "Completa los campos mínimos para registrar tu actividad evaluativa."}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -178,6 +207,13 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     horas: ""
   });
 
+  const [editingId, setEditingId] = React.useState<number | string | null>(null);
+  const [editingSubtask, setEditingSubtask] = React.useState({
+    nombre: "",
+    fecha: "",
+    horas: ""
+  });
+
   const handleCreateSubtask = async () => {
     if (!newSubtask.nombre.trim() || !activity) return;
 
@@ -207,6 +243,46 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
         return "Tarea creada correctamente";
       },
       error: "No se pudo crear la tarea"
+    });
+  };
+
+  const handleUpdateSubtask = async (id: number | string) => {
+    if (!editingSubtask.nombre.trim()) return;
+
+    const body = {
+      nombre: editingSubtask.nombre,
+      fecha_objetivo: editingSubtask.fecha || null,
+      horas_estimadas: parseFloat(editingSubtask.horas) || 0,
+    };
+
+    const promise = apiFetch<any>(`/tareas/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+
+    toast.promise(promise, {
+      loading: 'Actualizando tarea...',
+      success: (response) => {
+        const updatedSubtasksList = activity.subtasks.map((s: any) => 
+          s.id === id ? response : s
+        );
+        onActivityUpdate({
+          ...activity,
+          subtasks: updatedSubtasksList,
+        });
+        setEditingId(null);
+        return "Tarea actualizada correctamente";
+      },
+      error: "No se pudo actualizar la tarea"
+    });
+  };
+
+  const startEditing = (sub: any) => {
+    setEditingId(sub.id);
+    setEditingSubtask({
+      nombre: sub.nombre,
+      fecha: sub.fecha_objetivo || "",
+      horas: sub.horas_estimadas?.toString() || ""
     });
   };
 
@@ -370,41 +446,85 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
                 activity.subtasks.map((sub: any) => (
                   <div
                     key={sub.id}
-                    className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl hover:border-[#00682b]/30 transition-colors shadow-sm"
+                    className="p-3 bg-white border border-slate-100 rounded-xl hover:border-[#00682b]/30 transition-colors shadow-sm"
                   >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={sub.estado === "hecha"}
-                        onCheckedChange={() => handleToggleSubtask(sub.id)}
-                        className="rounded-full border-slate-300 data-[state=checked]:bg-[#00682b] data-[state=checked]:border-[#00682b]"
-                      />
-                      <div className="flex flex-col">
-                        <span
-                          className={`text-sm font-semibold ${
-                            sub.estado === "hecha" ? "line-through text-slate-400" : "text-slate-700"
-                          }`}
-                        >
-                          {sub.nombre}
-                        </span>
-                        <div className="flex gap-3 text-[10px] text-slate-400 font-medium">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" /> {sub.fecha_objetivo || 'Sin fecha'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {sub.horas_estimadas}h
-                          </span>
+                    {editingId === sub.id ? (
+                      <div className="space-y-2">
+                        <Input
+                          className="h-8 text-sm"
+                          value={editingSubtask.nombre}
+                          onChange={(e) => setEditingSubtask({ ...editingSubtask, nombre: e.target.value })}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="date"
+                            className="h-7 text-xs"
+                            value={editingSubtask.fecha}
+                            onChange={(e) => setEditingSubtask({ ...editingSubtask, fecha: e.target.value })}
+                          />
+                          <Input
+                            type="number"
+                            className="h-7 text-xs"
+                            value={editingSubtask.horas}
+                            onChange={(e) => setEditingSubtask({ ...editingSubtask, horas: e.target.value })}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingId(null)}>
+                            Cancelar
+                          </Button>
+                          <Button size="sm" className="h-7 text-xs bg-[#00682b] hover:bg-[#00682b]/90" onClick={() => handleUpdateSubtask(sub.id)}>
+                            Actualizar
+                          </Button>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={sub.estado === "hecha"}
+                            onCheckedChange={() => handleToggleSubtask(sub.id)}
+                            className="rounded-full border-slate-300 data-[state=checked]:bg-[#00682b] data-[state=checked]:border-[#00682b]"
+                          />
+                          <div className="flex flex-col">
+                            <span
+                              className={`text-sm font-semibold ${
+                                sub.estado === "hecha" ? "line-through text-slate-400" : "text-slate-700"
+                              }`}
+                            >
+                              {sub.nombre}
+                            </span>
+                            <div className="flex gap-3 text-[10px] text-slate-400 font-medium">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" /> {sub.fecha_objetivo || 'Sin fecha'}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> {sub.horas_estimadas}h
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteSubtask(sub.id)}
-                      className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEditing(sub)}
+                            className="h-8 w-8 text-slate-300 hover:text-[#00682b] hover:bg-green-50 transition-all"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteSubtask(sub.id)}
+                            className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (

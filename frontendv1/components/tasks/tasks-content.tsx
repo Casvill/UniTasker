@@ -6,7 +6,9 @@ import {
   Filter, 
   Calendar, 
   Tag, 
-  AlertCircle 
+  AlertCircle,
+  Pencil,
+  Settings2
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -19,7 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useEffect, useMemo, useState } from "react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
-import { ManageTasksDialog } from "./create-task-dialog"
+import { CreateTaskDialog, ManageTasksDialog } from "./create-task-dialog"
 
 
 type Task = {
@@ -101,9 +103,19 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
 
+  // Estados para el diálogo de edición de actividad
+  const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
+  const [activityToEdit, setActivityToEdit] = useState<any>(null);
+
   const handleOpenManageDialog = (actividad: any) => {
     setSelectedActivity(actividad);
     setIsManageDialogOpen(true);
+  };
+
+  const handleOpenEditActivity = (e: React.MouseEvent, activity: any) => {
+    e.stopPropagation();
+    setActivityToEdit(activity);
+    setIsEditActivityOpen(true);
   };
 
 // Función para cambiar ESTADO de subtarea desde la lista principal
@@ -191,34 +203,35 @@ const handleToggleActivity = async (task: Task) => {
   }
 };
 
-  useEffect(() => {
-    async function loadTasks() {
-      try {
-        setLoading(true);
-        setError(null);
-        const actividadesRaw: any = await apiFetch("/actividades/", { method: "GET" });
-        const listaActividades = Array.isArray(actividadesRaw) ? actividadesRaw : actividadesRaw?.results ?? [];
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const actividadesRaw: any = await apiFetch("/actividades/", { method: "GET" });
+      const listaActividades = Array.isArray(actividadesRaw) ? actividadesRaw : actividadesRaw?.results ?? [];
 
-        const mapped: Task[] = listaActividades.map((act: any) => ({
-          id: act.id,
-          title: act.titulo ?? "Sin título",
-          project: act.curso ?? "Sin curso",
-          priority: normalizePriority(act.prioridad),
-          dueDate: formatDueDate(act.fecha_entrega),
-          completed: act.estado === "hecha",
-          tags: [act.tipo],
-          subtasks: act.tareas || [],
-        }));
+      const mapped: Task[] = listaActividades.map((act: any) => ({
+        id: act.id,
+        title: act.titulo ?? "Sin título",
+        project: act.curso ?? "Sin curso",
+        priority: normalizePriority(act.prioridad),
+        dueDate: formatDueDate(act.fecha_entrega),
+        completed: act.estado === "hecha",
+        tags: [act.tipo],
+        subtasks: act.tareas || [],
+        description: act.descripcion || "",
+      }));
 
-        setTasks(mapped);
-      } catch (e) {
-        console.error("Error al cargar tareas:", e);
-        setError("Error al sincronizar con el servidor. Por favor, intenta de nuevo más tarde.");
-      } finally {
-        setLoading(false);
-      }
+      setTasks(mapped);
+    } catch (e) {
+      console.error("Error al cargar tareas:", e);
+      setError("Error al sincronizar con el servidor. Por favor, intenta de nuevo más tarde.");
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     loadTasks();
   }, [refreshKey]);
 
@@ -324,14 +337,24 @@ const handleToggleActivity = async (task: Task) => {
                     <h3 className={`font-semibold text-foreground ${task.completed ? "line-through opacity-60" : ""}`}>
                       {task.title}
                     </h3>
-                    <Badge
-                      variant={
-                        task.priority === "High" ? "destructive" : task.priority === "Medium" ? "default" : "secondary"
-                      }
-                      className="shrink-0"
-                    >
-                      {task.priority}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => handleOpenEditActivity(e, task)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Badge
+                        variant={
+                          task.priority === "High" ? "destructive" : task.priority === "Medium" ? "default" : "secondary"
+                        }
+                        className="shrink-0"
+                      >
+                        {task.priority}
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -394,6 +417,13 @@ const handleToggleActivity = async (task: Task) => {
           setSelectedActivity(updated);
           setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
         }}
+      />
+
+      <CreateTaskDialog 
+        open={isEditActivityOpen}
+        onOpenChange={setIsEditActivityOpen}
+        activity={activityToEdit}
+        onCreated={loadTasks}
       />
     </div>
   )
