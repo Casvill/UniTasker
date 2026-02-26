@@ -92,150 +92,155 @@ const handleCreateSubtask = async () => {
   if (!newSubtask.nombre.trim() || !selectedActivity) return;
 
   try {
-    // 2. Preparamos lo que vamos a enviar al servidor
     const body = {
       nombre: newSubtask.nombre,
       fecha_objetivo: newSubtask.fecha || null,
       horas_estimadas: parseFloat(newSubtask.horas) || 0,
-      actividad: selectedActivity.id, // Esto lo vincula a la actividad del Dialog
+      actividad: selectedActivity.id,
       estado: "pendiente"
     };
 
-    // 3. Hacemos la petición (el await ahora sí funcionará)
     const response = await apiFetch("/tareas/", {
       method: "POST",
       body: JSON.stringify(body),
     });
 
     if (response) {
-      // 4. Actualizamos el Dialog (selectedActivity)
+      // El backend marca la actividad como pendiente automáticamente
+      const updatedSubtasksList = [...(selectedActivity.subtasks || []), response];
+      
+      // Actualizamos el Dialog
       setSelectedActivity((prev: any) => ({
         ...prev,
-        subtasks: [...(prev.subtasks || []), response]
+        subtasks: updatedSubtasksList,
+        completed: false // Siempre será falso porque acabamos de añadir una pendiente
       }));
 
-      // 4.1 Actualizamos la lista principal (tasks)
+      // Actualizamos la lista principal
       setTasks((prevTasks) =>
         prevTasks.map((task) => {
           if (task.id === selectedActivity.id) {
-            const updatedSubtasks = [...(task.subtasks || []), response];
             return {
               ...task,
-              subtasks: updatedSubtasks,
-              completed: updatedSubtasks.length > 0 && updatedSubtasks.every((t: any) => t.estado === "hecha"),
+              subtasks: updatedSubtasksList,
+              completed: false,
             };
           }
           return task;
         })
       );
 
-      // 5. Limpiamos los campos del formulario
       setNewSubtask({ nombre: "", fecha: "", horas: "" });
     }
   } catch (error) {
     console.error("Error al guardar la subtarea:", error);
   }
 }; 
-  
-  
 
 // 3. Función para ELIMINAR la subtarea
 const handleDeleteSubtask = async (id: string | number) => {
   if (!confirm("¿Estás seguro de que deseas eliminar esta tarea?")) return;
 
+  const oldTasks = [...tasks];
+  const oldSelectedActivity = { ...selectedActivity };
+
+  // Optimistic update
+  const updatedSubtasksList = (selectedActivity.subtasks || []).filter((s: any) => s.id !== id);
+  const allDone = updatedSubtasksList.length > 0 && updatedSubtasksList.every((t: any) => t.estado === "hecha");
+  const newCompleted = allDone;
+
+  setSelectedActivity((prev: any) => ({
+    ...prev,
+    subtasks: updatedSubtasksList,
+    completed: newCompleted
+  }));
+
+  setTasks((prevTasks) =>
+    prevTasks.map((task) => {
+      if (task.id === selectedActivity.id) {
+        return {
+          ...task,
+          subtasks: updatedSubtasksList,
+          completed: newCompleted,
+        };
+      }
+      return task;
+    })
+  );
+
   try {
     await apiFetch(`/tareas/${id}/`, {
       method: "DELETE",
     });
-
-    // 1. Actualizar el Dialog (selectedActivity)
-    setSelectedActivity((prev: any) => {
-      if (!prev) return prev;
-      const updatedSubtasks = (prev.subtasks || []).filter((s: any) => s.id !== id);
-      return {
-        ...prev,
-        subtasks: updatedSubtasks,
-      };
-    });
-
-    // 2. Actualizar la lista principal (tasks)
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => {
-        if (task.subtasks.some((s) => s.id === id)) {
-          const updatedSubtasks = task.subtasks.filter((s) => s.id !== id);
-          return {
-            ...task,
-            subtasks: updatedSubtasks,
-            completed: updatedSubtasks.length > 0 && updatedSubtasks.every((t: any) => t.estado === "hecha"),
-          };
-        }
-        return task;
-      })
-    );
+    // El backend sincroniza el estado de la actividad automáticamente.
   } catch (error) {
     console.error("Error al eliminar la subtarea:", error);
+    setTasks(oldTasks);
+    setSelectedActivity(oldSelectedActivity);
     alert("No se pudo eliminar la tarea.");
   }
 };
 
 // 4. Función para cambiar ESTADO
 const handleToggleSubtask = async (id: string | number) => {
+  let targetTask: Task | undefined;
+  let subtask: any = null;
+
+  // 1. Encontrar la tarea y subtarea
+  for (const t of tasks) {
+    const found = t.subtasks.find((s: any) => s.id === id);
+    if (found) {
+      targetTask = t;
+      subtask = found;
+      break;
+    }
+  }
+
+  if (!targetTask || !subtask) return;
+
+  // 2. Calcular nuevos estados (Optimista)
+  const newEstado = subtask.estado === "hecha" ? "pendiente" : "hecha";
+  const updatedSubtasks = targetTask.subtasks.map(s => 
+    s.id === id ? { ...s, estado: newEstado } : s
+  );
+  
+  // Una actividad está "hecha" si tiene subtareas y todas están hechas
+  const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every(s => s.estado === "hecha");
+  const newCompleted = allDone;
+
+  // 3. Actualizar estado local inmediatamente
+  const updateLocalState = (tTask: Task, uSubtasks: any[], nCompleted: boolean) => {
+    setTasks(prev => prev.map(t => 
+      t.id === tTask.id ? { ...t, subtasks: uSubtasks, completed: nCompleted } : t
+    ));
+
+    if (selectedActivity && selectedActivity.id === tTask.id) {
+      setSelectedActivity((prev: any) => ({
+        ...prev,
+        subtasks: uSubtasks,
+        completed: nCompleted
+      }));
+    }
+  };
+
+  const oldTasks = [...tasks];
+  const oldSelectedActivity = selectedActivity ? { ...selectedActivity } : null;
+
+  updateLocalState(targetTask, updatedSubtasks, newCompleted);
+
   try {
-    let subtask: any = null;
-    
-    if (selectedActivity?.subtasks) {
-      subtask = selectedActivity.subtasks.find((s: any) => s.id === id);
-    }
-    
-    if (!subtask) {
-      for (const t of tasks) {
-        const found = t.subtasks.find((s: any) => s.id === id);
-        if (found) {
-          subtask = found;
-          break;
-        }
-      }
-    }
-
-    if (!subtask) return;
-
-    const newEstado = subtask.estado === "hecha" ? "pendiente" : "hecha";
-
-    const response = await apiFetch(`/tareas/${id}/`, {
+    // 4. Persistir en el backend
+    await apiFetch(`/tareas/${id}/`, {
       method: "PATCH",
       body: JSON.stringify({ estado: newEstado }),
     });
-
-    if (response) {
-      setSelectedActivity((prev: any) => {
-        if (!prev) return prev;
-        const updatedSubtasks = (prev.subtasks || []).map((s: any) =>
-          s.id === id ? response : s
-        );
-        return {
-          ...prev,
-          subtasks: updatedSubtasks,
-        };
-      });
-
-      setTasks((prevTasks) =>
-        prevTasks.map((task) => {
-          if (task.subtasks.some((s) => s.id === id)) {
-            const updatedSubtasks = task.subtasks.map((s) =>
-              s.id === id ? response : s
-            );
-            return {
-              ...task,
-              subtasks: updatedSubtasks,
-              completed: updatedSubtasks.length > 0 && updatedSubtasks.every((t: any) => t.estado === "hecha"),
-            };
-          }
-          return task;
-        })
-      );
-    }
+    // El backend ahora sincroniza automáticamente el estado de la actividad.
   } catch (error) {
     console.error("Error al cambiar el estado de la tarea:", error);
+    // Revertir en caso de error
+    setTasks(oldTasks);
+    if (oldSelectedActivity) setSelectedActivity(oldSelectedActivity);
+    alert("No se pudo actualizar la tarea. Inténtalo de nuevo.");
   }
 };
 
@@ -246,44 +251,30 @@ const handleMarkAllAsDone = async () => {
   const pendingSubtasks = selectedActivity.subtasks.filter((s: any) => s.estado !== "hecha");
   if (pendingSubtasks.length === 0) return;
 
+  const oldTasks = [...tasks];
+  const oldSelectedActivity = { ...selectedActivity };
+
+  // Optimistic UI update
+  const updatedSubtasks = selectedActivity.subtasks.map((s: any) => ({ ...s, estado: "hecha" }));
+  setSelectedActivity((prev: any) => ({ ...prev, subtasks: updatedSubtasks, completed: true }));
+  setTasks((prevTasks) =>
+    prevTasks.map((task) =>
+      task.id === selectedActivity.id ? { ...task, subtasks: updatedSubtasks, completed: true } : task
+    )
+  );
+
   try {
-    const updatedSubtasksPromises = pendingSubtasks.map((s: any) =>
-      apiFetch(`/tareas/${s.id}/`, {
-        method: "PATCH",
-        body: JSON.stringify({ estado: "hecha" }),
-      })
-    );
-
-    const responses = await Promise.all(updatedSubtasksPromises);
-
-    // 1. Actualizar el Dialog (selectedActivity)
-    setSelectedActivity((prev: any) => {
-      const updatedSubtasks = (prev.subtasks || []).map((s: any) => {
-        const found = responses.find((r: any) => r.id === s.id);
-        return found || s;
-      });
-      return { ...prev, subtasks: updatedSubtasks };
+    // Only update the activity status to "hecha" on the backend.
+    // The backend's Actividad.save() will mark all subtasks as "hecha" automatically.
+    await apiFetch(`/actividades/${selectedActivity.id}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ estado: "hecha" }),
     });
-
-    // 2. Actualizar la lista principal (tasks)
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => {
-        if (task.id === selectedActivity.id) {
-          const updatedSubtasks = task.subtasks.map((s) => {
-            const found = responses.find((r: any) => r.id === s.id);
-            return found || s;
-          });
-          return {
-            ...task,
-            subtasks: updatedSubtasks,
-            completed: true,
-          };
-        }
-        return task;
-      })
-    );
   } catch (error) {
     console.error("Error al marcar todas las tareas como hechas:", error);
+    setTasks(oldTasks);
+    setSelectedActivity(oldSelectedActivity);
+    alert("No se pudo completar la operación.");
   }
 };
 
@@ -292,78 +283,72 @@ const handleToggleActivity = async (task: Task) => {
   const newCompleted = !task.completed;
   const newEstado = newCompleted ? "hecha" : "pendiente";
 
+  const oldTasks = [...tasks];
+  const oldSelectedActivity = selectedActivity ? { ...selectedActivity } : null;
+
+  // Optimistic UI update
+  let updatedSubtasks = [...task.subtasks];
+  if (newCompleted) {
+    // If complete activity, complete all subtasks
+    updatedSubtasks = task.subtasks.map((s) => ({ ...s, estado: "hecha" }));
+  }
+
+  setTasks((prevTasks) =>
+    prevTasks.map((t) =>
+      t.id === task.id ? { ...t, subtasks: updatedSubtasks, completed: newCompleted } : t
+    )
+  );
+
+  if (selectedActivity && selectedActivity.id === task.id) {
+    setSelectedActivity((prev: any) => ({ ...prev, subtasks: updatedSubtasks, completed: newCompleted }));
+  }
+
   try {
-    // Si la actividad no tiene subtasks, no hay nada que marcar en el backend (por ahora)
-    // pero actualizamos el estado local para consistencia visual si fuera necesario.
-    if (task.subtasks.length === 0) return;
-
-    const updatedSubtasksPromises = task.subtasks.map((s: any) =>
-      apiFetch(`/tareas/${s.id}/`, {
-        method: "PATCH",
-        body: JSON.stringify({ estado: newEstado }),
-      })
-    );
-
-    const responses = await Promise.all(updatedSubtasksPromises);
-
-    setTasks((prevTasks) =>
-      prevTasks.map((t) => {
-        if (t.id === task.id) {
-          const updatedSubtasks = t.subtasks.map((s) => {
-            const found = responses.find((r: any) => r.id === s.id);
-            return found || { ...s, estado: newEstado }; // Fallback
-          });
-          return {
-            ...t,
-            subtasks: updatedSubtasks,
-            completed: newCompleted,
-          };
-        }
-        return t;
-      })
-    );
+    // 1. Actualizar el estado de la actividad en el backend
+    await apiFetch(`/actividades/${task.id}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ estado: newEstado }),
+    });
+    // The backend now handles syncing tasks if estado is "hecha".
   } catch (error) {
     console.error("Error al cambiar el estado de la actividad:", error);
+    setTasks(oldTasks);
+    if (oldSelectedActivity) setSelectedActivity(oldSelectedActivity);
+    alert("No se pudo actualizar la actividad.");
   }
 };
 
   useEffect(() => {
-  async function loadTasks() {
-    try {
-      setLoading(true);
-      // 1. Traemos las actividades (ahora vienen sin tareas)
-      const actividadesRaw: any = await apiFetch("/actividades/", { method: "GET" });
-      const listaActividades = Array.isArray(actividadesRaw) ? actividadesRaw : actividadesRaw?.results ?? [];
+    async function loadTasks() {
+      try {
+        setLoading(true);
+        // 1. Traemos las actividades (ahora vienen con sus tareas anidadas)
+        const actividadesRaw: any = await apiFetch("/actividades/", { method: "GET" });
+        const listaActividades = Array.isArray(actividadesRaw) ? actividadesRaw : actividadesRaw?.results ?? [];
 
-      // 2. Por cada actividad, disparamos la petición con el query param
-      const mapped: Task[] = await Promise.all(listaActividades.map(async (act: any) => {
-        // AQUÍ USAS TU NUEVA URL CON QUERY PARAM
-        const tareasActividad: any = await apiFetch(`/tareas/?actividad=${act.id}`, { method: "GET" });
-        const subtasks = Array.isArray(tareasActividad) ? tareasActividad : tareasActividad?.results ?? [];
-
-        return {
+        // 2. Mapear los datos directamente
+        const mapped: Task[] = listaActividades.map((act: any) => ({
           id: act.id,
           title: act.titulo ?? "Sin título",
           project: act.curso ?? "Sin curso",
           priority: normalizePriority(act.prioridad),
           dueDate: formatDueDate(act.fecha_entrega),
-          // Ahora calculamos el completado basado en los nuevos datos
-          completed: subtasks.length > 0 && subtasks.every((t: any) => t.estado === "hecha"),
+          completed: act.estado === "hecha",
           tags: [act.tipo],
-          subtasks: subtasks, // Guardamos las tareas obtenidas por el query param
-        };
-      }));
+          subtasks: act.tareas || [],
+        }));
 
-      setTasks(mapped);
-    } catch (e) {
-      setError("Error al sincronizar con el servidor.");
-    } finally {
-      setLoading(false);
+        setTasks(mapped);
+      } catch (e) {
+        console.error("Error al cargar tareas:", e);
+        setError("Error al sincronizar con el servidor.");
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  loadTasks();
-}, [refreshKey]);
+    loadTasks();
+  }, [refreshKey]);
 
   const filteredTasks = useMemo(() => {
     const byStatus =

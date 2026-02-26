@@ -12,7 +12,11 @@ class ActividadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Actividad.objects.filter(usuario=self.request.user)
+        return (
+            Actividad.objects.filter(usuario=self.request.user)
+            .prefetch_related("tareas")
+            .order_by("-creada_en")
+        )
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
