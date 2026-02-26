@@ -30,14 +30,15 @@ class TareaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        # 1. Filtramos solo lo que pertenece al usuario logueado
         queryset = Tarea.objects.filter(actividad__usuario=self.request.user)
+    
+        # 2. Si hay un filtro por actividad en la URL, validamos pertenencia
         actividad_id = self.request.query_params.get("actividad")
         if actividad_id:
-            # Validamos que la actividad exista y sea del usuario
-            get_object_or_404(Actividad, id=actividad_id, usuario=self.request.user)
             queryset = queryset.filter(actividad_id=actividad_id)
         return queryset.order_by("fecha_objetivo")
-
+type c
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
 
