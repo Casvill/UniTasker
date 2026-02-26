@@ -104,7 +104,7 @@ class RegistroAvance(models.Model):
     creada_en = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Registro {self.tarea.titulo} - {self.fecha}"
+        return f"Registro {self.tarea.nombre} - {self.fecha}"
 
 
 # ------------------------------------------------------------
