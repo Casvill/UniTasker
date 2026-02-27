@@ -31,6 +31,20 @@ ___
 [Tabla de Contenido](#tabla-de-contenido) 
 ### Frontend:
 ___
+# 🚀 Inicio Rápido (Servidores en simultáneo)
+
+Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar ambos servidores con un solo comando:
+
+### 🐧 Linux y macOS (Terminal)
+1.  Otorga permisos al script: `chmod +x start-dev.sh`
+2.  Ejecuta: `./start-dev.sh`
+    *(Usa `Ctrl + C` para detener ambos servidores)*
+
+### 🪟 Windows (CMD / PowerShell)
+1.  Ejecuta el archivo: `start-dev.bat` o haz doble clic sobre él.
+    *(Esto abrirá dos ventanas independientes. Ciérralas para detener los servidores)*
+
+___
 # Estructura del Proyecto
 ```bash 
 UniTasker/
