@@ -29,8 +29,8 @@ ___
 * Git
 
 [Tabla de Contenido](#tabla-de-contenido) 
-### Frontend:
 ___
+### Frontend:
 # 🚀 Inicio Rápido (Servidores en simultáneo)
 
 Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar ambos servidores con un solo comando:
