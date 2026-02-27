@@ -101,18 +101,8 @@ http://127.0.0.1:8000/
 
 
 
-## Frontend (Básico - Vite):
-```bash
-cd frontend
-npm install
-npm run dev
 ```
 
-## Frontend (Avanzado - Next.js):
-```bash
-cd frontendv1
-npm install
-npm run dev
 ```
 
 [Tabla de Contenido](#tabla-de-contenido) 
@@ -147,14 +137,10 @@ ___
 
 El proyecto cuenta con dos versiones del frontend:
 
-### 1. Frontend Básico (`frontend/`)
-Desarrollado con **React 19** y **Vite**. Utiliza **TypeScript** para asegurar la calidad y robustez del código.
-- **Iniciar:** `cd frontend && npm run dev`
-- **Linter:** `npm run lint` (ESLint)
 
-### 2. Frontend Avanzado / Dashboard (`frontendv1/`)
-Desarrollado con **Next.js**, **Radix UI** y **Tailwind CSS**.
-- **Iniciar:** `cd frontendv1 && npm run dev`
+###  Frontend / Dashboard 
+Desarrollado con **Next.js**, y **Tailwind CSS**.
+- **Iniciar:** `cd frontend && npm run dev`
 - **Linter:** `npm run lint` (Configuración en proceso)
 
 [Tabla de Contenido](#tabla-de-contenido) 

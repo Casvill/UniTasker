@@ -10,7 +10,7 @@ start "UniTasker Backend" cmd /k "cd backend && venv\Scripts\activate && python 
 
 :: 2. Iniciar Frontend
 echo Inicia Next.js Frontend en una nueva ventana...
-start "UniTasker Frontend" cmd /k "cd frontendv1 && npm run dev"
+start "UniTasker Frontend" cmd /k "cd frontend && npm run dev"
 
 echo.
 echo ----------------------------------------------------
