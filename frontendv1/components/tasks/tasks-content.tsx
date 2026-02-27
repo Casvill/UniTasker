@@ -34,6 +34,7 @@ type Task = {
   completed: boolean
   tags: string[]
   subtasks: any[]
+  description: string
 }
 
 function SkeletonTasks() {
@@ -135,90 +136,89 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     }
   };
 
-// Función para cambiar ESTADO de subtarea desde la lista principal
-const handleToggleSubtask = async (activityId: number, subtaskId: string | number) => {
+// Función para cambiar estado de subtarea usando RegistroAvance como marcador
+const handleToggleSubtask = async (activityId: number, subtaskId: number) => {
   const targetTask = tasks.find(t => t.id === activityId);
   if (!targetTask) return;
 
   const subtask = targetTask.subtasks.find((s: any) => s.id === subtaskId);
   if (!subtask) return;
 
-  const newEstado = subtask.estado === "hecha" ? "pendiente" : "hecha";
-  const updatedSubtasks = targetTask.subtasks.map(s => 
-    s.id === subtaskId ? { ...s, estado: newEstado } : s
-  );
-  
-  const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every(s => s.estado === "hecha");
-  const newCompleted = allDone;
-
-  const oldTasks = [...tasks];
-
-  // Actualización inmediata del UI
-  setTasks(prev => prev.map(t => 
-    t.id === activityId ? { ...t, subtasks: updatedSubtasks, completed: newCompleted } : t
-  ));
-
-  if (selectedActivity && selectedActivity.id === activityId) {
-    setSelectedActivity((prev: any) => ({
-      ...prev,
-      subtasks: updatedSubtasks,
-      completed: newCompleted
-    }));
-  }
-
-  if (newEstado === "hecha") {
-    toast.success("Tarea completada", { duration: 2000 });
-  } else {
-    toast.info("Tarea marcada como pendiente", { duration: 2000 });
-  }
+  const isCurrentlyDone = !!subtask.registroId;
 
   try {
-    await apiFetch(`/tareas/${subtaskId}/`, {
-      method: "PATCH",
-      body: JSON.stringify({ estado: newEstado }),
-    });
+    if (isCurrentlyDone) {
+      await apiFetch(`/registros/${subtask.registroId}/`, { method: "DELETE" });
+      toast.info("Tarea marcada como pendiente");
+    } else {
+      await apiFetch("/registros/", {
+        method: "POST",
+        body: JSON.stringify({
+          tarea: subtaskId,
+          fecha: new Date().toISOString().split('T')[0],
+          nota: "Completada",
+          horas_reales: subtask.horas_estimadas || 0
+        }),
+      });
+      toast.success("Tarea completada");
+    }
+    loadTasks();
   } catch (error) {
-    setTasks(oldTasks);
     toast.error("Error al sincronizar con el servidor");
   }
 };
 
 // Función para alternar el estado de toda una actividad
 const handleToggleActivity = async (task: Task) => {
-  const newCompleted = !task.completed;
-  const newEstado = newCompleted ? "hecha" : "pendiente";
-
-  const oldTasks = [...tasks];
-
-  let updatedSubtasks = [...task.subtasks];
-  if (newCompleted) {
-    updatedSubtasks = task.subtasks.map((s) => ({ ...s, estado: "hecha" }));
-  }
-
-  setTasks((prevTasks) =>
-    prevTasks.map((t) =>
-      t.id === task.id ? { ...t, subtasks: updatedSubtasks, completed: newCompleted } : t
-    )
-  );
-
-  if (selectedActivity && selectedActivity.id === task.id) {
-    setSelectedActivity((prev: any) => ({ ...prev, subtasks: updatedSubtasks, completed: newCompleted }));
-  }
-
-  if (newCompleted) {
-    toast.success("Actividad completada");
-  } else {
-    toast.info("Actividad marcada como pendiente");
-  }
-
+  const shouldComplete = !task.completed;
+  
   try {
-    await apiFetch(`/actividades/${task.id}/`, {
-      method: "PATCH",
-      body: JSON.stringify({ estado: newEstado }),
-    });
-  } catch (error) {
-    setTasks(oldTasks);
-    toast.error("Error al actualizar actividad");
+    toast.loading(shouldComplete ? "Completando..." : "Actualizando...");
+    
+    if (shouldComplete) {
+      let subtasksToComplete = task.subtasks.filter(s => !s.registroId);
+      
+      // Caso: Actividad sin tareas -> Creamos una tarea por defecto para poder marcarla
+      if (task.subtasks.length === 0) {
+        const newSub: any = await apiFetch("/tareas/", {
+          method: "POST",
+          body: JSON.stringify({
+            actividad: task.id,
+            nombre: "General",
+            fecha_objetivo: new Date().toISOString().split('T')[0],
+            horas_estimadas: 1
+          })
+        });
+        subtasksToComplete = [{ id: newSub.id, horas_estimadas: 1 }];
+      }
+
+      await Promise.all(subtasksToComplete.map(s => 
+        apiFetch("/registros/", {
+          method: "POST",
+          body: JSON.stringify({
+            tarea: s.id,
+            fecha: new Date().toISOString().split('T')[0],
+            nota: "Actividad completada",
+            horas_reales: s.horas_estimadas || 0
+          }),
+        })
+      ));
+      toast.dismiss();
+      toast.success("Actividad completada");
+    } else {
+      const done = task.subtasks.filter(s => s.registroId);
+      if (done.length > 0) {
+        await Promise.all(done.map(s => 
+          apiFetch(`/registros/${s.registroId}/`, { method: "DELETE" })
+        ));
+      }
+      toast.dismiss();
+      toast.info("Actividad pendiente");
+    }
+    loadTasks();
+  } catch (e) {
+    toast.dismiss();
+    toast.error("Error al actualizar estado");
   }
 };
 
@@ -226,25 +226,48 @@ const handleToggleActivity = async (task: Task) => {
     try {
       setLoading(true);
       setError(null);
-      const actividadesRaw: any = await apiFetch("/actividades/", { method: "GET" });
-      const listaActividades = Array.isArray(actividadesRaw) ? actividadesRaw : actividadesRaw?.results ?? [];
+      
+      const [actRaw, tareasRaw, registrosRaw]: any = await Promise.all([
+        apiFetch("/actividades/"),
+        apiFetch("/tareas/"),
+        apiFetch("/registros/")
+      ]);
 
-      const mapped: Task[] = listaActividades.map((act: any) => ({
-        id: act.id,
-        title: act.titulo ?? "Sin título",
-        project: act.curso ?? "Sin curso",
-        priority: normalizePriority(act.prioridad),
-        dueDate: formatDueDate(act.fecha_entrega),
-        completed: act.estado === "hecha",
-        tags: [act.tipo],
-        subtasks: act.tareas || [],
-        description: act.descripcion || "",
-      }));
+      const listaActividades = Array.isArray(actRaw) ? actRaw : actRaw?.results ?? [];
+      const listaTareas = Array.isArray(tareasRaw) ? tareasRaw : tareasRaw?.results ?? [];
+      const listaRegistros = Array.isArray(registrosRaw) ? registrosRaw : registrosRaw?.results ?? [];
+
+      const mapped: Task[] = listaActividades.map((act: any) => {
+        const subtasks = listaTareas
+          .filter((t: any) => t.actividad === act.id)
+          .map((t: any) => {
+            const registro = listaRegistros.find((r: any) => r.tarea === t.id);
+            return { ...t, registroId: registro?.id || null };
+          });
+
+        const isCompleted = subtasks.length > 0 && subtasks.every((s: any) => !!s.registroId);
+
+        return {
+          id: act.id,
+          title: act.titulo ?? "Sin título",
+          project: act.curso ?? "Sin curso",
+          priority: normalizePriority(act.prioridad),
+          dueDate: formatDueDate(act.fecha_entrega),
+          completed: isCompleted,
+          tags: [act.tipo],
+          subtasks: subtasks,
+          description: act.descripcion || "",
+        };
+      });
 
       setTasks(mapped);
+      if (selectedActivity) {
+        const updated = mapped.find(m => m.id === selectedActivity.id);
+        if (updated) setSelectedActivity(updated);
+      }
     } catch (e) {
       console.error("Error al cargar tareas:", e);
-      setError("Error al sincronizar con el servidor. Por favor, intenta de nuevo más tarde.");
+      setError("Error al sincronizar con el servidor.");
     } finally {
       setLoading(false);
     }
@@ -403,16 +426,16 @@ const handleToggleActivity = async (task: Task) => {
                     ))}
                   </div>
                   <div className="mt-3 space-y-2 border-t pt-3">
-                    {task.subtasks?.map((sub: any) => (
+                    {task.subtasks?.filter((s: any) => s.nombre !== "General").map((sub: any) => (
                       <div key={sub.id} className="flex items-center justify-between group/sub">
                         <div className="flex items-center gap-2">
                           <Checkbox 
-                            checked={sub.estado === "hecha"} 
+                            checked={!!sub.registroId} 
                             onCheckedChange={() => handleToggleSubtask(task.id, sub.id)}
                             onClick={(e) => e.stopPropagation()}
                             className="h-3.5 w-3.5"
                           />
-                          <span className={`text-xs ${sub.estado === "hecha" ? "line-through opacity-50" : "text-foreground/80"}`}>
+                          <span className={`text-xs ${!!sub.registroId ? "line-through opacity-50" : "text-foreground/80"}`}>
                             {sub.nombre}
                           </span>
                         </div>
@@ -422,8 +445,8 @@ const handleToggleActivity = async (task: Task) => {
                       </div>
                     ))}
                     
-                    {/* Validación para cuando no hay tareas */}
-                    {(!task.subtasks || task.subtasks.length === 0) && (
+                    {/* Validación para cuando no hay tareas (ignorando la tarea oculta 'General') */}
+                    {(!task.subtasks || task.subtasks.filter((s: any) => s.nombre !== "General").length === 0) && (
                       <p className="text-[10px] italic text-muted-foreground">
                         Sin tareas asignadas
                       </p>
@@ -440,6 +463,7 @@ const handleToggleActivity = async (task: Task) => {
         open={isManageDialogOpen}
         onOpenChange={setIsManageDialogOpen}
         activity={selectedActivity}
+        onRefresh={loadTasks}
         onActivityUpdate={(updated) => {
           setSelectedActivity(updated);
           setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));

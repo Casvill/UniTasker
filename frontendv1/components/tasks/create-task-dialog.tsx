@@ -198,9 +198,10 @@ type ManageTasksDialogProps = {
   onOpenChange: (open: boolean) => void
   activity: any
   onActivityUpdate: (updatedActivity: any) => void
+  onRefresh: () => void
 }
 
-export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpdate }: ManageTasksDialogProps) {
+export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpdate, onRefresh }: ManageTasksDialogProps) {
   const [newSubtask, setNewSubtask] = React.useState({
     nombre: "",
     fecha: "",
@@ -233,12 +234,7 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     toast.promise(promise, {
       loading: 'Creando tarea...',
       success: (response) => {
-        const updatedSubtasksList = [...(activity.subtasks || []), response];
-        onActivityUpdate({
-          ...activity,
-          subtasks: updatedSubtasksList,
-          completed: false
-        });
+        onRefresh();
         setNewSubtask({ nombre: "", fecha: "", horas: "" });
         return "Tarea creada correctamente";
       },
@@ -263,13 +259,7 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     toast.promise(promise, {
       loading: 'Actualizando tarea...',
       success: (response) => {
-        const updatedSubtasksList = activity.subtasks.map((s: any) => 
-          s.id === id ? response : s
-        );
-        onActivityUpdate({
-          ...activity,
-          subtasks: updatedSubtasksList,
-        });
+        onRefresh();
         setEditingId(null);
         return "Tarea actualizada correctamente";
       },
@@ -289,27 +279,17 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
   const handleDeleteSubtask = async (id: string | number) => {
     if (!confirm("¿Estás seguro de que deseas eliminar esta tarea?")) return;
 
-    const oldActivity = { ...activity };
-    const updatedSubtasksList = (activity.subtasks || []).filter((s: any) => s.id !== id);
-    const allDone = updatedSubtasksList.length > 0 && updatedSubtasksList.every((t: any) => t.estado === "hecha");
-    
-    onActivityUpdate({
-      ...activity,
-      subtasks: updatedSubtasksList,
-      completed: allDone
-    });
-
     const promise = apiFetch(`/tareas/${id}/`, {
       method: "DELETE",
     });
 
     toast.promise(promise, {
       loading: 'Eliminando tarea...',
-      success: "Tarea eliminada",
-      error: (err) => {
-        onActivityUpdate(oldActivity);
-        return "No se pudo eliminar la tarea";
-      }
+      success: () => {
+        onRefresh();
+        return "Tarea eliminada";
+      },
+      error: "No se pudo eliminar la tarea"
     });
   };
 
@@ -317,61 +297,73 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     const subtask = activity.subtasks.find((s: any) => s.id === id);
     if (!subtask) return;
 
-    const newEstado = subtask.estado === "hecha" ? "pendiente" : "hecha";
-    const updatedSubtasks = activity.subtasks.map((s: any) => 
-      s.id === id ? { ...s, estado: newEstado } : s
-    );
-    
-    const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every((s: any) => s.estado === "hecha");
-    const oldActivity = { ...activity };
-
-    onActivityUpdate({
-      ...activity,
-      subtasks: updatedSubtasks,
-      completed: allDone
-    });
-
-    if (newEstado === "hecha") {
-      toast.success("Tarea completada", { duration: 2000 });
-    } else {
-      toast.info("Tarea marcada como pendiente", { duration: 2000 });
-    }
+    const isCurrentlyDone = !!subtask.registroId;
 
     try {
-      await apiFetch(`/tareas/${id}/`, {
-        method: "PATCH",
-        body: JSON.stringify({ estado: newEstado }),
-      });
+      if (isCurrentlyDone) {
+        await apiFetch(`/registros/${subtask.registroId}/`, { method: "DELETE" });
+        toast.info("Tarea marcada como pendiente");
+      } else {
+        await apiFetch("/registros/", {
+          method: "POST",
+          body: JSON.stringify({
+            tarea: id,
+            fecha: new Date().toISOString().split('T')[0],
+            nota: "Completada",
+            horas_reales: subtask.horas_estimadas || 0
+          }),
+        });
+        toast.success("Tarea completada");
+      }
+      onRefresh(); // Llamamos al refresh para recargar los datos
     } catch (error) {
-      onActivityUpdate(oldActivity);
       toast.error("Error al sincronizar con el servidor");
     }
   };
 
   const handleMarkAllAsDone = async () => {
-    if (!activity || !activity.subtasks) return;
+    if (!activity) return;
 
-    const pendingSubtasks = activity.subtasks.filter((s: any) => s.estado !== "hecha");
-    if (pendingSubtasks.length === 0) return;
+    try {
+      toast.loading("Actualizando tareas...");
+      
+      let pendingSubtasks = activity.subtasks?.filter((s: any) => !s.registroId) || [];
 
-    const oldActivity = { ...activity };
-    const updatedSubtasks = activity.subtasks.map((s: any) => ({ ...s, estado: "hecha" }));
-    
-    onActivityUpdate({ ...activity, subtasks: updatedSubtasks, completed: true });
-
-    const promise = apiFetch(`/actividades/${activity.id}/`, {
-      method: "PATCH",
-      body: JSON.stringify({ estado: "hecha" }),
-    });
-
-    toast.promise(promise, {
-      loading: 'Actualizando tareas...',
-      success: "Todas las tareas completadas",
-      error: (err) => {
-        onActivityUpdate(oldActivity);
-        return "No se pudo completar la operación";
+      // Si no hay tareas, creamos una por defecto para poder marcarla
+      if (!activity.subtasks || activity.subtasks.length === 0) {
+        const newSub: any = await apiFetch("/tareas/", {
+          method: "POST",
+          body: JSON.stringify({
+            actividad: activity.id,
+            nombre: "General",
+            fecha_objetivo: new Date().toISOString().split('T')[0],
+            horas_estimadas: 1
+          })
+        });
+        pendingSubtasks = [{ id: newSub.id, horas_estimadas: 1 }];
       }
-    });
+
+      if (pendingSubtasks.length > 0) {
+        await Promise.all(pendingSubtasks.map((s: any) => 
+          apiFetch("/registros/", {
+            method: "POST",
+            body: JSON.stringify({
+              tarea: s.id,
+              fecha: new Date().toISOString().split('T')[0],
+              nota: "Completada",
+              horas_reales: s.horas_estimadas || 0
+            }),
+          })
+        ));
+      }
+      
+      toast.dismiss();
+      toast.success("Todas las tareas completadas");
+      onRefresh();
+    } catch (err) {
+      toast.dismiss();
+      toast.error("No se pudo completar la operación");
+    }
   };
 
   return (
@@ -446,8 +438,8 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
           <section className="space-y-3">
             <h3 className="text-sm font-bold text-slate-700">Tareas Actuales</h3>
             <div className="max-h-[250px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-              {activity?.subtasks?.length > 0 ? (
-                activity.subtasks.map((sub: any) => (
+              {activity?.subtasks?.filter((s: any) => s.nombre !== "General").length > 0 ? (
+                activity.subtasks.filter((s: any) => s.nombre !== "General").map((sub: any) => (
                   <div
                     key={sub.id}
                     className="p-3 bg-white border border-slate-100 rounded-xl hover:border-[#00682b]/30 transition-colors shadow-sm"
@@ -486,14 +478,14 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Checkbox
-                            checked={sub.estado === "hecha"}
+                            checked={!!sub.registroId}
                             onCheckedChange={() => handleToggleSubtask(sub.id)}
                             className="rounded-full border-slate-300 data-[state=checked]:bg-[#00682b] data-[state=checked]:border-[#00682b]"
                           />
                           <div className="flex flex-col">
                             <span
                               className={`text-sm font-semibold ${
-                                sub.estado === "hecha" ? "line-through text-slate-400" : "text-slate-700"
+                                !!sub.registroId ? "line-through text-slate-400" : "text-slate-700"
                               }`}
                             >
                               {sub.nombre}
