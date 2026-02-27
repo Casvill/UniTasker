@@ -50,8 +50,7 @@ ___
 UniTasker/
 │
 ├── backend/      # API (Django Rest Framework)
-├── frontend/     # Cliente web básico (React + Vite)
-├── frontendv1/   # Dashboard avanzado (Next.js)
+├── frontend/     # Cliente web(React +  Next.js)
 ├── .gitignore
 ├── pull_request_template.md
 └── README.md
