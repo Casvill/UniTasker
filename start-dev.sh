@@ -9,10 +9,10 @@ echo -e "${BLUE}🚀 Iniciando entorno de desarrollo de UniTasker...${NC}"
 
 # Función para detener los procesos al salir (Ctrl+C)
 cleanup() {
-    echo -e "
+  echo -e "
 ${BLUE}🛑 Deteniendo servidores...${NC}"
-    kill $BACKEND_PID $FRONTEND_PID
-    exit
+  kill $BACKEND_PID $FRONTEND_PID
+  exit
 }
 
 trap cleanup EXIT
@@ -27,7 +27,7 @@ cd ..
 
 # 2. Iniciar Frontend
 echo -e "${GREEN}⚛️ Iniciando Next.js Frontend...${NC}"
-cd frontendv1
+cd frontend
 npm run dev &
 FRONTEND_PID=$!
 cd ..
