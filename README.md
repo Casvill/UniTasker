@@ -36,7 +36,8 @@ ___
 UniTasker/
 │
 ├── backend/      # API (Django Rest Framework)
-├── frontend/     # Cliente web (React)
+├── frontend/     # Cliente web básico (React + Vite)
+├── frontendv1/   # Dashboard avanzado (Next.js)
 ├── .gitignore
 ├── pull_request_template.md
 └── README.md
@@ -86,9 +87,16 @@ http://127.0.0.1:8000/
 
 
 
-## Frontend:
+## Frontend (Básico - Vite):
 ```bash
 cd frontend
+npm install
+npm run dev
+```
+
+## Frontend (Avanzado - Next.js):
+```bash
+cd frontendv1
 npm install
 npm run dev
 ```
@@ -123,30 +131,18 @@ Antes de crear un Pull Request, el código debe estar correctamente formateado y
 ___
 # Calidad de código (Frontend)
 
-El frontend de UniTasker está desarrollado con **React 19** y **Vite** para una experiencia de desarrollo rápida y moderna. Utiliza **TypeScript** para asegurar la calidad y robustez del código.
+El proyecto cuenta con dos versiones del frontend:
 
-### Iniciar el Frontend:
-Desde la carpeta raíz del proyecto:
-1. Navegar al directorio del frontend:
-   ```bash
-   cd frontend
-   ```
-2. Instalar las dependencias (solo la primera vez):
-   ```bash
-   npm install
-   ```
-3. Iniciar el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
+### 1. Frontend Básico (`frontend/`)
+Desarrollado con **React 19** y **Vite**. Utiliza **TypeScript** para asegurar la calidad y robustez del código.
+- **Iniciar:** `cd frontend && npm run dev`
+- **Linter:** `npm run lint` (ESLint)
 
-El servidor estará disponible usualmente en `http://localhost:5173/`.
+### 2. Frontend Avanzado / Dashboard (`frontendv1/`)
+Desarrollado con **Next.js**, **Radix UI** y **Tailwind CSS**.
+- **Iniciar:** `cd frontendv1 && npm run dev`
+- **Linter:** `npm run lint` (Configuración en proceso)
 
-### Linter:
-Para mantener el estándar de código se utiliza **ESLint**:
-```bash
-npm run lint
-```
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Convención de Ramas
