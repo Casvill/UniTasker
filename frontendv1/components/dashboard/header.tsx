@@ -1,11 +1,13 @@
 "use client"
 
-import { Search, Mail, Bell } from "lucide-react"
+import { Search, Mail, Bell, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileNav } from "./mobile-nav"
 import type { ReactNode } from "react"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 interface HeaderProps {
   title: string
@@ -14,6 +16,14 @@ interface HeaderProps {
 }
 
 export function Header({ title, description, actions }: HeaderProps) {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <header className="space-y-3 md:space-y-4 animate-slide-in-up">
       <div className="flex items-center justify-between gap-3">
@@ -33,6 +43,16 @@ export function Header({ title, description, actions }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2">
+          {mounted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-secondary transition-all duration-300 hover:scale-110 h-8 w-8"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
