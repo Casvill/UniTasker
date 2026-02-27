@@ -30,7 +30,18 @@ ___
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
-### Frontend:
+
+###  Frontend 
+* npm
+* 
+* 
+Desarrollado con **Next.js**, y **Tailwind CSS**.
+- **Iniciar:** `cd frontend && npm run dev`
+- **Linter:** `npm run lint` (Configuración en proceso)
+
+[Tabla de Contenido](#tabla-de-contenido) 
+___
+
 # 🚀 Inicio Rápido (Servidores en simultáneo)
 
 Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar ambos servidores con un solo comando:
@@ -44,6 +55,7 @@ Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar amb
 1.  Ejecuta el archivo: `start-dev.bat` o haz doble clic sobre él.
     *(Esto abrirá dos ventanas independientes. Ciérralas para detener los servidores)*
 
+[Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Estructura del Proyecto
 ```bash 
@@ -134,11 +146,6 @@ Antes de crear un Pull Request, el código debe estar correctamente formateado y
 ___
 # Calidad de código (Frontend)
 
-
-###  Frontend / Dashboard 
-Desarrollado con **Next.js**, y **Tailwind CSS**.
-- **Iniciar:** `cd frontend && npm run dev`
-- **Linter:** `npm run lint` (Configuración en proceso)
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
