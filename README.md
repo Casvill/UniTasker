@@ -134,8 +134,6 @@ Antes de crear un Pull Request, el código debe estar correctamente formateado y
 ___
 # Calidad de código (Frontend)
 
-El proyecto cuenta con dos versiones del frontend:
-
 
 ###  Frontend / Dashboard 
 Desarrollado con **Next.js**, y **Tailwind CSS**.
