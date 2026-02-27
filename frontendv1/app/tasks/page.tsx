@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Header } from "@/components/dashboard/header"
 import { TasksContent } from "@/components/tasks/tasks-content"
-import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
+import { CreateActivityDialog } from "@/components/tasks/create-activity-dialog"
 
 export default function TasksPage() {
   const [refreshKey, setRefreshKey] = useState(0)
@@ -15,7 +15,7 @@ export default function TasksPage() {
           title="Tareas"
           description="Maneja y prioriza tus tareas eficientemente."
           actions={
-            <CreateTaskDialog
+            <CreateActivityDialog
               onCreated={() => setRefreshKey((k) => k + 1)}
             />
           }
