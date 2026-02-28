@@ -19,7 +19,6 @@ while true; do
   else
     echo "[$TIME] ⚠️ Status: $RESPONSE (Revisar si es esperado)"
   fi
-
   # Aquí el sleep ya tendrá el valor de 600
   sleep $INTERVAL
 done
