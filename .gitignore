@@ -1,32 +1,36 @@
-# Entorno virtual
+# --- Entornos Virtuales ---
 venv/
 env/
 .venv/
-../venv/
 
-# Variables de entorno
+# --- Next.js / Frontend ---
+.next/
+out/
+build/
+node_modules/
+.vercel/
+
+# --- Variables de Entorno ---
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Python
+# --- Python / Django ---
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Archivos del sistema
+GEMINI.md
+.cursorrules
+
+# --- Sistema y Editores ---
 .DS_Store
 Thumbs.db
-
-# Archivos temporales
-.vercel/
-frontend/.next/
-frontend/.vercel/
 .vscode/
-GEMINI.md
-GEMINI.md/
-./GEMINI.md
-./GEMINI.md/
-.next
-.next/
-./.next/
-./.next
+.idea/
+*.swp
