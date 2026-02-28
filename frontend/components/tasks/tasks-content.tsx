@@ -202,13 +202,15 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-4">
+        <CreateActivityDialog onCreated={loadTasks} />
         <div className="flex-1 relative">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar tareas..." className="pl-10" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <Input placeholder="Buscar actividades..." className="pl-10" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 bg-transparent"><Filter className="w-4 h-4" /> Filtro</Button>
           <Button variant="outline" className="gap-2 bg-transparent"><Calendar className="w-4 h-4" /> Fecha</Button>
+          
         </div>
       </div>
 
@@ -245,7 +247,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
         }}
       />
-      <CreateActivityDialog open={isEditActivityOpen} onOpenChange={setIsEditActivityOpen} activity={activityToEdit} onCreated={loadTasks} />
+      <CreateActivityDialog open={isEditActivityOpen} onOpenChange={setIsEditActivityOpen} activity={activityToEdit} onCreated={loadTasks} showTrigger={false} />
     </div>
   )
 }

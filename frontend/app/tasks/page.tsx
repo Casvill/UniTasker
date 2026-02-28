@@ -12,13 +12,13 @@ export default function TasksPage() {
     <div className="flex min-h-screen bg-background">
       <main className="flex-1 p-4 lg:p-6 lg:ml-64">
         <Header
-          title="Tareas"
-          description="Maneja y prioriza tus tareas eficientemente."
-          actions={
-            <CreateActivityDialog
-              onCreated={() => setRefreshKey((k) => k + 1)}
-            />
-          }
+          title="Actividades"
+          description="Crea y edita tus actividades para mantenerte al día con tus responsabilidades académicas."
+          // actions={
+          //   <CreateActivityDialog
+          //     onCreated={() => setRefreshKey((k) => k + 1)}
+          //   />
+          // }
         />
 
         <div className="mt-6">

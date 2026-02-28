@@ -25,12 +25,19 @@ type CreateActivityDialogProps = {
     activity?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    showTrigger?: boolean
 }
 
-export function CreateActivityDialog({ onCreated, activity, open: controlledOpen, onOpenChange }: CreateActivityDialogProps) {
+export function CreateActivityDialog({ onCreated, activity, open: controlledOpen, onOpenChange, showTrigger = true }: CreateActivityDialogProps) {
     const [internalOpen, setInternalOpen] = React.useState(false)
     const open = controlledOpen ?? internalOpen
     const setOpen = onOpenChange ?? setInternalOpen
+
+    const minDate = React.useMemo(() => {
+        const d = new Date()
+        d.setDate(d.getDate())
+        return d.toISOString().split("T")[0]
+    }, [])
 
     const form = useForm<ActivityFormValues>({
         resolver: zodResolver(ActivitySchema),
@@ -93,7 +100,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {!activity && (
+            {showTrigger && !activity && (
                 <DialogTrigger asChild>
                     <Button className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
                         + Crear Actividad
@@ -109,7 +116,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-1.5">
                         <Label htmlFor="title">Título de actividad *</Label>
                         <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} />
@@ -144,7 +151,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
 
                     <div className="space-y-1.5">
                         <Label htmlFor="dueDate">Fecha de entrega *</Label>
-                        <Input id="dueDate" type="date" {...register("dueDate")} />
+                        <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
                         {errors.dueDate && <p className="text-sm text-destructive">{errors.dueDate.message}</p>}
                     </div>
 
