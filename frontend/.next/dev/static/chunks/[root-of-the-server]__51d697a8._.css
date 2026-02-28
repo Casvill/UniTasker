@@ -151,13 +151,15 @@
       --tw-animation-delay: 0s;
       --tw-animation-direction: normal;
       --tw-animation-duration: initial;
-      --tw-animation-fill-mode: forwards;
+      --tw-animation-fill-mode: none;
       --tw-animation-iteration-count: 1;
+      --tw-enter-blur: 0;
       --tw-enter-opacity: 1;
       --tw-enter-rotate: 0;
       --tw-enter-scale: 1;
       --tw-enter-translate-x: 0;
       --tw-enter-translate-y: 0;
+      --tw-exit-blur: 0;
       --tw-exit-opacity: 1;
       --tw-exit-rotate: 0;
       --tw-exit-scale: 1;
@@ -178,6 +180,7 @@
     --color-amber-100: #fef3c6;
     --color-amber-500: #f99c00;
     --color-amber-700: #b75000;
+    --color-green-400: #05df72;
     --color-green-600: #00a544;
     --color-emerald-100: #d0fae5;
     --color-emerald-500: #00bb7f;
@@ -188,8 +191,10 @@
     --color-purple-500: #ac4bff;
     --color-rose-100: #ffe4e6;
     --color-rose-700: #c20039;
+    --color-slate-50: #f8fafc;
     --color-slate-400: #90a1b9;
     --color-gray-500: #6a7282;
+    --color-gray-900: #101828;
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
@@ -248,6 +253,7 @@
       --color-amber-100: lab(95.916% -1.21653 23.111);
       --color-amber-500: lab(72.7183% 31.8672 97.9407);
       --color-amber-700: lab(47.2709% 42.9082 69.2966);
+      --color-green-400: lab(78.503% -64.9265 39.7492);
       --color-green-600: lab(59.0978% -58.6621 41.2579);
       --color-emerald-100: lab(94.9004% -17.0769 5.63836);
       --color-emerald-500: lab(66.9756% -58.27 19.5419);
@@ -258,8 +264,10 @@
       --color-purple-500: lab(52.0183% 66.11 -78.2316);
       --color-rose-100: lab(92.8221% 9.86832 2.60075);
       --color-rose-700: lab(41.1651% 71.6251 30.3087);
+      --color-slate-50: lab(98.1434% -.369519 -1.05966);
       --color-slate-400: lab(65.5349% -2.25151 -14.5072);
       --color-gray-500: lab(47.7841% -.393182 -10.0268);
+      --color-gray-900: lab(8.11897% .811279 -12.254);
     }
   }
 }
@@ -857,6 +865,10 @@
     margin-left: calc(var(--spacing) * 4);
   }
 
+  .ml-5 {
+    margin-left: calc(var(--spacing) * 5);
+  }
+
   .ml-auto {
     margin-left: auto;
   }
@@ -1110,6 +1122,10 @@
 
   .max-h-\(--radix-select-content-available-height\) {
     max-height: var(--radix-select-content-available-height);
+  }
+
+  .max-h-60 {
+    max-height: calc(var(--spacing) * 60);
   }
 
   .max-h-\[250px\] {
@@ -1469,7 +1485,7 @@
   }
 
   .animate-in {
-    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .animate-pulse {
@@ -1974,6 +1990,10 @@
     background-color: var(--color-gray-500);
   }
 
+  .bg-gray-900 {
+    background-color: var(--color-gray-900);
+  }
+
   .bg-green-600 {
     background-color: var(--color-green-600);
   }
@@ -2052,6 +2072,10 @@
 
   .bg-sidebar-border {
     background-color: var(--sidebar-border);
+  }
+
+  .bg-slate-50 {
+    background-color: var(--color-slate-50);
   }
 
   .bg-transparent {
@@ -2475,6 +2499,10 @@
     .text-foreground\/80 {
       color: color-mix(in oklab, var(--foreground) 80%, transparent);
     }
+  }
+
+  .text-green-400 {
+    color: var(--color-green-400);
   }
 
   .text-green-600 {
@@ -4069,7 +4097,7 @@
   }
 
   .data-\[motion\^\=from-\]\:animate-in[data-motion^="from-"] {
-    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[motion\^\=from-\]\:fade-in[data-motion^="from-"] {
@@ -4077,7 +4105,7 @@
   }
 
   .data-\[motion\^\=to-\]\:animate-out[data-motion^="to-"] {
-    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[motion\^\=to-\]\:fade-out[data-motion^="to-"] {
@@ -4363,11 +4391,11 @@
   }
 
   .data-\[state\=closed\]\:animate-accordion-up[data-state="closed"] {
-    animation: accordion-up var(--tw-animation-duration, var(--tw-duration, .2s)) ease-out;
+    animation: accordion-up var(--tw-animation-duration, var(--tw-duration, .2s)) var(--tw-ease, ease-out) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[state\=closed\]\:animate-out[data-state="closed"] {
-    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[state\=closed\]\:duration-300[data-state="closed"] {
@@ -4408,7 +4436,7 @@
   }
 
   .group-data-\[viewport\=false\]\/navigation-menu\:data-\[state\=closed\]\:animate-out:is(:where(.group\/navigation-menu)[data-viewport="false"] *)[data-state="closed"] {
-    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .group-data-\[viewport\=false\]\/navigation-menu\:data-\[state\=closed\]\:fade-out-0:is(:where(.group\/navigation-menu)[data-viewport="false"] *)[data-state="closed"] {
@@ -4420,7 +4448,7 @@
   }
 
   .data-\[state\=hidden\]\:animate-out[data-state="hidden"] {
-    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[state\=hidden\]\:fade-out[data-state="hidden"] {
@@ -4436,11 +4464,11 @@
   }
 
   .data-\[state\=open\]\:animate-accordion-down[data-state="open"] {
-    animation: accordion-down var(--tw-animation-duration, var(--tw-duration, .2s)) ease-out;
+    animation: accordion-down var(--tw-animation-duration, var(--tw-duration, .2s)) var(--tw-ease, ease-out) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[state\=open\]\:animate-in[data-state="open"] {
-    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[state\=open\]\:bg-accent[data-state="open"] {
@@ -4511,7 +4539,7 @@
   }
 
   .group-data-\[viewport\=false\]\/navigation-menu\:data-\[state\=open\]\:animate-in:is(:where(.group\/navigation-menu)[data-viewport="false"] *)[data-state="open"] {
-    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .group-data-\[viewport\=false\]\/navigation-menu\:data-\[state\=open\]\:fade-in-0:is(:where(.group\/navigation-menu)[data-viewport="false"] *)[data-state="open"] {
@@ -4558,7 +4586,7 @@
   }
 
   .data-\[state\=visible\]\:animate-in[data-state="visible"] {
-    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: enter var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[state\=visible\]\:fade-in[data-state="visible"] {
@@ -4576,7 +4604,7 @@
   }
 
   .data-\[swipe\=end\]\:animate-out[data-swipe="end"] {
-    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, forwards);
+    animation: exit var(--tw-animation-duration, var(--tw-duration, .15s)) var(--tw-ease, ease) var(--tw-animation-delay, 0s) var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal) var(--tw-animation-fill-mode, none);
   }
 
   .data-\[swipe\=move\]\:translate-x-\[var\(--radix-toast-swipe-move-x\)\][data-swipe="move"] {
@@ -5913,13 +5941,19 @@
 @property --tw-animation-fill-mode {
   syntax: "*";
   inherits: false;
-  initial-value: forwards;
+  initial-value: none;
 }
 
 @property --tw-animation-iteration-count {
   syntax: "*";
   inherits: false;
   initial-value: 1;
+}
+
+@property --tw-enter-blur {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
 }
 
 @property --tw-enter-opacity {
@@ -5947,6 +5981,12 @@
 }
 
 @property --tw-enter-translate-y {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-exit-blur {
   syntax: "*";
   inherits: false;
   initial-value: 0;
@@ -6566,6 +6606,7 @@
   from {
     opacity: var(--tw-enter-opacity, 1);
     transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0));
+    filter: blur(var(--tw-enter-blur, 0));
   }
 }
 
@@ -6573,6 +6614,7 @@
   to {
     opacity: var(--tw-exit-opacity, 1);
     transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0));
+    filter: blur(var(--tw-exit-blur, 0));
   }
 }
 
@@ -6582,13 +6624,13 @@
   }
 
   to {
-    height: var(--radix-accordion-content-height, var(--bits-accordion-content-height, var(--reka-accordion-content-height, var(--kb-accordion-content-height, auto))));
+    height: var(--radix-accordion-content-height, var(--bits-accordion-content-height, var(--reka-accordion-content-height, var(--kb-accordion-content-height, var(--ngp-accordion-content-height, auto)))));
   }
 }
 
 @keyframes accordion-up {
   from {
-    height: var(--radix-accordion-content-height, var(--bits-accordion-content-height, var(--reka-accordion-content-height, var(--kb-accordion-content-height, auto))));
+    height: var(--radix-accordion-content-height, var(--bits-accordion-content-height, var(--reka-accordion-content-height, var(--kb-accordion-content-height, var(--ngp-accordion-content-height, auto)))));
   }
 
   to {
