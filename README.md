@@ -54,7 +54,7 @@ UniTasker/
 ___
 # Ejecución local
 
-## Backend:
+## Backend
 
 **Variables de Entorno:**
 El proyecto utiliza variables de entorno para configuración sensible.
@@ -91,6 +91,26 @@ python manage.py runserver
 ```
 
 
+## Frontend
+
+1. Preparar archivo .env con estos datos:
+```bash  
+API_URL=https://unitaskis.onrender.com/api
+BASIC_USER=Anacleto
+BASIC_PASS=contrasenia*1
+```
+
+2. Instalar dependencias:
+```bash
+npm install
+``` 
+
+3. Ejecutar el servidor de desarrollo:
+```bash 
+npm run dev
+```
+
+**Nota:** Por defecto, el frontend estará disponible en http://localhost:3000.
 
 ## 🚀 Inicio Rápido (Servidores en simultáneo)
 
@@ -133,11 +153,6 @@ Verificar errores de estilo:
 flake8 .
 ```
 Antes de crear un Pull Request, el código debe estar correctamente formateado y no presentar errores de linting.
-
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Calidad de código (Frontend)
-
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
