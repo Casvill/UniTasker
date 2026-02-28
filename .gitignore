@@ -19,8 +19,14 @@ Thumbs.db
 
 # Archivos temporales
 .vercel/
+frontend/.next/
+frontend/.vercel/
 .vscode/
 GEMINI.md
 GEMINI.md/
 ./GEMINI.md
 ./GEMINI.md/
+.next
+.next/
+./.next/
+./.next
