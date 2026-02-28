@@ -112,13 +112,13 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                 <DialogHeader>
                     <DialogTitle>{activity ? "Editar actividad" : "Nueva actividad"}</DialogTitle>
                     <DialogDescription>
-                        {activity ? "Modifica los campos de tu actividad." : "Completa los campos mínimos para registrar tu actividad evaluativa."}
+                        {activity ? "Modifica los campos de tu actividad." : "A continuación, ingresa los detalles de tu nueva actividad."}
                     </DialogDescription>
                 </DialogHeader>
 
                 <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-1.5">
-                        <Label htmlFor="title">Título de actividad *</Label>
+                        <Label htmlFor="title">¿Que es la actividad? *</Label>
                         <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} />
                         {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
                     </div>
@@ -144,28 +144,28 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="course">Curso *</Label>
+                        <Label htmlFor="course">¿A qué curso pertenece? *</Label>
                         <Input id="course" placeholder="Ej: Matemáticas II" {...register("course")} />
                         {errors.course && <p className="text-sm text-destructive">{errors.course.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="dueDate">Fecha de entrega *</Label>
+                        <Label htmlFor="dueDate">¿Cuándo es la entrega? *</Label>
                         <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
                         {errors.dueDate && <p className="text-sm text-destructive">{errors.dueDate.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="description">Descripción (opcional)</Label>
+                        <Label htmlFor="description">¿Qué detalles adicionales deseas agregar? </Label>
                         <Input id="description" placeholder="Ej: Temas 1-3, llevar calculadora" {...register("description")} />
                     </div>
 
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }}>
+                    <DialogFooter className="gap-3 sm:gap-2">
+                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1">
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Guardando..." : "Guardar"}
+                        <Button type="submit" disabled={isSubmitting} className="flex-1">
+                            {isSubmitting ? "Guardando..." : "Guardar Actividad"}
                         </Button>
                     </DialogFooter>
                 </form>
