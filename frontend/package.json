@@ -1,19 +1,21 @@
+
 {
   "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-<<<<<<< HEAD
-    "build": "next build",
     "dev": "next dev",
-    "lint": "eslint .",
-    "start": "next start"
-=======
-    "lint": "eslint ."
->>>>>>> 773f603 (REMOVED | all references to VITE (deprecated))
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
+    "next": "15.x.x",
+    "react": "19.x.x",
+    "react-dom": "19.x.x",
+    "tailwindcss": "4.x.x",
+    "tw-animate-css": "latest",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
@@ -66,32 +68,16 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-<<<<<<< HEAD
+    "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22.19.11",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
-    "eslint": "^9.39.3",
-    "eslint-config-next": "^16.1.6",
-    "eslint-plugin-next": "^0.0.0",
-    "eslint-plugin-react": "^7.37.5",
-    "postcss": "^8.5",
-    "tailwindcss": "^4.1.9",
-    "tw-animate-css": "1.3.3",
-    "typescript": "^5"
-=======
-    "@eslint/js": "^9.39.1",
-    "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "typescript": "~5.9.3",
+    "eslint": "^9.39.3",
+    "eslint-config-next": "^16.1.6",
+    "postcss": "^8.5",
+    "tailwindcss": "^4.1.9",
+    "typescript": "^5.7.0",
     "typescript-eslint": "^8.48.0"
->>>>>>> 773f603 (REMOVED | all references to VITE (deprecated))
   }
 }
