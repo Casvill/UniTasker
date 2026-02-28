@@ -1,19 +1,34 @@
 import { z } from "zod"
 
 export const ActivitySchema = z.object({
-    title: z.string().min(2, "El título es obligatorio (mínimo 2 caracteres)."),
-    type: z.enum(["examen", "quiz", "taller", "proyecto", "otro"]).default("otro"),
-    course: z.string().min(2, "El curso es obligatorio (mínimo 2 caracteres)."),
+    
+    title: z
+    .string()
+    .nonempty({ message: "Dale un nombre a tu actividad." })
+    .min(2, { message: "¡Este nombre es muy corto!" })
+    .max(25, { message: "¡Este nombre es muy largo!" }),
+    
+    type: z
+      .enum(["examen", "quiz", "taller", "proyecto", "otro"], { 
+            errorMap: () => ({ message: "Selecciona un tipo de evaluación." })
+        }),
+    
+    course: z
+    .string()
+    .nonempty({ message: "Rellena el nombre del curso." })
+        .min(2, { message: "¡Nombre de curso muy corto!" }),
+    
     dueDate: z
     .string()
-    .min(1, "La fecha de entrega es obligatoria.")
+    .min(1, { message: "Ingresa una fecha de entrega." })
     .refine((value) => {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
       const selected = new Date(`${value}T00:00:00`)
       return selected >= today 
-    }, "Esa fecha ya pasó."),
+    }, "¡Esa fecha ya pasó!"),
+    
     description: z.string().optional(),
 })
 

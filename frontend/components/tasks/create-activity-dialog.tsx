@@ -43,7 +43,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
         resolver: zodResolver(ActivitySchema),
         defaultValues: {
             title: activity?.title || "",
-            type: activity?.tags?.[0] || "otro",
+            type: activity?.tags?.[0] || "",
             course: activity?.project || "",
             dueDate: activity?.dueDate ? (activity.dueDate.includes('/') ? activity.dueDate.split('/').reverse().join('-') : activity.dueDate) : "",
             description: activity?.description || "",
@@ -59,7 +59,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
         if (activity) {
             reset({
                 title: activity.title,
-                type: activity.tags?.[0] || "otro",
+                type: activity.tags?.[0] || "",
                 course: activity.project,
                 dueDate: activity.dueDate ? (activity.dueDate.includes('/') ? activity.dueDate.split('/').reverse().join('-') : activity.dueDate) : "",
                 description: activity.description || "",
@@ -111,25 +111,38 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
             <DialogContent className="sm:max-w-[520px]">
                 <DialogHeader>
                     <DialogTitle>{activity ? "Editar actividad" : "Nueva actividad"}</DialogTitle>
-                    <DialogDescription>
-                        {activity ? "Modifica los campos de tu actividad." : "A continuación, ingresa los detalles de tu nueva actividad."}
+                    <DialogDescription className="mb-2 text-sm text-muted-foreground">
+                        {activity ? "Modifica los detalles de tu actividad." : "A continuación, ingresa los detalles de tu nueva actividad."}
                     </DialogDescription>
                 </DialogHeader>
 
-                <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-1.5">
-                        <Label htmlFor="title">¿Que es la actividad? *</Label>
-                        <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} />
-                        {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4" >
+                    <Label>1. Información general </Label>
+                    <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="title">¿Nombre de la actividad? *</Label>
+                            <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} />
+                            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="course">¿A qué curso pertenece? *</Label>
+                            <Input id="course" placeholder="Ej: Matemáticas II" {...register("course")} />
+                            {errors.course && <p className="text-sm text-destructive">{errors.course.message}</p>}
+                        </div>
+                        
                     </div>
 
-                    <div className="space-y-1.5">
-                        <Label>¿Cómo te van a evaluar? *</Label>
-                        <Select
-                            value={selectedType}
-                            onValueChange={(v) => setValue("type", v as ActivityFormValues["type"], { shouldValidate: true })}
-                        >
-                            <SelectTrigger>
+                    <div className="border-t-2 border-dotted border-gray-300 my-3"></div>
+                    
+                    <Label>2. Evaluación y entrega</Label>
+                    <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+                        <div className="space-y-1.5">
+                            <Label>¿Cómo te van a evaluar? * </Label>
+                            <Select
+                                defaultValue={activity?.tags?.[0]}
+                                onValueChange={(v) => setValue("type", v as ActivityFormValues["type"], { shouldValidate: true })}
+                            >
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Selecciona un tipo" />
                             </SelectTrigger>
                             <SelectContent>
@@ -140,32 +153,31 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                                 <SelectItem value="otro">Otro</SelectItem>
                             </SelectContent>
                         </Select>
-                        {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                            {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="dueDate">¿En que fecha? *</Label>
+                            <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
+                            {errors.dueDate && <p className="text-sm text-destructive">{errors.dueDate.message}</p>}
+                        </div>
+                    </div>
+                    
+                    <div className="border-t-2 border-dotted border-gray-300 my-3"></div>
+                    
+                    <Label>3. Detalles o indicaciones</Label>
+                    <div className="space-y-1.5 sm:space-y-0 sm:grid sm:gap-4">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="description">¿Quieres agregar algún detalle adicional? </Label>
+                            <Input id="description" placeholder="Ej: Temas 1-3, llevar calculadora" {...register("description")} />
+                        </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <Label htmlFor="course">¿A qué curso pertenece? *</Label>
-                        <Input id="course" placeholder="Ej: Matemáticas II" {...register("course")} />
-                        {errors.course && <p className="text-sm text-destructive">{errors.course.message}</p>}
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <Label htmlFor="dueDate">¿Cuándo es la entrega? *</Label>
-                        <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
-                        {errors.dueDate && <p className="text-sm text-destructive">{errors.dueDate.message}</p>}
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <Label htmlFor="description">¿Qué detalles adicionales deseas agregar? </Label>
-                        <Input id="description" placeholder="Ej: Temas 1-3, llevar calculadora" {...register("description")} />
-                    </div>
-
-                    <DialogFooter className="gap-3 sm:gap-2">
+                    <DialogFooter className="gap-3 mt-8">
                         <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1">
                             Cancelar
                         </Button>
                         <Button type="submit" disabled={isSubmitting} className="flex-1">
-                            {isSubmitting ? "Guardando..." : "Guardar Actividad"}
+                            {isSubmitting ? "Guardando..." : (activity ? "Guardar Cambios" : "Guardar Actividad")}
                         </Button>
                     </DialogFooter>
                 </form>
