@@ -13,7 +13,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar, Clock, Trash2, CheckCircle2, Pencil } from "lucide-react"
+import { Calendar, Clock, Trash2, CheckCircle2, Pencil, Tag } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { SubtaskSchema, SubtaskFormValues } from "./subtask-schema"
 
 type ManageTasksDialogProps = {
   open: boolean
@@ -24,32 +27,41 @@ type ManageTasksDialogProps = {
 }
 
 export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpdate, onRefresh }: ManageTasksDialogProps) {
-  const [newSubtask, setNewSubtask] = React.useState({ nombre: "", fecha: "", horas: "" });
+  // const [newSubtask, setNewSubtask] = React.useState({ nombre: "", fecha: "", horas: "" });
   const [editingId, setEditingId] = React.useState<number | string | null>(null);
   const [editingSubtask, setEditingSubtask] = React.useState({ nombre: "", fecha: "", horas: "" });
 
-  const handleCreateSubtask = async () => {
-    if (!newSubtask.nombre.trim() || !activity) return;
+  const form = useForm<SubtaskFormValues>({
+    resolver: zodResolver(SubtaskSchema),
+    defaultValues: { nombre: "", fecha: "", horas: "" },
+    mode: "onTouched",
+  });
+
+  const { register, handleSubmit, formState, reset } = form;
+  const { errors, isSubmitting } = formState;
+
+  const onSubmitSubtask = async (values: SubtaskFormValues) => {
+    if (!activity) return;
 
     const promise = apiFetch<any>("/tareas/", {
       method: "POST",
       body: JSON.stringify({
-        nombre: newSubtask.nombre,
-        fecha_objetivo: newSubtask.fecha || null,
-        horas_estimadas: parseFloat(newSubtask.horas) || 0,
+        nombre: values.nombre,
+        fecha_objetivo: values.fecha,
+        horas_estimadas: parseFloat(values.horas),
         actividad: activity.id,
       }),
     });
 
     toast.promise(promise, {
       loading: 'Creando tarea...',
-      success: () => {
-        onRefresh();
-        setNewSubtask({ nombre: "", fecha: "", horas: "" });
-        return "Tarea creada";
-      },
+      success: "Tarea creada",
       error: "Error al crear"
     });
+
+    await promise;
+    onRefresh();
+    reset();
   };
 
   const handleUpdateSubtask = async (id: number | string) => {
@@ -149,21 +161,35 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
           </div>
           <div className="mt-4 p-4 bg-card rounded-xl border border-border">
             <p className="font-bold text-foreground">{activity?.title}</p>
-            <p className="text-sm text-muted-foreground">{activity?.project}</p>
+            <span className="flex items-center gap-1">
+              <Tag className="w-4 h-4 text-muted-foreground" />
+              <p className="text-m text-muted-foreground">{activity?.project}</p>
+            </span>
             <p className="text-sm text-muted-foreground mt-1">{activity?.description?.trim() || null}</p>
           </div>
         </DialogHeader>
 
         <div className="p-4 pt-0 space-y-2"> 
           <h3 className="text-lg font-semibold text-foreground justify-center">¿Quieres agregar una nueva tarea?</h3>
-          <div className="grid gap-2 p-2 rounded-xl bg-card border border-border shadow-sm">
-            <Input placeholder="Descripción" className="bg-background border-border h-8 text-sm" value={newSubtask.nombre} onChange={(e) => setNewSubtask({ ...newSubtask, nombre: e.target.value })} />
-            <div className="grid grid-cols-2 gap-2">
-              <Input type="date" className="bg-background border-border h-7 text-xs" value={newSubtask.fecha} onChange={(e) => setNewSubtask({ ...newSubtask, fecha: e.target.value })} />
-              <Input type="number" placeholder="Horas" className="bg-background border-border h-7 text-xs" value={newSubtask.horas} onChange={(e) => setNewSubtask({ ...newSubtask, horas: e.target.value })} />
+          <form noValidate onSubmit={handleSubmit(onSubmitSubtask)} className="grid gap-2 p-2 rounded-xl bg-card border border-border shadow-sm">
+            <div className="space-y-1">
+              <Input placeholder="Describe que tienes que hacer" className="bg-background border-border h-8 text-sm" {...register("nombre")} />
+              {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
             </div>
-            <Button onClick={handleCreateSubtask}>Guardar Tarea</Button>
-          </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Input type="date" className="bg-background border-border h-7 text-xs" {...register("fecha")} />
+                {errors.fecha && <p className="text-xs text-destructive">{errors.fecha.message}</p>}
+              </div>
+              <div className="space-y-1">
+                <Input type="number" placeholder="¿Horas estimadas?" className="bg-background border-border h-7 text-xs" {...register("horas")} />
+                {errors.horas && <p className="text-xs text-destructive">{errors.horas.message}</p>}
+              </div>
+            </div>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando Tarea..." : "Guardar Tarea"}
+            </Button>
+          </form>
 
           <section className="space-y-3">
             <h3 className="text-sm font-bold text-foreground">Tareas Actuales</h3>

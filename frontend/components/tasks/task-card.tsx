@@ -79,7 +79,7 @@ export function TaskCard({
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Tag className="w-4 h-4" />
+              {/* <Tag className="w-4 h-4" /> */}
               {task.project}
             </span>
             <span className="flex items-center gap-1">
