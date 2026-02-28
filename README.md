@@ -28,13 +28,10 @@ ___
 * pip
 * Git
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-
 ###  Frontend 
-* npm
-* 
-* 
+* Node.js 18.x o superior
+* npm (o yarn/pnpm según prefieras)
+* Git
 Desarrollado con **Next.js**, y **Tailwind CSS**.
 - **Iniciar:** `cd frontend && npm run dev`
 - **Linter:** `npm run lint` (Configuración en proceso)
@@ -42,21 +39,6 @@ Desarrollado con **Next.js**, y **Tailwind CSS**.
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
 
-# 🚀 Inicio Rápido (Servidores en simultáneo)
-
-Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar ambos servidores con un solo comando:
-
-### 🐧 Linux y macOS (Terminal)
-1.  Otorga permisos al script: `chmod +x start-dev.sh`
-2.  Ejecuta: `./start-dev.sh`
-    *(Usa `Ctrl + C` para detener ambos servidores)*
-
-### 🪟 Windows (CMD / PowerShell)
-1.  Ejecuta el archivo: `start-dev.bat` o haz doble clic sobre él.
-    *(Esto abrirá dos ventanas independientes. Ciérralas para detener los servidores)*
-
-[Tabla de Contenido](#tabla-de-contenido) 
-___
 # Estructura del Proyecto
 ```bash 
 UniTasker/
@@ -107,14 +89,24 @@ python manage.py migrate
 # Ejecutar servidor:
 python manage.py runserver
 ```
-**Servidor disponible en:**
-http://127.0.0.1:8000/
 
 
 
-```
+## 🚀 Inicio Rápido (Servidores en simultáneo)
 
-```
+Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar ambos servidores con un solo comando:
+
+### 🐧 Linux y macOS (Terminal)
+1.  Otorga permisos al script: `chmod +x start-dev.sh`
+2.  Ejecuta: `./start-dev.sh`
+    *(Usa `Ctrl + C` para detener ambos servidores)*
+
+### 🪟 Windows (CMD / PowerShell)
+1.  Ejecuta el archivo: `start-dev.bat` o haz doble clic sobre él.
+    *(Esto abrirá dos ventanas independientes. Ciérralas para detener los servidores)*
+
+[Tabla de Contenido](#tabla-de-contenido) 
+___
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
