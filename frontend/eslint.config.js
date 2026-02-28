@@ -6,10 +6,19 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+<<<<<<< HEAD
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
       react,
     },
+=======
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+    ],
+>>>>>>> 773f603 (REMOVED | all references to VITE (deprecated))
     languageOptions: {
       parserOptions: {
         ecmaFeatures: {
