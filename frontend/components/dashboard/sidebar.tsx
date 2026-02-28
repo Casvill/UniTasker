@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, CheckSquare, Calendar, BarChart3, Users, Settings, HelpCircle, LogOut } from "lucide-react"
+import { LayoutDashboard, CheckSquare, Calendar, BarChart3, Users, Settings, HelpCircle, LogOut, BookCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import Link from "next/link"
@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation"
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: CheckSquare, label: "Tareas", badge: "124", href: "/tasks" },
+  { icon: BookCheck, label: "Actividades", badge: "124", href: "/tasks" },
   { icon: Calendar, label: "Calendario", href: "/calendar" },
 ]
 
@@ -27,7 +27,24 @@ export function Sidebar() {
     <aside className="fixed top-0 left-0 w-64 bg-card border-r border-border p-4 h-screen overflow-y-auto lg:block">
       <div className="flex items-center gap-2 mb-6 group cursor-pointer">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/unitasker.svg" alt="UniTasker" width={170} height={170} />
+          {/* Logo claro para modo claro */}
+          <Image
+            src="/unitasker.svg"
+            alt="UniTasker"
+            width={180}
+            height={180}
+            className="block dark:hidden transition-all duration-300"
+            priority
+          />
+          {/* Logo oscuro para modo oscuro */}
+          <Image
+            src="/unitaskerv2.svg"
+            alt="UniTasker dark"
+            width={180}
+            height={180}
+            className="hidden dark:block transition-all duration-300"
+            priority
+          />
         </Link>
       </div>
 

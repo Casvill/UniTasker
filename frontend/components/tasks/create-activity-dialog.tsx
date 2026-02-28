@@ -25,12 +25,19 @@ type CreateActivityDialogProps = {
     activity?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    showTrigger?: boolean
 }
 
-export function CreateActivityDialog({ onCreated, activity, open: controlledOpen, onOpenChange }: CreateActivityDialogProps) {
+export function CreateActivityDialog({ onCreated, activity, open: controlledOpen, onOpenChange, showTrigger = true }: CreateActivityDialogProps) {
     const [internalOpen, setInternalOpen] = React.useState(false)
     const open = controlledOpen ?? internalOpen
     const setOpen = onOpenChange ?? setInternalOpen
+
+    const minDate = React.useMemo(() => {
+        const d = new Date()
+        d.setDate(d.getDate())
+        return d.toISOString().split("T")[0]
+    }, [])
 
     const form = useForm<ActivityFormValues>({
         resolver: zodResolver(ActivitySchema),
@@ -93,7 +100,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            {!activity && (
+            {showTrigger && !activity && (
                 <DialogTrigger asChild>
                     <Button className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
                         + Crear Actividad
@@ -105,13 +112,13 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                 <DialogHeader>
                     <DialogTitle>{activity ? "Editar actividad" : "Nueva actividad"}</DialogTitle>
                     <DialogDescription>
-                        {activity ? "Modifica los campos de tu actividad." : "Completa los campos mínimos para registrar tu actividad evaluativa."}
+                        {activity ? "Modifica los campos de tu actividad." : "A continuación, ingresa los detalles de tu nueva actividad."}
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-1.5">
-                        <Label htmlFor="title">Título de actividad *</Label>
+                        <Label htmlFor="title">¿Que es la actividad? *</Label>
                         <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} />
                         {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
                     </div>
@@ -137,28 +144,28 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="course">Curso *</Label>
+                        <Label htmlFor="course">¿A qué curso pertenece? *</Label>
                         <Input id="course" placeholder="Ej: Matemáticas II" {...register("course")} />
                         {errors.course && <p className="text-sm text-destructive">{errors.course.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="dueDate">Fecha de entrega *</Label>
-                        <Input id="dueDate" type="date" {...register("dueDate")} />
+                        <Label htmlFor="dueDate">¿Cuándo es la entrega? *</Label>
+                        <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
                         {errors.dueDate && <p className="text-sm text-destructive">{errors.dueDate.message}</p>}
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="description">Descripción (opcional)</Label>
+                        <Label htmlFor="description">¿Qué detalles adicionales deseas agregar? </Label>
                         <Input id="description" placeholder="Ej: Temas 1-3, llevar calculadora" {...register("description")} />
                     </div>
 
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }}>
+                    <DialogFooter className="gap-3 sm:gap-2">
+                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1">
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Guardando..." : "Guardar"}
+                        <Button type="submit" disabled={isSubmitting} className="flex-1">
+                            {isSubmitting ? "Guardando..." : "Guardar Actividad"}
                         </Button>
                     </DialogFooter>
                 </form>

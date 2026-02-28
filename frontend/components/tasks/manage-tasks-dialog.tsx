@@ -139,37 +139,38 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border border-border bg-card text-card-foreground shadow-2xl">
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold text-slate-800">Gestionar Tareas</DialogTitle>
-            <Button variant="outline" size="sm" className="text-[#00682b] border-[#00682b] hover:bg-[#00682b] hover:text-white" onClick={handleMarkAllAsDone}>
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Hecho
+            <DialogTitle className="text-2xl font-bold text-foreground">Gestionar Actividad</DialogTitle>
+            <Button variant="outline" size="sm" onClick={handleMarkAllAsDone} className="ml-auto mr-4">
+              <CheckCircle2 className="h-4 w-4 mr-2" /> Marcar como hecha
             </Button>
           </div>
-          <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <p className="font-bold text-slate-700">{activity?.title}</p>
+          <div className="mt-4 p-4 bg-card rounded-xl border border-border">
+            <p className="font-bold text-foreground">{activity?.title}</p>
             <p className="text-sm text-muted-foreground">{activity?.project}</p>
+            <p className="text-sm text-muted-foreground mt-1">{activity?.description?.trim() || null}</p>
           </div>
         </DialogHeader>
 
         <div className="p-4 pt-0 space-y-2"> 
-          <h3 className="text-lg font-semibold text-slate-800 mb-5">Agregar tarea</h3>
-          <div className="grid gap-2 p-2 rounded-xl bg-white border border-slate-200 shadow-sm">
-            <Input placeholder="Descripción" className="bg-slate-50 border-none h-8 text-sm" value={newSubtask.nombre} onChange={(e) => setNewSubtask({ ...newSubtask, nombre: e.target.value })} />
+          <h3 className="text-lg font-semibold text-foreground justify-center">¿Quieres agregar una nueva tarea?</h3>
+          <div className="grid gap-2 p-2 rounded-xl bg-card border border-border shadow-sm">
+            <Input placeholder="Descripción" className="bg-background border-border h-8 text-sm" value={newSubtask.nombre} onChange={(e) => setNewSubtask({ ...newSubtask, nombre: e.target.value })} />
             <div className="grid grid-cols-2 gap-2">
-              <Input type="date" className="bg-slate-50 border-none h-7 text-xs" value={newSubtask.fecha} onChange={(e) => setNewSubtask({ ...newSubtask, fecha: e.target.value })} />
-              <Input type="number" placeholder="Horas" className="bg-slate-50 border-none h-7 text-xs" value={newSubtask.horas} onChange={(e) => setNewSubtask({ ...newSubtask, horas: e.target.value })} />
+              <Input type="date" className="bg-background border-border h-7 text-xs" value={newSubtask.fecha} onChange={(e) => setNewSubtask({ ...newSubtask, fecha: e.target.value })} />
+              <Input type="number" placeholder="Horas" className="bg-background border-border h-7 text-xs" value={newSubtask.horas} onChange={(e) => setNewSubtask({ ...newSubtask, horas: e.target.value })} />
             </div>
             <Button onClick={handleCreateSubtask}>Guardar Tarea</Button>
           </div>
 
           <section className="space-y-3">
-            <h3 className="text-sm font-bold text-slate-700">Tareas Actuales</h3>
+            <h3 className="text-sm font-bold text-foreground">Tareas Actuales</h3>
             <div className="max-h-[250px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
               {activity?.subtasks?.filter((s: any) => s.nombre !== "General").length > 0 ? (
                 activity.subtasks.filter((s: any) => s.nombre !== "General").map((sub: any) => (
-                  <div key={sub.id} className="p-3 bg-white border border-slate-100 rounded-xl hover:border-[#00682b]/30 transition-colors shadow-sm">
+                  <div key={sub.id} className="p-3 bg-card border border-border rounded-xl hover:border-secondary/40 transition-colors shadow-sm">
                     {editingId === sub.id ? (
                       <div className="space-y-2">
                         <Input className="h-8 text-sm" value={editingSubtask.nombre} onChange={(e) => setEditingSubtask({ ...editingSubtask, nombre: e.target.value })} />
@@ -181,9 +182,9 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
                     ) : (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Checkbox checked={!!sub.registroId} onCheckedChange={() => handleToggleSubtask(sub.id)} className="rounded-full border-slate-300 data-[state=checked]:bg-[#00682b]" />
+                          <Checkbox checked={!!sub.registroId} onCheckedChange={() => handleToggleSubtask(sub.id)} className="rounded-full mt-1" />
                           <div className="flex flex-col">
-                            <span className={`text-sm font-semibold ${!!sub.registroId ? "line-through text-slate-400" : "text-slate-700"}`}>{sub.nombre}</span>
+                            <span className={`text-sm font-semibold ${!!sub.registroId ? "line-through text-slate-400" : "text-foreground"}`}>{sub.nombre}</span>
                             <div className="flex gap-3 text-[10px] text-slate-400">
                               <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {sub.fecha_objetivo || 'Sin fecha'}</span>
                               <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {sub.horas_estimadas}h</span>
@@ -191,15 +192,17 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
                           </div>
                         </div>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => { setEditingId(sub.id); setEditingSubtask({ nombre: sub.nombre, fecha: sub.fecha_objetivo || "", horas: sub.horas_estimadas?.toString() || "" }); }} className="h-8 w-8 text-slate-300 hover:text-[#00682b]"><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSubtask(sub.id)} className="h-8 w-8 text-slate-300 hover:text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => { setEditingId(sub.id); setEditingSubtask({ nombre: sub.nombre, fecha: sub.fecha_objetivo || "", horas: sub.horas_estimadas?.toString() || "" }); }} className="h-8 w-8 text-muted-foreground"><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSubtask(sub.id)} className="h-8 w-8 text-muted-foreground"><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
                     )}
                   </div>
                 ))
               ) : (
-                <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 italic">No hay subtareas.</p></div>
+                <div className="text-center py-10 bg-card rounded-2xl border border-dashed border-border">
+                  <p className="text-xs text-muted-foreground italic">No hay subtareas.</p>
+                </div>
               )}
             </div>
           </section>

@@ -28,17 +28,17 @@ export function Header({ title, description, actions }: HeaderProps) {
     <header className="space-y-3 md:space-y-4 animate-slide-in-up">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1">
-          <MobileNav />
+          {/* <MobileNav /> */}
 
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search task"
+              placeholder="Buscar..."
               className="pl-9 pr-3 md:pr-16 h-9 text-sm bg-card border-border transition-all duration-300 focus:shadow-lg focus:shadow-primary/10"
             />
-            <kbd className="hidden md:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground bg-muted rounded border border-border">
+            {/* <kbd className="hidden md:inline-block absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground bg-muted rounded border border-border">
               ⌘F
-            </kbd>
+            </kbd> */}
           </div>
         </div>
 
