@@ -29,14 +29,40 @@ ___
 * Git
 
 [Tabla de Contenido](#tabla-de-contenido) 
-### Frontend:
+___
+
+###  Frontend 
+* npm
+* 
+* 
+Desarrollado con **Next.js**, y **Tailwind CSS**.
+- **Iniciar:** `cd frontend && npm run dev`
+- **Linter:** `npm run lint` (Configuración en proceso)
+
+[Tabla de Contenido](#tabla-de-contenido) 
+___
+
+# 🚀 Inicio Rápido (Servidores en simultáneo)
+
+Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar ambos servidores con un solo comando:
+
+### 🐧 Linux y macOS (Terminal)
+1.  Otorga permisos al script: `chmod +x start-dev.sh`
+2.  Ejecuta: `./start-dev.sh`
+    *(Usa `Ctrl + C` para detener ambos servidores)*
+
+### 🪟 Windows (CMD / PowerShell)
+1.  Ejecuta el archivo: `start-dev.bat` o haz doble clic sobre él.
+    *(Esto abrirá dos ventanas independientes. Ciérralas para detener los servidores)*
+
+[Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Estructura del Proyecto
 ```bash 
 UniTasker/
 │
 ├── backend/      # API (Django Rest Framework)
-├── frontend/     # Cliente web (React)
+├── frontend/     # Cliente web(React +  Next.js)
 ├── .gitignore
 ├── pull_request_template.md
 └── README.md
@@ -86,9 +112,8 @@ http://127.0.0.1:8000/
 
 
 
-## Frontend:
-```bash
-cd frontend
+```
+
 ```
 
 [Tabla de Contenido](#tabla-de-contenido) 
@@ -120,6 +145,8 @@ Antes de crear un Pull Request, el código debe estar correctamente formateado y
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Calidad de código (Frontend)
+
+
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Convención de Ramas
