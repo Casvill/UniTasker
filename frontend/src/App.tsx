@@ -6,9 +6,9 @@ function App() {
 const [data, setData] = useState([]);
 useEffect(() => {
   async function fetchData() {
-    console.log(import.meta.env.VITE_API_URL)
+    console.log(process.env.API_URL)
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}`);
+      const response = await fetch(`${process.env.API_URL}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }

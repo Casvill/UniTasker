@@ -17,5 +17,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Archivos de VSCode
+# Archivos temporales
+.vercel/
 .vscode/
+GEMINI.md
+GEMINI.md/
+./GEMINI.md
+./GEMINI.md/

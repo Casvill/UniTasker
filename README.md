@@ -28,15 +28,23 @@ ___
 * pip
 * Git
 
+###  Frontend 
+* Node.js 18.x o superior
+* npm (o yarn/pnpm según prefieras)
+* Git
+Desarrollado con **Next.js**, y **Tailwind CSS**.
+- **Iniciar:** `cd frontend && npm run dev`
+- **Linter:** `npm run lint` (Configuración en proceso)
+
 [Tabla de Contenido](#tabla-de-contenido) 
-### Frontend:
 ___
+
 # Estructura del Proyecto
 ```bash 
 UniTasker/
 │
 ├── backend/      # API (Django Rest Framework)
-├── frontend/     # Cliente web (React)
+├── frontend/     # Cliente web(React +  Next.js)
 ├── .gitignore
 ├── pull_request_template.md
 └── README.md
@@ -46,7 +54,7 @@ UniTasker/
 ___
 # Ejecución local
 
-## Backend:
+## Backend
 
 **Variables de Entorno:**
 El proyecto utiliza variables de entorno para configuración sensible.
@@ -81,15 +89,45 @@ python manage.py migrate
 # Ejecutar servidor:
 python manage.py runserver
 ```
-**Servidor disponible en:**
-http://127.0.0.1:8000/
 
+Con esto ya estará andando el ba ckend de manera local en http://localhost:8000/
 
+## Frontend
 
-## Frontend:
-```bash
-cd frontend
+1. Preparar archivo .env con estos datos:
+```bash  
+API_URL=https://unitaskis.onrender.com/api
+BASIC_USER=Anacleto
+BASIC_PASS=contrasenia*1
 ```
+
+2. Instalar dependencias:
+```bash
+npm install
+``` 
+
+3. Ejecutar el servidor de desarrollo:
+```bash 
+npm run dev
+```
+
+**Nota:** Por defecto, el frontend estará disponible en http://localhost:3000.
+
+## 🚀 Inicio Rápido (Servidores en simultáneo)
+
+Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar ambos servidores con un solo comando:
+
+### 🐧 Linux y macOS (Terminal)
+1.  Otorga permisos al script: `chmod +x start-dev.sh`
+2.  Ejecuta: `./start-dev.sh`
+    *(Usa `Ctrl + C` para detener ambos servidores)*
+
+### 🪟 Windows (CMD / PowerShell)
+1.  Ejecuta el archivo: `start-dev.bat` o haz doble clic sobre él.
+    *(Esto abrirá dos ventanas independientes. Ciérralas para detener los servidores)*
+
+[Tabla de Contenido](#tabla-de-contenido) 
+___
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
@@ -117,9 +155,6 @@ flake8 .
 ```
 Antes de crear un Pull Request, el código debe estar correctamente formateado y no presentar errores de linting.
 
-[Tabla de Contenido](#tabla-de-contenido) 
-___
-# Calidad de código (Frontend)
 [Tabla de Contenido](#tabla-de-contenido) 
 ___
 # Convención de Ramas
