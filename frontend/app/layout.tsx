@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
-import { Sidebar } from "@/components/dashboard/sidebar"
 import { Toaster } from "@/components/ui/sonner"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -16,18 +15,9 @@ export const metadata: Metadata = {
   generator: "v0.app",
   icons: {
     icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/unitaskerfavi.svg",
-        type: "image/svg+xml",
-      },
+      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/unitaskerfavi.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-icon.png",
   },
@@ -35,32 +25,27 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="system" 
-          enableSystem 
+      <body className="font-sans antialiased">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
           storageKey="unitasker-theme"
         >
-          <div className="hidden lg:block">
-            <Sidebar />
-          </div>
           {children}
+
           <Toaster
             position="top-center"
-            expand={true}
+            expand
             richColors
             closeButton
             duration={5000}
             toastOptions={{
-              className:
-                "text-lg px-8 py-5 rounded-2xl shadow-2xl border bg-card",
+              className: "text-lg px-8 py-5 rounded-2xl shadow-2xl border bg-card",
             }}
           />
         </ThemeProvider>

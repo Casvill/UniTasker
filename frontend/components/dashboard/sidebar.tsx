@@ -8,7 +8,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: BookCheck, label: "Actividades", badge: "124", href: "/tasks" },
   { icon: Calendar, label: "Calendario", href: "/calendar" },
 ]
