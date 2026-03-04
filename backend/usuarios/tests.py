@@ -75,7 +75,8 @@ class JWTLoginErrorHandlingTests(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="tester_de_mensaje",
-            password="Contrasenia_correcta"
+            email="tester@unitasker.com",
+            password="Contrasenia_correcta",
         )
 
     def test_existing_user_wrong_credentials(self):
@@ -86,7 +87,7 @@ class JWTLoginErrorHandlingTests(APITestCase):
         response = self.client.post(
             "/api/token/",
             {
-                "username": "tester_de_mensaje",
+                "email": "tester@unitasker.com",
                 "password": "Contrasenia_incorrecta"
             },
             format="json",
@@ -102,8 +103,8 @@ class JWTLoginErrorHandlingTests(APITestCase):
         response = self.client.post(
             "/api/token/",
             {
-                "username": "usuario_que_no_existe", 
-                "password": "Contrasenia_mala"
+                "email": "noexiste@unitasker.com", 
+                "password": "Contrasenia_mala",
             },
             format="json",
         )

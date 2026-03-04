@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from usuarios.views import UsuarioViewSet
 from planner.views import ActividadViewSet, TareaViewSet, RegistroAvanceViewSet
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 from usuarios.auth import SafeTokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 
