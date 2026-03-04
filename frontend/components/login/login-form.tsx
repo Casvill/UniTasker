@@ -24,7 +24,7 @@ export function LoginForm() {
     // Simulate login delay
     await new Promise((resolve) => setTimeout(resolve, 1200))
     setIsLoading(false)
-    router.push("/")
+    router.push("/dashboard")
   }
 
   return (
