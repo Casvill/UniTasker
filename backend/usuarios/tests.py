@@ -31,7 +31,6 @@ class JWTUnauthorizedCasesTests(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
             username="tester_de_jwt",
-            email="jwt@test.com",
             password="Contrasenia!",
         )
         #Ejemplo de un endpoint
@@ -61,3 +60,52 @@ class JWTUnauthorizedCasesTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(expired)}")
         response = self.client.get(self.protected_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class JWTLoginErrorHandlingTests(APITestCase):
+    """
+    Para este conjunto de test validan el manejo seguro de errores en el
+    endpoint de autenticación JWT (/api/token/) 
+
+    Casos para testing:
+        - test_existing_user_wrong_credentials & test_invalid_credentials
+            Ambos verifican que el sistema responda con 401 y un mensaje genérico cuando las 
+            credenciales son inválidas, en uno creamos un usuario real e intentamos la autenticación
+            con una credencial invalida, en otro ambas son invalidad.
+    """
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="tester_de_mensaje",
+            password="Contrasenia_correcta"
+        )
+
+    def test_existing_user_wrong_credentials(self):
+        """
+        Verifica que un usuario existente con contraseña incorrecta
+        retorne 401 y mensaje genérico.
+        """
+        response = self.client.post(
+            "/api/token/",
+            {
+                "username": "tester_de_mensaje",
+                "password": "Contrasenia_incorrecta"
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data.get("detail"), "Credenciales inválidas.")
+
+    def test_invalid_credentials(self):
+        """
+        Verifica que cuando ambas credenciales (en este caso)
+        retorne 401 y mensaje genérico.
+        """
+        response = self.client.post(
+            "/api/token/",
+            {
+                "username": "usuario_que_no_existe", 
+                "password": "Contrasenia_mala"
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data.get("detail"), "Credenciales inválidas.")
