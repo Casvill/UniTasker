@@ -1,34 +1,68 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { apiFetch, setTokens } from "@/lib/api"
+import { useTheme } from "next-themes"
 
 export function LoginForm() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate login delay
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-    setIsLoading(false)
-    router.push("/dashboard")
+    setError(null)
+
+    try {
+      const data = await apiFetch<{ access: string; refresh: string }>("/token/", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      })
+
+      setTokens(data.access, data.refresh, email)
+      router.push("/dashboard")
+    } catch (err: any) {
+      console.error("Login error:", err)
+      setError(err.message || "Error al iniciar sesión. Por favor, verifica tus credenciales.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen relative">
+      {/* Botón de cambio de tema flotante */}
+      {mounted && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 right-4 z-50 hover:bg-secondary rounded-full"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </Button>
+      )}
+
       {/* Left panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden flex-col items-center justify-center p-12">
         <div className="absolute inset-0 opacity-10">
@@ -38,7 +72,6 @@ export function LoginForm() {
         </div>
 
         <div className="relative z-10 max-w-md text-center">
-
           <h1 className="text-4xl font-bold text-primary-foreground mb-4 text-balance">
             Organiza tus actividades sin estrés
           </h1>
@@ -69,13 +102,22 @@ export function LoginForm() {
       <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="flex items-center justify-center mb-10">
+            {/* Logo dinámico según el tema */}
             <Image
               src="/unitasker.svg"
               alt="Logo UniTasker"
               width={300}
               height={300}
               priority
-              className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl"
+              className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl block dark:hidden"
+            />
+            <Image
+              src="/unitaskerv2.svg"
+              alt="Logo UniTasker Dark"
+              width={300}
+              height={300}
+              priority
+              className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl hidden dark:block"
             />
           </div>
 
@@ -83,6 +125,13 @@ export function LoginForm() {
             <h2 className="text-2xl font-bold text-foreground">Bienvenido de nuevo</h2>
             <p className="text-muted-foreground mt-1">Accede a tu espacio personal y continúa organizando tus actividades.</p>
           </div>
+
+          {error && (
+            <Alert variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">

@@ -1,14 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, Mail, Lock, User, Check } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, Check, AlertCircle, Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { apiFetch } from "@/lib/api"
+import { useTheme } from "next-themes"
 
 const passwordRequirements = [
     { label: "Mínimo 8 caracteres", test: (p: string) => p.length >= 8 },
@@ -19,6 +22,8 @@ const passwordRequirements = [
 
 export function RegisterForm() {
     const router = useRouter()
+    const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -27,6 +32,11 @@ export function RegisterForm() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
     const [passwordFocused, setPasswordFocused] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const passwordsMatch = password === confirmPassword && confirmPassword.length > 0
     const allRequirementsMet = passwordRequirements.every((req) => req.test(password))
@@ -35,13 +45,40 @@ export function RegisterForm() {
         e.preventDefault()
         if (!allRequirementsMet || !passwordsMatch) return
         setIsLoading(true)
-        await new Promise((resolve) => setTimeout(resolve, 1200))
-        setIsLoading(false)
-        router.push("/login")
+        setError(null)
+
+        try {
+            await apiFetch("/usuarios/", {
+                method: "POST",
+                body: JSON.stringify({
+                    username: name.replace(/\s+/g, "_").toLowerCase(),
+                    email: email,
+                    password: password
+                }),
+            })
+            router.push("/login?registered=true")
+        } catch (err: any) {
+            console.error("Registration error:", err)
+            setError(err.message || "Error al crear la cuenta. Inténtalo de nuevo.")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen relative">
+            {/* Botón de cambio de tema flotante */}
+            {mounted && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-4 right-4 z-50 hover:bg-secondary rounded-full"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                >
+                    {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </Button>
+            )}
+
             {/* Left panel - Branding */}
             <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden flex-col items-center justify-center p-12">
                 <div className="absolute inset-0 opacity-10">
@@ -51,7 +88,6 @@ export function RegisterForm() {
                 </div>
 
                 <div className="relative z-10 max-w-md text-center">
-
                     <h1 className="text-4xl font-bold text-primary-foreground mb-4 text-balance">
                         Comienza a organizar tu semestre hoy
                     </h1>
@@ -79,15 +115,23 @@ export function RegisterForm() {
             {/* Right panel - Register form */}
             <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-background">
                 <div className="w-full max-w-md space-y-6">
-                    {/* Mobile logo */}
                     <div className="flex items-center justify-center mb-10">
+                        {/* Logo dinámico según el tema */}
                         <Image
                             src="/unitasker.svg"
                             alt="Logo UniTasker"
                             width={300}
                             height={300}
                             priority
-                            className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl"
+                            className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl block dark:hidden"
+                        />
+                        <Image
+                            src="/unitaskerv2.svg"
+                            alt="Logo UniTasker Dark"
+                            width={300}
+                            height={300}
+                            priority
+                            className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl hidden dark:block"
                         />
                     </div>
 
@@ -95,6 +139,13 @@ export function RegisterForm() {
                         <h2 className="text-2xl font-bold text-foreground">Crea tu cuenta</h2>
                         <p className="text-muted-foreground mt-1">Empieza a planificar tus actividades académicas de forma organizada.</p>
                     </div>
+
+                    {error && (
+                        <Alert variant="destructive" className="bg-destructive/10 text-destructive border-destructive/20">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
@@ -200,7 +251,7 @@ export function RegisterForm() {
                                 </button>
                             </div>
                             {confirmPassword.length > 0 && !passwordsMatch && (
-                                <p className="text-xs text-destructive">Passwords do not match</p>
+                                <p className="text-xs text-destructive">Las contraseñas no coinciden</p>
                             )}
                         </div>
 

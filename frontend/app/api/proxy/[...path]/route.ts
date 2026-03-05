@@ -1,69 +1,67 @@
 import { NextRequest, NextResponse } from "next/server"
 
+// Forzamos que no se use caché para las variables de entorno en el edge runtime
+export const dynamic = 'force-dynamic'
+
 const API_URL = process.env.API_URL
 const BASIC_USER = process.env.BASIC_USER
 const BASIC_PASS = process.env.BASIC_PASS
 
-function must(v: string | undefined, name: string) {
-    if (!v) throw new Error(`Missing env var: ${name}`)
-    return v
-}
-
 function basicAuth() {
-    const user = must(BASIC_USER, "BASIC_USER")
-    const pass = must(BASIC_PASS, "BASIC_PASS")
-    return `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`
+    return `Basic ${Buffer.from(`${BASIC_USER || 'admin'}:${BASIC_PASS || 'admin'}`).toString("base64")}`
 }
 
 async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
     try {
         const { path } = await ctx.params
+        // Si por alguna razón la env var no carga, usamos localhost por defecto
+        const base = (process.env.API_URL || "http://127.0.0.1:8000/api").replace(/\/+$/, "")
+        const finalPath = path.join("/")
+        const queryString = req.nextUrl.search || ""
+        
+        const url = `${base}/${finalPath}/${queryString}`.replace(/([^:]\/)\/+/g, "$1")
 
-        const base = must(API_URL, "API_URL").replace(/\/+$/, "")
-        const joinedPath = path.join("/") // ej "actividades"
-        const url = `${base}/${path.join("/")}/${req.nextUrl.search ?? ""}`
-
-
-        console.log("[proxy] base:", base)
-        console.log("[proxy] path:", joinedPath)
-        console.log("[proxy] url:", url)
-        console.log("[proxy] method:", req.method)
+        console.log(`[proxy] ${req.method} -> ${url}`)
 
         const method = req.method
         const hasBody = !["GET", "HEAD"].includes(method)
         const body = hasBody ? await req.text() : undefined
 
+        const authHeader = req.headers.get("Authorization") || basicAuth()
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s
+
         const upstream = await fetch(url, {
             method,
             headers: {
-                Authorization: basicAuth(),
-
+                "Authorization": authHeader,
                 ...(hasBody ? { "Content-Type": req.headers.get("content-type") || "application/json" } : {}),
             },
             body,
+            signal: controller.signal,
+            cache: 'no-store'
         })
+        clearTimeout(timeoutId)
 
         const contentType = upstream.headers.get("content-type") || ""
         const raw = await upstream.text()
 
-
         if (upstream.status === 204) return new NextResponse(null, { status: 204 })
-        if (!raw) return new NextResponse(null, { status: upstream.status })
+        
+        const responseHeaders = new Headers()
+        if (contentType) responseHeaders.set("Content-Type", contentType)
 
-        if (contentType.includes("application/json")) {
-            try {
-                return NextResponse.json(JSON.parse(raw), { status: upstream.status })
-            } catch {
-                return new NextResponse(raw, { status: upstream.status })
-            }
-        }
+        return new NextResponse(raw, { 
+            status: upstream.status,
+            headers: responseHeaders
+        })
 
-        return new NextResponse(raw, { status: upstream.status })
     } catch (error: any) {
-        console.error("[proxy] ERROR:", error)
+        console.error("[proxy] FATAL ERROR:", error.message)
         return NextResponse.json(
-            { message: "Proxy error", error: String(error?.message || error) },
-            { status: 500 }
+            { detail: `Error de conexión con el servidor local: ${error.message}. Asegúrate de que Django esté corriendo en el puerto 8000.` },
+            { status: 502 }
         )
     }
 }
