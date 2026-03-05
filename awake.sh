@@ -3,7 +3,7 @@
 # URL de tu servicio
 URL="https://unitaskis.onrender.com/api/"
 # IMPORTANTE: Sin espacios alrededor del igual
-INTERVAL=100
+INTERVAL=160
 
 echo "------------------------------------------"
 echo "🚀 Manteniendo vivo: $URL"
