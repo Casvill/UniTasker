@@ -12,6 +12,11 @@ class ActividadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+
+        if getattr(self, 'swagger_fake_view', False):
+            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
+            return Actividad.objects.none()
+
         return Actividad.objects.filter(usuario=self.request.user)
 
     def perform_create(self, serializer):
@@ -26,6 +31,11 @@ class TareaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+
+        if getattr(self, 'swagger_fake_view', False):
+            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
+            return Tarea.objects.none()
+
         actividad_id = self.request.query_params.get("actividad")
 
         queryset = Tarea.objects.filter(actividad__usuario=self.request.user)
@@ -68,6 +78,11 @@ class RegistroAvanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+
+        if getattr(self, 'swagger_fake_view', False):
+            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
+            return RegistroAvance.objects.none()
+
         return RegistroAvance.objects.filter(
             tarea__actividad__usuario=self.request.user
         )
