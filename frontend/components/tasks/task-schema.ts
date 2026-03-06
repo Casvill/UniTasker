@@ -1,26 +1,15 @@
 import { z } from "zod"
 
-export const ActivitySchema = z.object({
-    
-    title: z
+export const TaskSchema = z.object({
+  title: z
     .string()
-    .nonempty({ message: "Dale un nombre a tu actividad." })
-    .min(2, { message: "¡Este nombre es muy corto!" })
-    .max(25, { message: "¡Este nombre es muy largo!" }),
-    
-    type: z
-      .enum(["examen", "quiz", "taller", "proyecto", "otro"], { 
-            errorMap: () => ({ message: "Selecciona un tipo de evaluación." })
-        }),
-    
-    course: z
+    .nonempty({ message: "Escribe un nombre para la tarea." })
+    .min(2, { message: "El nombre es muy corto." })
+    .max(80, { message: "El nombre es muy largo." }),
+
+  dueDate: z
     .string()
-    .nonempty({ message: "Rellena el nombre del curso." })
-        .min(2, { message: "¡Nombre de curso muy corto!" }),
-    
-    dueDate: z
-    .string()
-    .min(1, { message: "Ingresa una fecha de entrega." })
+    .min(1, { message: "Selecciona una fecha objetivo." })
     .refine((value) => {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -28,8 +17,12 @@ export const ActivitySchema = z.object({
       const selected = new Date(`${value}T00:00:00`)
       return selected >= today 
     }, "¡Esa fecha ya pasó!"),
-    
-    description: z.string().optional(),
+
+  estimatedHours: z
+    .string()
+    .min(1, { message: "Ingresa horas estimadas." })
+    .refine((v) => !Number.isNaN(Number(v)), { message: "Debe ser un número válido." })
+    .refine((v) => Number(v) > 0, { message: "Las horas deben ser mayores a 0." }),
 })
 
-export type ActivityFormValues = z.infer<typeof ActivitySchema>
+export type TaskFormValues = z.infer<typeof TaskSchema>
