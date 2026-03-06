@@ -8,9 +8,11 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 
 const menuItems = [
+  { icon: Calendar, label: "Hoy", href: "/today" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: BookCheck, label: "Actividades", badge: "124", href: "/tasks" },
   { icon: Calendar, label: "Calendario", href: "/calendar" },
+
 ]
 
 const generalItems = [

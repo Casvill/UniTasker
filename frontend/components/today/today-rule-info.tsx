@@ -1,35 +1,20 @@
 "use client"
 
 import { Info } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
 
 export function TodayRuleInfo() {
     return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                    <Info className="h-4 w-4" />
-                    ¿Cómo se ordena esto?
-                </Button>
-            </PopoverTrigger>
-
-            <PopoverContent align="end" className="w-[320px]">
-                <div className="space-y-2">
-                    <p className="text-sm font-medium">Regla de orden</p>
+        <div className="rounded-xl border bg-muted/40 p-4">
+            <div className="flex items-start gap-3">
+                <Info className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                <div className="space-y-1">
+                    <p className="text-sm font-medium">Cómo se ordena esta vista</p>
                     <p className="text-sm text-muted-foreground">
-                        Se agrupa en <b>Vencidas</b>, <b>Para hoy</b> y <b>Próximas</b>.
-                        <br />
-                        Orden: vencidas (más antiguas primero), hoy, y próximas (fecha más cercana).
-                        <br />
-                        Empates: primero la de <b>menor esfuerzo</b>.
+                        Las subtareas se agrupan en <strong>Vencidas</strong>, <strong>Para hoy</strong> y{" "}
+                        <strong>Próximas</strong>. Dentro de cada grupo, se ordenan por fecha priorizando la de <strong>menor esfuerzo</strong>.
                     </p>
                 </div>
-            </PopoverContent>
-        </Popover>
+            </div>
+        </div>
     )
 }
