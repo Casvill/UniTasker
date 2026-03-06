@@ -67,9 +67,10 @@ export function TodayTaskCard({
         <article
             className={cn(
                 "rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
-                variant === "overdue" && "border-destructive/20",
-                variant === "today" && "border-amber-500/20",
-                variant === "upcoming" && "border-blue-500/20",
+                "dark:bg-white/[0.035] dark:border-white/10 dark:shadow-none dark:hover:bg-white/[0.055]",
+                variant === "overdue" && "border-destructive/20 dark:border-red-500/20",
+                variant === "today" && "border-amber-500/20 dark:border-amber-400/20",
+                variant === "upcoming" && "border-blue-500/20 dark:border-blue-400/20",
                 isChecked && "opacity-75"
             )}
         >
@@ -91,17 +92,17 @@ export function TodayTaskCard({
                             {task.title || "Subtarea sin título"}
                         </h4>
 
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground dark:text-zinc-300/90">
                             {task.actividad_title || "Actividad sin título"}
                         </p>
 
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground dark:text-zinc-400">
                             {task.course || "Sin curso"}
                         </p>
                     </div>
 
                     <div className="flex flex-col gap-2 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
+                        <div className="flex items-center gap-2 text-muted-foreground dark:text-zinc-300/80">
                             <Clock3 className="h-4 w-4" />
                             <span>
                                 {task.estimated_effort == null
@@ -113,9 +114,9 @@ export function TodayTaskCard({
                         <div
                             className={cn(
                                 "flex items-center gap-2 font-medium",
-                                variant === "overdue" && "text-destructive",
-                                variant === "today" && "text-amber-700 dark:text-amber-400",
-                                variant === "upcoming" && "text-blue-700 dark:text-blue-400"
+                                variant === "overdue" && "text-destructive dark:text-red-400",
+                                variant === "today" && "text-amber-700 dark:text-amber-300",
+                                variant === "upcoming" && "text-blue-700 dark:text-blue-300"
                             )}
                         >
                             <CalendarDays className="h-4 w-4" />
