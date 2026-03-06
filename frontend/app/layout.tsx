@@ -6,8 +6,14 @@ import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const _geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+})
+const _geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+})
 
 export const metadata: Metadata = {
   title: "Unitasker",
@@ -28,7 +34,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="font-sans antialiased">
+      <body className={`${_geist.variable} ${_geistMono.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
