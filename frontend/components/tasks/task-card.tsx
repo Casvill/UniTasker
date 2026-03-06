@@ -3,23 +3,23 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Tag, Calendar } from "lucide-react"
-import { Task } from "./task-types"
+import { Activity } from "./task-types"
 
 interface TaskCardProps {
-  task: Task
+  task: Activity
   index: number
-  onToggleActivity: (task: Task) => void
-  onToggleSubtask: (taskId: number, subId: number) => void
-  onOpenManage: (task: Task) => void
-  onOpenEdit: (e: React.MouseEvent, task: Task) => void
-  onDelete: (e: React.MouseEvent, taskId: number) => void
+  onToggleActivity: (activity: Activity) => void
+  onToggleTask: (activityId: number, taskId: number) => void
+  onOpenManage: (activity: Activity) => void
+  onOpenEdit: (e: React.MouseEvent, activity: Activity) => void
+  onDelete: (e: React.MouseEvent, activityId: number) => void
 }
 
 export function TaskCard({ 
   task, 
   index, 
   onToggleActivity, 
-  onToggleSubtask, 
+  onToggleTask, 
   onOpenManage, 
   onOpenEdit, 
   onDelete 
@@ -66,20 +66,11 @@ export function TaskCard({
                   </Badge>
                 ))}
               </div>
-              {/* <Badge
-                variant={
-                  task.priority === "High" ? "destructive" : task.priority === "Medium" ? "default" : "secondary"
-                }
-                className="shrink-0"
-              >
-                {task.priority}
-              </Badge> */}
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
-              {/* <Tag className="w-4 h-4" /> */}
               {task.project}
             </span>
             <span className="flex items-center gap-1">
@@ -88,38 +79,29 @@ export function TaskCard({
             </span>
           </div>
 
-          {/* <div className="flex gap-2 flex-wrap">
-            {task.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-ss">
-                {tag}
-              </Badge>
-            ))}
-          </div> */}
-
           <div className="mt-3 space-y-2 border-t pt-3">
-            {task.subtasks?.filter((s: any) => s.nombre !== "General").map((sub: any) => (
-              <div key={sub.id} className="flex items-center justify-between group/sub">
+            {task.tasks?.filter((t: any) => t.title !== "General").map((t: any) => (
+              <div key={t.id} className="flex items-center justify-between group/sub">
                 <div className="flex items-center gap-2">
                   <Checkbox 
-                    checked={!!sub.registroId} 
-                    onCheckedChange={() => onToggleSubtask(task.id, sub.id)}
+                    checked={t.completed} 
+                    onCheckedChange={() => onToggleTask(task.id, t.id)}
                     onClick={(e) => e.stopPropagation()}
                     className="h-3.5 w-3.5 rounded-full"
                   />
-                  <span className={`text-sm ${!!sub.registroId ? "line-through opacity-50" : "text-foreground/80"}`}>
-                    {sub.nombre}
+                  <span className={`text-sm ${t.completed ? "line-through opacity-50" : "text-foreground/80"}`}>
+                    {t.title}
                   </span>
                 </div>
                 <span className="text-[10px] text-muted-foreground opacity-0 group-hover/sub:opacity-100 transition-opacity">
-                  {sub.horas_estimadas}h
+                  {t.estimatedHours}h
                 </span>
               </div>
             ))}
             
-            {/* Validación para cuando no hay tareas (ignorando la tarea oculta 'General') */}
-            {(!task.subtasks || task.subtasks.filter((s: any) => s.nombre !== "General").length === 0) && (
+            {(!task.tasks || task.tasks.filter((t: any) => t.title !== "General").length === 0) && (
               <p className="text-sm italic text-muted-foreground">
-                ¡Agrega subtareas a esta actividad! 
+                ¡Agrega tareas a esta actividad! 
               </p>
             )}
           </div>

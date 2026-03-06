@@ -94,19 +94,12 @@ Con esto ya estará andando el ba ckend de manera local en http://localhost:8000
 
 ## Frontend
 
-1. Preparar archivo .env con estos datos:
-```bash  
-API_URL=https://unitaskis.onrender.com/api
-BASIC_USER=Anacleto
-BASIC_PASS=contrasenia*1
-```
-
-2. Instalar dependencias:
+1. Instalar dependencias:
 ```bash
 npm install
 ``` 
 
-3. Ejecutar el servidor de desarrollo:
+2. Ejecutar el servidor de desarrollo:
 ```bash 
 npm run dev
 ```
@@ -125,9 +118,6 @@ Si ya tienes configurado tu entorno (`venv` y `npm install`), puedes iniciar amb
 ### 🪟 Windows (CMD / PowerShell)
 1.  Ejecuta el archivo: `start-dev.bat` o haz doble clic sobre él.
     *(Esto abrirá dos ventanas independientes. Ciérralas para detener los servidores)*
-
-[Tabla de Contenido](#tabla-de-contenido) 
-___
 
 [Tabla de Contenido](#tabla-de-contenido) 
 ___

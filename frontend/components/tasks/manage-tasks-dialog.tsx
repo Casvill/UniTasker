@@ -16,39 +16,39 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar, Clock, Trash2, CheckCircle2, Pencil, Tag } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { SubtaskSchema, SubtaskFormValues } from "./subtask-schema"
+import { TaskSchema, TaskFormValues } from "./task-schema"
+import { Activity } from "./task-types"
 
 type ManageTasksDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  activity: any
-  onActivityUpdate: (updatedActivity: any) => void
+  activity: Activity | null
+  onActivityUpdate: (updatedActivity: Activity) => void
   onRefresh: () => void
 }
 
 export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpdate, onRefresh }: ManageTasksDialogProps) {
-  // const [newSubtask, setNewSubtask] = React.useState({ nombre: "", fecha: "", horas: "" });
   const [editingId, setEditingId] = React.useState<number | string | null>(null);
-  const [editingSubtask, setEditingSubtask] = React.useState({ nombre: "", fecha: "", horas: "" });
+  const [editingTask, setEditingTask] = React.useState({ title: "", dueDate: "", estimatedHours: "" });
 
-  const form = useForm<SubtaskFormValues>({
-    resolver: zodResolver(SubtaskSchema),
-    defaultValues: { nombre: "", fecha: "", horas: "" },
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(TaskSchema),
+    defaultValues: { title: "", dueDate: "", estimatedHours: "" },
     mode: "onTouched",
   });
 
   const { register, handleSubmit, formState, reset } = form;
   const { errors, isSubmitting } = formState;
 
-  const onSubmitSubtask = async (values: SubtaskFormValues) => {
+  const onSubmitTask = async (values: TaskFormValues) => {
     if (!activity) return;
 
     const promise = apiFetch<any>("/tareas/", {
       method: "POST",
       body: JSON.stringify({
-        nombre: values.nombre,
-        fecha_objetivo: values.fecha,
-        horas_estimadas: parseFloat(values.horas),
+        nombre: values.title,
+        fecha_objetivo: values.dueDate,
+        horas_estimadas: parseFloat(values.estimatedHours),
         actividad: activity.id,
       }),
     });
@@ -64,14 +64,14 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     reset();
   };
 
-  const handleUpdateSubtask = async (id: number | string) => {
-    if (!editingSubtask.nombre.trim()) return;
+  const handleUpdateTask = async (id: number | string) => {
+    if (!editingTask.title.trim()) return;
     const promise = apiFetch<any>(`/tareas/${id}/`, {
       method: "PATCH",
       body: JSON.stringify({
-        nombre: editingSubtask.nombre,
-        fecha_objetivo: editingSubtask.fecha || null,
-        horas_estimadas: parseFloat(editingSubtask.horas) || 0,
+        nombre: editingTask.title,
+        fecha_objetivo: editingTask.dueDate || null,
+        horas_estimadas: parseFloat(editingTask.estimatedHours) || 0,
       }),
     });
     toast.promise(promise, {
@@ -85,7 +85,7 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     });
   };
 
-  const handleDeleteSubtask = async (id: string | number) => {
+  const handleDeleteTask = async (id: string | number) => {
     if (!confirm("¿Eliminar tarea?")) return;
     const promise = apiFetch(`/tareas/${id}/`, { method: "DELETE" });
     toast.promise(promise, {
@@ -95,12 +95,13 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     });
   };
 
-  const handleToggleSubtask = async (id: string | number) => {
-    const subtask = activity.subtasks.find((s: any) => s.id === id);
-    if (!subtask) return;
+  const handleToggleTask = async (id: string | number) => {
+    if (!activity) return;
+    const task = activity.tasks.find((t: any) => t.id === id);
+    if (!task) return;
     try {
-      if (!!subtask.registroId) {
-        await apiFetch(`/registros/${subtask.registroId}/`, { method: "DELETE" });
+      if (!!task.registrationId) {
+        await apiFetch(`/registros/${task.registrationId}/`, { method: "DELETE" });
         toast.info("Marcada como pendiente");
       } else {
         await apiFetch("/registros/", {
@@ -109,7 +110,7 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
             tarea: id,
             fecha: new Date().toISOString().split('T')[0],
             nota: "Completada",
-            horas_reales: subtask.horas_estimadas || 0
+            horas_reales: task.estimatedHours || 0
           }),
         });
         toast.success("Completada");
@@ -122,9 +123,9 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
     if (!activity) return;
     try {
       toast.loading("Actualizando...");
-      let pending = activity.subtasks?.filter((s: any) => !s.registroId) || [];
-      if (!activity.subtasks || activity.subtasks.length === 0) {
-        const newSub: any = await apiFetch("/tareas/", {
+      let pending = activity.tasks?.filter((t: any) => !t.registrationId) || [];
+      if (!activity.tasks || activity.tasks.length === 0) {
+        const newTask: any = await apiFetch("/tareas/", {
           method: "POST",
           body: JSON.stringify({
             actividad: activity.id, nombre: "General",
@@ -132,14 +133,14 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
             horas_estimadas: 1
           })
         });
-        pending = [{ id: newSub.id, horas_estimadas: 1 }];
+        pending = [{ id: newTask.id, estimatedHours: 1 } as any];
       }
-      await Promise.all(pending.map((s: any) => 
+      await Promise.all(pending.map((t: any) => 
         apiFetch("/registros/", {
           method: "POST",
           body: JSON.stringify({
-            tarea: s.id, fecha: new Date().toISOString().split('T')[0],
-            nota: "Completada", horas_reales: s.horas_estimadas || 0
+            tarea: t.id, fecha: new Date().toISOString().split('T')[0],
+            nota: "Completada", horas_reales: t.estimatedHours || 0
           }),
         })
       ));
@@ -171,19 +172,19 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
 
         <div className="p-4 pt-0 space-y-2"> 
           <h3 className="text-lg font-semibold text-foreground justify-center">¿Quieres agregar una nueva tarea?</h3>
-          <form noValidate onSubmit={handleSubmit(onSubmitSubtask)} className="grid gap-2 p-2 rounded-xl bg-card border border-border shadow-sm">
+          <form noValidate onSubmit={handleSubmit(onSubmitTask)} className="grid gap-2 p-2 rounded-xl bg-card border border-border shadow-sm">
             <div className="space-y-1">
-              <Input placeholder="Describe que tienes que hacer" className="bg-background border-border h-8 text-sm" {...register("nombre")} />
-              {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
+              <Input placeholder="Describe que tienes que hacer" className="bg-background border-border h-8 text-sm" {...register("title")} />
+              {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Input type="date" className="bg-background border-border h-7 text-xs" {...register("fecha")} />
-                {errors.fecha && <p className="text-xs text-destructive">{errors.fecha.message}</p>}
+                <Input type="date" className="bg-background border-border h-7 text-xs" {...register("dueDate")} />
+                {errors.dueDate && <p className="text-xs text-destructive">{errors.dueDate.message}</p>}
               </div>
               <div className="space-y-1">
-                <Input type="number" placeholder="¿Horas estimadas?" className="bg-background border-border h-7 text-xs" {...register("horas")} />
-                {errors.horas && <p className="text-xs text-destructive">{errors.horas.message}</p>}
+                <Input type="number" placeholder="¿Horas estimadas?" className="bg-background border-border h-7 text-xs" {...register("estimatedHours")} />
+                {errors.estimatedHours && <p className="text-xs text-destructive">{errors.estimatedHours.message}</p>}
               </div>
             </div>
             <Button type="submit" disabled={isSubmitting}>
@@ -194,32 +195,32 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
           <section className="space-y-3">
             <h3 className="text-sm font-bold text-foreground">Tareas Actuales</h3>
             <div className="max-h-[250px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-              {activity?.subtasks?.filter((s: any) => s.nombre !== "General").length > 0 ? (
-                activity.subtasks.filter((s: any) => s.nombre !== "General").map((sub: any) => (
-                  <div key={sub.id} className="p-3 bg-card border border-border rounded-xl hover:border-secondary/40 transition-colors shadow-sm">
-                    {editingId === sub.id ? (
+              {activity?.tasks?.filter((t: any) => t.title !== "General").length > 0 ? (
+                activity.tasks.filter((t: any) => t.title !== "General").map((task: any) => (
+                  <div key={task.id} className="p-3 bg-card border border-border rounded-xl hover:border-secondary/40 transition-colors shadow-sm">
+                    {editingId === task.id ? (
                       <div className="space-y-2">
-                        <Input className="h-8 text-sm" value={editingSubtask.nombre} onChange={(e) => setEditingSubtask({ ...editingSubtask, nombre: e.target.value })} />
+                        <Input className="h-8 text-sm" value={editingTask.title} onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })} />
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingId(null)}>Cancelar</Button>
-                          <Button size="sm" className="h-7 text-xs bg-[#00682b]" onClick={() => handleUpdateSubtask(sub.id)}>Actualizar</Button>
+                          <Button size="sm" className="h-7 text-xs bg-[#00682b]" onClick={() => handleUpdateTask(task.id)}>Actualizar</Button>
                         </div>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Checkbox checked={!!sub.registroId} onCheckedChange={() => handleToggleSubtask(sub.id)} className="rounded-full mt-1" />
+                          <Checkbox checked={task.completed} onCheckedChange={() => handleToggleTask(task.id)} className="rounded-full mt-1" />
                           <div className="flex flex-col">
-                            <span className={`text-sm font-semibold ${!!sub.registroId ? "line-through text-slate-400" : "text-foreground"}`}>{sub.nombre}</span>
+                            <span className={`text-sm font-semibold ${task.completed ? "line-through text-slate-400" : "text-foreground"}`}>{task.title}</span>
                             <div className="flex gap-3 text-[10px] text-slate-400">
-                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {sub.fecha_objetivo || 'Sin fecha'}</span>
-                              <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {sub.horas_estimadas}h</span>
+                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {task.dueDate || 'Sin fecha'}</span>
+                              <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {task.estimatedHours}h</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => { setEditingId(sub.id); setEditingSubtask({ nombre: sub.nombre, fecha: sub.fecha_objetivo || "", horas: sub.horas_estimadas?.toString() || "" }); }} className="h-8 w-8 text-muted-foreground"><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteSubtask(sub.id)} className="h-8 w-8 text-muted-foreground"><Trash2 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => { setEditingId(task.id); setEditingTask({ title: task.title, dueDate: task.dueDate || "", estimatedHours: task.estimatedHours?.toString() || "" }); }} className="h-8 w-8 text-muted-foreground"><Pencil className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="h-8 w-8 text-muted-foreground"><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
                     )}
@@ -227,7 +228,7 @@ export function ManageTasksDialog({ open, onOpenChange, activity, onActivityUpda
                 ))
               ) : (
                 <div className="text-center py-10 bg-card rounded-2xl border border-dashed border-border">
-                  <p className="text-xs text-muted-foreground italic">No hay subtareas.</p>
+                  <p className="text-xs text-muted-foreground italic">No hay tareas.</p>
                 </div>
               )}
             </div>

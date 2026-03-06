@@ -1,16 +1,25 @@
 export type Task = {
   id: number
   title: string
+  dueDate: string | null
+  estimatedHours: number
+  completed: boolean
+  registrationId?: number
+}
+
+export type Activity = {
+  id: number
+  title: string
   project: string
   priority: "High" | "Medium" | "Low"
   dueDate: string
   completed: boolean
   tags: string[]
-  subtasks: any[]
+  tasks: Task[]
   description: string
 }
 
-export function normalizePriority(value: any): Task["priority"] {
+export function normalizePriority(value: any): Activity["priority"] {
   const v = String(value ?? "").toLowerCase()
   if (v === "high" || v === "alta" || v === "alto") return "High"
   if (v === "low" || v === "baja" || v === "bajo") return "Low"
