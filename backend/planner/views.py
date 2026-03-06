@@ -1,10 +1,11 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
 from .models import Actividad, Tarea, RegistroAvance
 from django.shortcuts import get_object_or_404
-from .serializers import ActividadSerializer, TareaSerializer, RegistroAvanceSerializer
-
+from .serializers import ActividadSerializer, TareaSerializer, RegistroAvanceSerializer, HoyTareaSerializer
+from datetime import date, timedelta
 
 # ------------------------------------------------------------------------------------
 class ActividadViewSet(viewsets.ModelViewSet):
@@ -46,7 +47,7 @@ class TareaViewSet(viewsets.ModelViewSet):
 
             queryset = queryset.filter(actividad_id=actividad_id)
 
-        return queryset.order_by("fecha_objetivo")  # 👈 orden estable
+        return queryset.order_by("fecha_objetivo")  
 
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
@@ -60,7 +61,7 @@ class TareaViewSet(viewsets.ModelViewSet):
 
         # Si actividad no existe → 404
         actividad = get_object_or_404(
-            Actividad, id=actividad_id, usuario=request.user  # seguridad extra 🔥
+            Actividad, id=actividad_id, usuario=request.user  
         )
 
         serializer = self.get_serializer(data=request.data)
@@ -69,6 +70,42 @@ class TareaViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=["get"], url_path="hoy")
+    def hoy(self, request):
+        """
+        GET /api/tareas/hoy/
+        Retorna:
+          {
+            "vencidas": [...],
+            "para_hoy": [...],
+            "proximas": [...]
+          }
+        Regla(susceptible a cambio): próximas = próximas 7 días (no trae tareas superiores a 7 días)
+        """
+        user = request.user
+        today = date.today()
+        window_end = today + timedelta(days=7)
+
+        base_qs = Tarea.objects.filter(actividad__usuario=user)
+
+        # Pre-fetch registros para evitar múltiples consultas: build map tarea_id -> latest_reg_id
+        regs_qs = RegistroAvance.objects.filter(tarea__in=base_qs).order_by("tarea", "-id")
+        regs_map = {}
+        for r in regs_qs:
+            if r.tarea_id not in regs_map:
+                regs_map[r.tarea_id] = r.id
+
+        # Construir querysets por grupo con orden y desempate
+        vencidas_qs = base_qs.filter(fecha_objetivo__lt=today).order_by("fecha_objetivo", "horas_estimadas")
+        para_hoy_qs = base_qs.filter(fecha_objetivo=today).order_by("horas_estimadas")
+        proximas_qs = base_qs.filter(fecha_objetivo__gt=today, fecha_objetivo__lte=window_end).order_by("fecha_objetivo", "horas_estimadas")
+
+        # Serializar (usamos HoyTareaSerializer para incluir flags)
+        vencidas = HoyTareaSerializer(vencidas_qs, many=True, context={"request": request}).data
+        para_hoy = HoyTareaSerializer(para_hoy_qs, many=True, context={"request": request}).data
+        proximas = HoyTareaSerializer(proximas_qs, many=True, context={"request": request}).data
+
+        return Response({"vencidas": vencidas, "para_hoy": para_hoy, "proximas": proximas}) 
 
 # ------------------------------------------------------------------------------------
 

@@ -81,3 +81,16 @@ class RegistroAvanceSerializer(serializers.ModelSerializer):
 
 
 # ------------------------------------------------------------------------------------
+
+class HoyTareaSerializer(serializers.ModelSerializer):
+    """
+    Serializer para la respuesta /tareas/hoy/
+    """
+    class Meta:
+        model = Tarea
+        fields = ["id", 
+                  "nombre", 
+                  "fecha_objetivo", 
+                  "horas_estimadas", 
+                  "actividad", 
+                  ]
