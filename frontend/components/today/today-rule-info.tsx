@@ -1,20 +1,34 @@
 "use client"
 
-import { Info } from "lucide-react"
+import { CircleHelp } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function TodayRuleInfo() {
     return (
-        <div className="rounded-xl border bg-muted/40 p-4">
-            <div className="flex items-start gap-3">
-                <Info className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                <div className="space-y-1">
-                    <p className="text-sm font-medium">Cómo se ordena esta vista</p>
-                    <p className="text-sm text-muted-foreground">
-                        Las subtareas se agrupan en <strong>Vencidas</strong>, <strong>Para hoy</strong> y{" "}
-                        <strong>Próximas</strong>. Dentro de cada grupo, se ordenan por fecha priorizando la de <strong>menor esfuerzo</strong>.
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="outline" className="gap-2 bg-transparent">
+                        <CircleHelp className="h-4 w-4" />
+                        Info
+                    </Button>
+                </TooltipTrigger>
+
+                <TooltipContent side="bottom" align="center" className="max-w-xs">
+                    <p className="text-sm">
+                        Las subtareas se agrupan en <strong>Vencidas</strong>,{" "}
+                        <strong>Para hoy</strong> y <strong>Próximas</strong>. Dentro de cada
+                        grupo se ordenan por fecha priorizando la de{" "}
+                        <strong>menor esfuerzo</strong>.
                     </p>
-                </div>
-            </div>
-        </div>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     )
 }
