@@ -110,3 +110,15 @@ class JWTLoginErrorHandlingTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data.get("detail"), "Credenciales inválidas.")
+
+"""
+
+Desde la carpeta del backend:
+
+correr pruebas de jwt:
+python manage.py test usuarios.tests.JWTUnauthorizedCasesTests --keepdb -v 2
+
+correr pruebas de autenticaciones inválidas:
+python manage.py test usuarios.tests.JWTLoginErrorHandlingTests --keepdb -v 2
+
+"""
