@@ -3,24 +3,31 @@ type ApiError = {
     [key: string]: any
 }
 
-export function setTokens(access: string, refresh: string, email?: string) {
+export function setTokens(access: string, refresh: string, email?: string, remember: boolean = false) {
     if (typeof window !== "undefined") {
-        localStorage.setItem("access_token", access)
-        localStorage.setItem("refresh_token", refresh)
-        if (email) localStorage.setItem("user_email", email)
+        const storage = remember ? localStorage : sessionStorage
+        storage.setItem("access_token", access)
+        storage.setItem("refresh_token", refresh)
+        if (email) storage.setItem("user_email", email)
+        
+        // Clear from other storage to avoid conflicts
+        const otherStorage = remember ? sessionStorage : localStorage
+        otherStorage.removeItem("access_token")
+        otherStorage.removeItem("refresh_token")
+        otherStorage.removeItem("user_email")
     }
 }
 
 export function getAccessToken() {
     if (typeof window !== "undefined") {
-        return localStorage.getItem("access_token")
+        return localStorage.getItem("access_token") || sessionStorage.getItem("access_token")
     }
     return null
 }
 
 export function getUserEmail() {
     if (typeof window !== "undefined") {
-        return localStorage.getItem("user_email")
+        return localStorage.getItem("user_email") || sessionStorage.getItem("user_email")
     }
     return null
 }
@@ -30,6 +37,9 @@ export function logout() {
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
         localStorage.removeItem("user_email")
+        sessionStorage.removeItem("access_token")
+        sessionStorage.removeItem("refresh_token")
+        sessionStorage.removeItem("user_email")
         window.location.href = "/login"
     }
 }
