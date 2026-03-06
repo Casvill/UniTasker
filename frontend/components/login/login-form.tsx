@@ -16,7 +16,7 @@ import { useTheme } from "next-themes"
 
 export function LoginForm() {
   const router = useRouter()
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -52,18 +52,6 @@ export function LoginForm() {
 
   return (
     <div className="flex min-h-screen relative">
-      {/* Botón de cambio de tema flotante */}
-      {mounted && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 z-50 hover:bg-secondary rounded-full"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </Button>
-      )}
-
       {/* Left panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden flex-col items-center justify-center p-12">
         <div className="absolute inset-0 opacity-10">

@@ -56,17 +56,6 @@ export function Header({ title, description, actions }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2">
-          {mounted && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hover:bg-secondary h-8 w-8"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-          )}
-          
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <Bell className="w-4 h-4" />
           </Button>
