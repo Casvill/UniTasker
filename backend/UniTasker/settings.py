@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "usuarios",
     "planner",
     "corsheaders",
+    "drf_yasg",
 ]
 
 MIDDLEWARE = [
