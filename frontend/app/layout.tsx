@@ -21,11 +21,7 @@ export const metadata: Metadata = {
   description: "Planifique, priorice y realice sus tareas con facilidad",
   generator: "v0.app",
   icons: {
-    icon: [
-      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
-      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
-      { url: "/unitaskerfavi.svg", type: "image/svg+xml" },
-    ],
+    icon: "/unitaskerfavi.svg",
     apple: "/apple-icon.png",
   },
 }
