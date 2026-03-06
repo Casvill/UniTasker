@@ -5,12 +5,15 @@ import { TodayRuleInfo } from "@/components/today/today-rule-info"
 export default function TodayPage() {
     return (
         <div className="flex min-h-screen bg-background">
-            <main className="flex-1 p-4 lg:p-6 lg:ml-64">
+            <main className="flex-1 p-4 lg:ml-64 lg:p-6">
                 <Header
                     title="Hoy"
                     description="Lo urgente y lo próximo, ordenado para decidir qué hacer primero."
-                    actions={<TodayRuleInfo />}
                 />
+
+                <div className="mt-6">
+                    <TodayRuleInfo />
+                </div>
 
                 <div className="mt-6">
                     <TodayContent />

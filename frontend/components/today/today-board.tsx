@@ -2,11 +2,17 @@
 
 import { TodayColumn } from "@/components/today/today-column"
 
-type Subtask = {
-    id: string | number
+export type SubtaskStatus = "pendiente" | "finalizado"
+
+export type Subtask = {
+    id: number
     title: string
-    target_date: string // "YYYY-MM-DD"
-    estimated_effort?: number | null
+    target_date: string
+    estimated_effort: number | null
+    actividad_title: string
+    course: string
+    type: string
+    status: SubtaskStatus
 }
 
 export function TodayBoard({
@@ -21,7 +27,7 @@ export function TodayBoard({
     upcomingDays: number
 }) {
     return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
             <TodayColumn
                 title="Vencidas"
                 variant="overdue"
