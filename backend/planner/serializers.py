@@ -86,6 +86,9 @@ class HoyTareaSerializer(serializers.ModelSerializer):
     """
     Serializer para la respuesta /tareas/hoy/
     """
+
+    actividad = serializers.CharField(source="actividad.titulo", read_only=True)
+
     class Meta:
         model = Tarea
         fields = ["id", 
