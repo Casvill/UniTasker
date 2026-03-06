@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ActivitySchema, ActivityFormValues } from "./task-schema"
+import { ActivitySchema, ActivityFormValues } from "./activity-schema"
 
 type CreateActivityDialogProps = {
     onCreated?: () => void
