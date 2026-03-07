@@ -28,3 +28,4 @@ GEMINI.md/
 # Next.js build/cache
 frontend/.next/
 .next/
+.vercel

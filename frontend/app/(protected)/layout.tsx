@@ -30,9 +30,9 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen lg:flex">
+    <div className="min-h-screen">
       <div className="hidden lg:block">
-        <Sidebar />
+        <Sidebar className="fixed inset-y-0 left-0 h-screen" />
       </div>
 
       <div className="flex-1">{children}</div>

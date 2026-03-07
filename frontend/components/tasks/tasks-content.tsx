@@ -4,6 +4,7 @@ import { Search, Filter, Calendar, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEffect, useMemo, useState } from "react"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
@@ -19,6 +20,8 @@ type TasksContentProps = {
 
 export function TasksContent({ refreshKey }: TasksContentProps) {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all")
+  const [typeFilter, setTypeFilter] = useState<string>("all")
+  const [dateFilter, setDateFilter] = useState<string>("all")
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +48,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   // Esta es la función que querías implementar para abrir el diálogo tras crear
   const handleOnCreated = (newActivity?: any) => {
     loadActivities(true)
-    if (newActivity && !activityToEdit) {
+    if (newActivity) {
       const mappedActivity: Activity = {
         id: newActivity.id,
         title: newActivity.titulo ?? "Sin título",
@@ -224,10 +227,13 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       });
 
       setActivities(mapped);
-      if (selectedActivity) {
-        const updated = mapped.find(m => m.id === selectedActivity.id);
-        if (updated) setSelectedActivity(updated);
-      }
+      
+      // Fix race condition: use functional update to get the latest selectedActivity
+      setSelectedActivity(prev => {
+        if (!prev) return null;
+        const updated = mapped.find(m => m.id === prev.id);
+        return updated || prev;
+      });
     } catch (e) {
       setError("Ocurrió un problema al cargar los datos.");
     } finally {
@@ -240,11 +246,67 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   }, [refreshKey]);
 
   const filteredActivities = useMemo(() => {
-    const byStatus = filter === "all" ? activities : filter === "completed" ? activities.filter((a) => a.completed) : activities.filter((a) => !a.completed)
+    let result = filter === "all" ? activities : filter === "completed" ? activities.filter((a) => a.completed) : activities.filter((a) => !a.completed)
+    
+    if (typeFilter !== "all") {
+      result = result.filter(a => a.tags.some(tag => tag.toLowerCase() === typeFilter.toLowerCase()))
+    }
+
+    if (dateFilter !== "all") {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      
+      const getEndOfDay = (d: Date) => {
+        const end = new Date(d);
+        end.setHours(23, 59, 59, 999);
+        return end;
+      };
+
+      result = result.filter(a => {
+        if (!a.dueDate || a.dueDate === "Sin fecha") return false;
+        
+        // Parse date from DD/MM/YYYY format
+        const [day, month, year] = a.dueDate.split("/").map(Number);
+        const taskDate = new Date(year, month - 1, day);
+
+        if (dateFilter === "today") {
+          return taskDate.getTime() === now.getTime();
+        }
+
+        if (dateFilter === "this-week") {
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          return taskDate >= startOfWeek && taskDate <= getEndOfDay(endOfWeek);
+        }
+
+        if (dateFilter === "next-week") {
+          const startOfNextWeek = new Date(now);
+          startOfNextWeek.setDate(now.getDate() + (7 - now.getDay()));
+          const endOfNextWeek = new Date(startOfNextWeek);
+          endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+          return taskDate >= startOfNextWeek && taskDate <= getEndOfDay(endOfNextWeek);
+        }
+
+        if (dateFilter === "this-month") {
+          return taskDate.getMonth() === now.getMonth() && taskDate.getFullYear() === now.getFullYear();
+        }
+
+        if (dateFilter === "next-month") {
+          const nextMonth = new Date(now);
+          nextMonth.setMonth(now.getMonth() + 1);
+          return taskDate.getMonth() === nextMonth.getMonth() && taskDate.getFullYear() === nextMonth.getFullYear();
+        }
+
+        return true;
+      });
+    }
+
     const q = query.trim().toLowerCase()
-    if (!q) return byStatus
-    return byStatus.filter((a) => `${a.title} ${a.project} ${a.tags.join(" ")}`.toLowerCase().includes(q))
-  }, [filter, activities, query])
+    if (!q) return result
+    return result.filter((a) => `${a.title} ${a.project} ${a.tags.join(" ")}`.toLowerCase().includes(q))
+  }, [filter, typeFilter, dateFilter, activities, query])
 
   if (loading) return <SkeletonTasks />
   if (error) return (
@@ -266,8 +328,38 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           <Input placeholder="Buscar actividades..." className="pl-10" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 bg-transparent"><Filter className="w-4 h-4" /> Filtro</Button>
-          <Button variant="outline" className="gap-2 bg-transparent"><Calendar className="w-4 h-4" /> Fecha</Button>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[165px] bg-transparent border-input">
+              <div className="flex items-center gap-2 truncate">
+                <Filter className="w-4 h-4 shrink-0" />
+                <SelectValue placeholder="Tipo" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="examen">Examen</SelectItem>
+              <SelectItem value="quiz">Quiz</SelectItem>
+              <SelectItem value="taller">Taller</SelectItem>
+              <SelectItem value="proyecto">Proyecto</SelectItem>
+              <SelectItem value="otro">Otro</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="w-[185px] bg-transparent border-input">
+              <div className="flex items-center gap-2 truncate">
+                <Calendar className="w-4 h-4 shrink-0" />
+                <SelectValue placeholder="Fecha" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las fechas</SelectItem>
+              <SelectItem value="today">Para hoy</SelectItem>
+              <SelectItem value="this-week">Esta semana</SelectItem>
+              <SelectItem value="next-week">Próxima semana</SelectItem>
+              <SelectItem value="this-month">Este mes</SelectItem>
+              <SelectItem value="next-month">Próximo mes</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -307,7 +399,10 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       
       <CreateActivityDialog 
         open={isEditActivityOpen} 
-        onOpenChange={setIsEditActivityOpen} 
+        onOpenChange={(open) => {
+          setIsEditActivityOpen(open);
+          if (!open) setActivityToEdit(null);
+        }} 
         activity={activityToEdit} 
         onCreated={loadActivities} 
         showTrigger={false} 
