@@ -62,6 +62,11 @@ export function ManageTasksDialog({
   const [isEditingDescription, setIsEditingDescription] = React.useState(false)
   const [activityDescription, setActivityDescription] = React.useState("")
 
+  const minDate = React.useMemo(() => {
+    const d = new Date()
+    return d.toISOString().split("T")[0]
+  }, [])
+
   React.useEffect(() => {
     if (activity) {
       setActivityDescription(activity.description || "")
@@ -366,7 +371,7 @@ export function ManageTasksDialog({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
                 <div className="space-y-1">
-                  <Input id="dueDate" type="date" {...register("dueDate")} />
+                  <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
                   {errors.dueDate && (
                     <p className="text-xs text-destructive">
                       {errors.dueDate.message}
@@ -436,6 +441,7 @@ export function ManageTasksDialog({
                             <Label>Fecha objetivo</Label>
                             <Input
                               type="date"
+                              min={minDate}
                               value={editingTask.dueDate}
                               onChange={(e) =>
                                 setEditingTask({
