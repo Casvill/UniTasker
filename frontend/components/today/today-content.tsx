@@ -53,7 +53,7 @@ export function TodayContent() {
     const [query, setQuery] = useState("")
     const [debouncedQuery, setDebouncedQuery] = useState("")
     const [courseFilter, setCourseFilter] = useState("all")
-    const [statusFilter, setStatusFilter] = useState("pendiente")
+    const [statusFilter, setStatusFilter] = useState("all")
     
     const isFirstLoad = useRef(true)
 
