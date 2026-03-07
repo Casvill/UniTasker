@@ -48,7 +48,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   // Esta es la función que querías implementar para abrir el diálogo tras crear
   const handleOnCreated = (newActivity?: any) => {
     loadActivities(true)
-    if (newActivity && !activityToEdit) {
+    if (newActivity) {
       const mappedActivity: Activity = {
         id: newActivity.id,
         title: newActivity.titulo ?? "Sin título",
@@ -227,10 +227,13 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       });
 
       setActivities(mapped);
-      if (selectedActivity) {
-        const updated = mapped.find(m => m.id === selectedActivity.id);
-        if (updated) setSelectedActivity(updated);
-      }
+      
+      // Fix race condition: use functional update to get the latest selectedActivity
+      setSelectedActivity(prev => {
+        if (!prev) return null;
+        const updated = mapped.find(m => m.id === prev.id);
+        return updated || prev;
+      });
     } catch (e) {
       setError("Ocurrió un problema al cargar los datos.");
     } finally {
@@ -396,7 +399,10 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       
       <CreateActivityDialog 
         open={isEditActivityOpen} 
-        onOpenChange={setIsEditActivityOpen} 
+        onOpenChange={(open) => {
+          setIsEditActivityOpen(open);
+          if (!open) setActivityToEdit(null);
+        }} 
         activity={activityToEdit} 
         onCreated={loadActivities} 
         showTrigger={false} 
