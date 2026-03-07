@@ -49,6 +49,7 @@ export function TodayContent() {
         total: 0,
         mensaje: null
     })
+    const [allCourses, setAllCourses] = useState<string[]>([])
     const [query, setQuery] = useState("")
     const [courseFilter, setCourseFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("pendiente")
@@ -63,6 +64,21 @@ export function TodayContent() {
         type: tarea.tipo || "Sin tipo",
         status: (tarea.estado === "hecha" ? "finalizado" : "pendiente") as SubtaskStatus,
     }), []);
+
+    const fetchCourses = useCallback(async () => {
+        try {
+            const activities: any = await apiFetch("/actividades/")
+            const activitiesList = Array.isArray(activities) ? activities : (activities?.results || [])
+            const courses = Array.from(new Set(activitiesList.map((a: any) => a.curso).filter(Boolean))).sort() as string[]
+            setAllCourses(courses)
+        } catch (e) {
+            console.error("Error fetching courses:", e)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchCourses()
+    }, [fetchCourses])
 
     const handleToggleSubtask = useCallback(async (id: number, currentStatus: SubtaskStatus) => {
         try {
@@ -97,7 +113,12 @@ export function TodayContent() {
         try {
             if (!silent) setState("loading")
 
-            const response = await apiFetch<TodayApiResponse>("/tareas/hoy/")
+            const params = new URLSearchParams()
+            if (courseFilter !== "all") params.append("curso", courseFilter)
+            if (statusFilter !== "all") params.append("estado", statusFilter)
+            if (query.trim()) params.append("search", query.trim())
+
+            const response = await apiFetch<TodayApiResponse>(`/tareas/hoy/?${params.toString()}`)
             setData(response)
             
             if (!silent) setState("success")
@@ -105,46 +126,19 @@ export function TodayContent() {
             console.error("Error cargando vista Hoy:", error)
             if (!silent) setState("error")
         }
-    }, [])
+    }, [courseFilter, statusFilter, query])
 
     useEffect(() => {
         fetchTodayData()
     }, [fetchTodayData])
 
-    const allSubtasks = useMemo(() => [
-        ...data.vencidas.map(mapBackendToSubtask),
-        ...data.para_hoy.map(mapBackendToSubtask),
-        ...data.proximas.map(mapBackendToSubtask),
-    ], [data, mapBackendToSubtask])
-
-    const availableCourses = useMemo(() => {
-        return Array.from(new Set(allSubtasks.map((task) => task.course).filter(Boolean))).sort()
-    }, [allSubtasks])
-
-    const filterTasks = useCallback((tasks: TareaBackend[]) => {
-        const normalizedQuery = query.trim().toLowerCase()
-        return tasks.map(mapBackendToSubtask).filter((task) => {
-            const matchesCourse = courseFilter === "all" || task.course === courseFilter
-            const matchesStatus = statusFilter === "all" || task.status === statusFilter
-            const matchesQuery =
-                normalizedQuery.length === 0 ||
-                task.title.toLowerCase().includes(normalizedQuery) ||
-                task.actividad_title.toLowerCase().includes(normalizedQuery) ||
-                task.course.toLowerCase().includes(normalizedQuery)
-
-            return matchesCourse && matchesStatus && matchesQuery
-        })
-    }, [query, courseFilter, statusFilter, mapBackendToSubtask])
-
-    const filteredOverdue = useMemo(() => filterTasks(data.vencidas), [data.vencidas, filterTasks])
-    const filteredToday = useMemo(() => filterTasks(data.para_hoy), [data.para_hoy, filterTasks])
-    const filteredUpcoming = useMemo(() => filterTasks(data.proximas), [data.proximas, filterTasks])
+    const availableCourses = allCourses;
 
     const isEmpty =
         state === "success" &&
-        filteredOverdue.length === 0 &&
-        filteredToday.length === 0 &&
-        filteredUpcoming.length === 0
+        data.vencidas.length === 0 &&
+        data.para_hoy.length === 0 &&
+        data.proximas.length === 0
 
     if (state === "loading") {
         return (
@@ -197,9 +191,9 @@ export function TodayContent() {
                 </div>
             ) : (
                 <TodayBoard
-                    overdue={filteredOverdue}
-                    today={filteredToday}
-                    upcoming={filteredUpcoming}
+                    overdue={data.vencidas.map(mapBackendToSubtask)}
+                    today={data.para_hoy.map(mapBackendToSubtask)}
+                    upcoming={data.proximas.map(mapBackendToSubtask)}
                     upcomingDays={UPCOMING_DAYS}
                     onToggleSubtask={handleToggleSubtask}
                 />
