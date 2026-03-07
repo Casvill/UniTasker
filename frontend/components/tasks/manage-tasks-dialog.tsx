@@ -8,6 +8,8 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -249,12 +251,12 @@ export function ManageTasksDialog({
       <DialogContent className="max-h-[90vh] overflow-hidden border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[620px]">
         <DialogHeader className="border-b border-border px-6 py-3">
           <div className="space-y-1 pr-8">
-            <h2 className="text-2xl font-bold leading-tight text-foreground">
+            <DialogTitle className="text-2xl font-bold leading-tight text-foreground">
               {activity?.title || "Actividad sin título"}
-            </h2>
-            <p className="text-sm text-muted-foreground">
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
               Administra sus tareas y detalles principales.
-            </p>
+            </DialogDescription>
           </div>
         </DialogHeader>
 

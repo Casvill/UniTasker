@@ -60,6 +60,12 @@ export async function apiFetch<T>(
     })
 
     if (!res.ok) {
+        if (res.status === 401 && token) {
+            // Token is likely expired or invalid
+            logout()
+            throw new Error("Sesión expirada. Por favor, inicia sesión de nuevo.")
+        }
+
         let data: ApiError | null = null
         try {
             data = await res.json()
