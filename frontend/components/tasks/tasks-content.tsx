@@ -81,8 +81,22 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     if (!task) return;
 
     try {
-      if (!!task.registrationId) {
-        await apiFetch(`/registros/${task.registrationId}/`, { method: "DELETE" });
+      const isCurrentlyDone = task.completed;
+      const newStatus = isCurrentlyDone ? "pendiente" : "hecha";
+      
+      toast.loading(isCurrentlyDone ? "Actualizando..." : "Completando...");
+
+      // Actualizar estado de la tarea
+      await apiFetch(`/tareas/${taskId}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ estado: newStatus }),
+      });
+
+      if (isCurrentlyDone) {
+        if (task.registrationId) {
+          await apiFetch(`/registros/${task.registrationId}/`, { method: "DELETE" });
+        }
+        toast.dismiss();
         toast.info("Tarea marcada como pendiente");
       } else {
         await apiFetch("/registros/", {
@@ -94,10 +108,12 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
             horas_reales: task.estimatedHours || 0
           }),
         });
+        toast.dismiss();
         toast.success("Tarea completada");
       }
       loadActivities(true);
     } catch (error) {
+      toast.dismiss();
       toast.error("Algo salió mal al guardar.");
     }
   };
@@ -107,7 +123,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     try {
       toast.loading(shouldComplete ? "Completando..." : "Actualizando...");
       if (shouldComplete) {
-        let tasksToComplete = activity.tasks.filter(t => !t.registrationId);
+        let tasksToComplete = activity.tasks.filter(t => !t.completed);
         if (activity.tasks.length === 0) {
           const newTask: any = await apiFetch("/tareas/", {
             method: "POST",
@@ -115,11 +131,21 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
               actividad: activity.id,
               nombre: "General",
               fecha_objetivo: new Date().toISOString().split('T')[0],
-              horas_estimadas: 1
+              horas_estimadas: 1,
+              estado: "hecha"
             })
           });
           tasksToComplete = [{ id: newTask.id, estimatedHours: 1 } as any];
+        } else {
+          // Actualizar estado de las tareas existentes
+          await Promise.all(tasksToComplete.map(t =>
+            apiFetch(`/tareas/${t.id}/`, {
+              method: "PATCH",
+              body: JSON.stringify({ estado: "hecha" }),
+            })
+          ));
         }
+
         await Promise.all(tasksToComplete.map(t =>
           apiFetch("/registros/", {
             method: "POST",
@@ -134,9 +160,15 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         toast.dismiss();
         toast.success("Actividad completada");
       } else {
-        const done = activity.tasks.filter(t => t.registrationId);
+        const done = activity.tasks.filter(t => t.completed);
         if (done.length > 0) {
-          await Promise.all(done.map(t => apiFetch(`/registros/${t.registrationId}/`, { method: "DELETE" })));
+          await Promise.all(done.map(t => 
+            apiFetch(`/tareas/${t.id}/`, {
+              method: "PATCH",
+              body: JSON.stringify({ estado: "pendiente" }),
+            })
+          ));
+          await Promise.all(done.map(t => t.registrationId ? apiFetch(`/registros/${t.registrationId}/`, { method: "DELETE" }) : Promise.resolve()));
         }
         toast.dismiss();
         toast.info("Actividad pendiente");
@@ -172,7 +204,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
               title: t.nombre,
               dueDate: t.fecha_objetivo,
               estimatedHours: t.horas_estimadas,
-              completed: !!reg,
+              completed: t.estado === "hecha",
               registrationId: reg?.id || null
             };
           });

@@ -182,10 +182,24 @@ export function ManageTasksDialog({
     if (!task) return
 
     try {
-      if (task.registrationId) {
-        await apiFetch(`/registros/${task.registrationId}/`, {
-          method: "DELETE",
-        })
+      const isCurrentlyDone = task.completed;
+      const newStatus = isCurrentlyDone ? "pendiente" : "hecha";
+      
+      toast.loading(isCurrentlyDone ? "Actualizando..." : "Completando...");
+
+      // Actualizar estado de la tarea en la BD
+      await apiFetch(`/tareas/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ estado: newStatus }),
+      });
+
+      if (isCurrentlyDone) {
+        if (task.registrationId) {
+          await apiFetch(`/registros/${task.registrationId}/`, {
+            method: "DELETE",
+          })
+        }
+        toast.dismiss();
         toast.info("Tarea marcada como pendiente")
       } else {
         await apiFetch("/registros/", {
@@ -197,11 +211,13 @@ export function ManageTasksDialog({
             horas_reales: task.estimatedHours || 0,
           }),
         })
+        toast.dismiss();
         toast.success("Tarea completada")
       }
 
       onRefresh()
     } catch {
+      toast.dismiss();
       toast.error("No se pudo actualizar el estado de la tarea")
     }
   }
@@ -212,7 +228,7 @@ export function ManageTasksDialog({
     try {
       toast.loading("Actualizando actividad...")
 
-      let pending = activity.tasks?.filter((t: any) => !t.registrationId) || []
+      let pending = activity.tasks?.filter((t: any) => !t.completed) || []
 
       if (!activity.tasks || activity.tasks.length === 0) {
         const newTask: any = await apiFetch("/tareas/", {
@@ -222,10 +238,21 @@ export function ManageTasksDialog({
             nombre: "General",
             fecha_objetivo: new Date().toISOString().split("T")[0],
             horas_estimadas: 1,
+            estado: "hecha"
           }),
         })
 
         pending = [{ id: newTask.id, estimatedHours: 1 } as any]
+      } else {
+        // Actualizar estado de las tareas pendientes
+        await Promise.all(
+          pending.map((t: any) =>
+            apiFetch(`/tareas/${t.id}/`, {
+              method: "PATCH",
+              body: JSON.stringify({ estado: "hecha" }),
+            })
+          )
+        )
       }
 
       await Promise.all(
