@@ -39,7 +39,6 @@ export default function RootLayout({
           disableTransitionOnChange
           storageKey="unitasker-theme"
         >
-          <ThemeToggle />
           {children}
 
           <Toaster

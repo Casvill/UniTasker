@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import Link from "next/link"
 import { Loader2, Info, Search } from "lucide-react"
 
@@ -54,6 +54,9 @@ export function TodayContent() {
     const [debouncedQuery, setDebouncedQuery] = useState("")
     const [courseFilter, setCourseFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("pendiente")
+    
+    // Ref to track if it's the first load
+    const isFirstLoad = useRef(true)
 
     // Debounce query to avoid flickering and too many requests
     useEffect(() => {
@@ -125,21 +128,21 @@ export function TodayContent() {
 
             const response = await apiFetch<TodayApiResponse>(`/tareas/hoy/?${params.toString()}`)
             setData(response)
-            
-            if (!silent || state !== "success") setState("success")
+            setState("success")
+            isFirstLoad.current = false
         } catch (error) {
             console.error("Error cargando vista Hoy:", error)
-            if (!silent) setState("error")
+            setState("error")
         }
-    }, [courseFilter, statusFilter, debouncedQuery, state])
+    }, [courseFilter, statusFilter, debouncedQuery])
 
     useEffect(() => {
         fetchCourses()
     }, [fetchCourses])
 
     useEffect(() => {
-        // Silent update if we already have data (prevents flickering on search/filter)
-        fetchTodayData(state === "success")
+        // Initial load is NOT silent, subsequent ones ARE silent to prevent flickering
+        fetchTodayData(!isFirstLoad.current)
     }, [fetchTodayData])
 
     const hasActiveFilters = query !== "" || courseFilter !== "all" || statusFilter !== "all"
@@ -156,7 +159,7 @@ export function TodayContent() {
         data.para_hoy.length === 0 &&
         data.proximas.length === 0
 
-    if (state === "loading") {
+    if (state === "loading" && isFirstLoad.current) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -223,13 +226,15 @@ export function TodayContent() {
                     </div>
                 </div>
             ) : (
-                <TodayBoard
-                    overdue={data.vencidas.map(mapBackendToSubtask)}
-                    today={data.para_hoy.map(mapBackendToSubtask)}
-                    upcoming={data.proximas.map(mapBackendToSubtask)}
-                    upcomingDays={UPCOMING_DAYS}
-                    onToggleSubtask={handleToggleSubtask}
-                />
+                <div className={state === "loading" ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+                    <TodayBoard
+                        overdue={data.vencidas.map(mapBackendToSubtask)}
+                        today={data.para_hoy.map(mapBackendToSubtask)}
+                        upcoming={data.proximas.map(mapBackendToSubtask)}
+                        upcomingDays={UPCOMING_DAYS}
+                        onToggleSubtask={handleToggleSubtask}
+                    />
+                </div>
             )}
         </div>
     )
