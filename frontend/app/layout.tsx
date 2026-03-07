@@ -40,6 +40,7 @@ export default function RootLayout({
           storageKey="unitasker-theme"
         >
           {children}
+          <ThemeToggle />
 
           <Toaster
             position="top-center"

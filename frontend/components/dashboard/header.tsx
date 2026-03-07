@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useEffect, useState, ReactNode } from "react"
 import { fetchProfile, UserProfile } from "@/lib/api"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { MobileNav } from "./mobile-nav"
 
 interface HeaderProps {
   title: string
@@ -44,15 +44,18 @@ export function Header({ title, description, actions }: HeaderProps) {
 
   return (
     <header className="flex items-center justify-between gap-4 animate-slide-in-up">
-      <div className="flex-1 min-w-0">
-        <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">{title}</h1>
-        <p className="text-xs text-muted-foreground truncate">{description}</p>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="lg:hidden">
+          <MobileNav />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground truncate">{title}</h1>
+          <p className="text-xs text-muted-foreground truncate">{description}</p>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 shrink-0">
         <div className="flex items-center gap-1 md:gap-1.5">
-          <ThemeToggle className="static w-9 h-9 shadow-none border-none bg-transparent backdrop-blur-none hover:bg-accent" />
-
           <Button variant="ghost" size="icon" className="h-9 w-9">
             <Bell className="w-4 h-4" />
           </Button>
