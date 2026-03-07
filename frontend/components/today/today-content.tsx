@@ -199,7 +199,7 @@ export function TodayContent() {
         return (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-3 text-center">
                 <p className="max-w-md text-sm text-muted-foreground">
-                    No pudimos cargar las subtareas de la vista de hoy. Intenta nuevamente.
+                    No pudimos cargar las tareas de la vista de hoy. Intenta nuevamente.
                 </p>
                 <Button onClick={fetchTodayData}>Reintentar</Button>
             </div>
@@ -221,11 +221,11 @@ export function TodayContent() {
 
                 <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
                     <p className="max-w-md text-sm text-muted-foreground">
-                        Para hoy no tienes actividades programadas. ¿Quieres crear una?
+                        Para hoy no tienes tareas programadas. ¿Quieres crear una?
                     </p>
 
                     <Button asChild>
-                        <Link href="/tasks">Crear actividad</Link>
+                        <Link href="/tasks">Crear tareas</Link>
                     </Button>
                 </div>
             </div>
