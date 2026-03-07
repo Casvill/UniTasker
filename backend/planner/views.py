@@ -74,26 +74,40 @@ class TareaViewSet(viewsets.ModelViewSet):
     def hoy(self, request):
         """
         GET /api/tareas/hoy/
+
+        Query params opcionales: (US-05)
+            - curso: filtra por nombre del curso (case-insensitive, coincidencia parcial)
+            - estado: filtra por estado de la tarea (pendiente, hecha, pospuesta)
+
         Retorna:
           {
             "vencidas": [...],
             "para_hoy": [...],
             "proximas": [...]
           }
+
         Regla(susceptible a cambio): próximas = próximas 7 días (no trae tareas superiores a 7 días)
+        Los filtros se aplican ANTES de agrupar, manteniendo el orden definido.
         """
         user = request.user
         today = date.today()
         window_end = today + timedelta(days=7)
 
+        # Query params
+        curso_filter = request.query_params.get("curso", "").strip()
+        estado_filter = request.query_params.get("estado", "").strip().lower()
+
         base_qs = Tarea.objects.filter(actividad__usuario=user)
 
-        # Pre-fetch registros para evitar múltiples consultas: build map tarea_id -> latest_reg_id
-        regs_qs = RegistroAvance.objects.filter(tarea__in=base_qs).order_by("tarea", "-id")
-        regs_map = {}
-        for r in regs_qs:
-            if r.tarea_id not in regs_map:
-                regs_map[r.tarea_id] = r.id
+        # Aplicar filtro por curso (case-insensitive, coincidencia parcial)
+        if curso_filter:
+            base_qs = base_qs.filter(actividad__curso__icontains=curso_filter)
+
+        # Aplicar filtro por estado (coincidencia exacta)
+        if estado_filter:
+            valid_estados = ["pendiente", "hecha", "pospuesta"]
+            if estado_filter in valid_estados:
+                base_qs = base_qs.filter(estado=estado_filter)
 
         # Construir querysets por grupo con orden y desempate
         vencidas_qs = base_qs.filter(fecha_objetivo__lt=today).order_by("fecha_objetivo", "horas_estimadas")

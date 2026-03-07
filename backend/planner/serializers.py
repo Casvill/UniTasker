@@ -91,9 +91,12 @@ class HoyTareaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tarea
-        fields = ["id", 
-                  "nombre", 
-                  "fecha_objetivo", 
-                  "horas_estimadas", 
-                  "actividad", 
-                  ]
+        fields = [
+            "id",
+            "nombre",
+            "fecha_objetivo",
+            "horas_estimadas",
+            "estado",
+            "actividad",
+            "curso",
+            ]
