@@ -56,9 +56,11 @@ function getDateLabel(targetDate: string, variant: Variant) {
 export function TodayTaskCard({
     task,
     variant,
+    onToggle,
 }: {
     task: Subtask
     variant: Variant
+    onToggle?: () => void
 }) {
     const dateLabel = getDateLabel(task.target_date, variant)
     const isChecked = task.status === "finalizado"
@@ -77,6 +79,7 @@ export function TodayTaskCard({
             <div className="flex items-start gap-3">
                 <Checkbox
                     checked={isChecked}
+                    onCheckedChange={onToggle}
                     className="mt-1"
                     aria-label={`Marcar ${task.title} como finalizada`}
                 />

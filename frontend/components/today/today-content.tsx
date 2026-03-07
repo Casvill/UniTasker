@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { apiFetch } from "@/lib/api"
+import { toast } from "sonner"
 import { TodayBoard, type Subtask, type SubtaskStatus } from "@/components/today/today-board"
 import { TodayFilters } from "@/components/today/today-filters"
 
@@ -26,7 +27,7 @@ type TareaApi = {
     fecha_objetivo: string
     horas_estimadas: string | number | null
     actividad: string | number
-    estado?: "pendiente" | "finalizado"
+    estado?: "pendiente" | "hecha" | "pospuesta"
 }
 
 type LoadState = "loading" | "error" | "success"
@@ -84,9 +85,32 @@ export function TodayContent() {
     const [courseFilter, setCourseFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("pendiente")
 
-    const fetchTodayData = useCallback(async () => {
+    const handleToggleSubtask = useCallback(async (id: number, currentStatus: SubtaskStatus) => {
         try {
-            setState("loading")
+            const isHecha = currentStatus === "finalizado";
+            const newStatus = isHecha ? "pendiente" : "hecha";
+            
+            toast.loading(isHecha ? "Actualizando..." : "Completando...");
+            
+            await apiFetch(`/tareas/${id}/`, {
+                method: "PATCH",
+                body: JSON.stringify({ estado: newStatus })
+            });
+
+            // Actualizar localmente para respuesta inmediata
+            setSubtasks(prev => prev.map(s => s.id === id ? { ...s, status: newStatus === "hecha" ? "finalizado" : "pendiente" } : s));
+            toast.dismiss();
+            toast.success(isHecha ? "Tarea marcada como pendiente" : "Tarea completada");
+        } catch (error) {
+            toast.dismiss();
+            toast.error("Error al actualizar la tarea");
+            console.error("Error toggling task:", error);
+        }
+    }, []);
+
+    const fetchTodayData = useCallback(async (silent = false) => {
+        try {
+            if (!silent) setState("loading")
 
             const actividadesResponse = await apiFetch("/actividades/")
             const actividadesList: ActividadApi[] = isActividadArray(actividadesResponse)
@@ -115,7 +139,7 @@ export function TodayContent() {
                                 actividad_title: actividadTitle,
                                 course: actividad.curso || "Sin curso",
                                 type: actividad.tipo || "Sin tipo",
-                                status: (tarea.estado ?? "pendiente") as SubtaskStatus,
+                                status: (tarea.estado === "hecha" ? "finalizado" : "pendiente") as SubtaskStatus,
                             }
                         })
                         .filter((item): item is Subtask => item !== null)
@@ -123,10 +147,10 @@ export function TodayContent() {
             )
 
             setSubtasks(subtasksNested.flat())
-            setState("success")
+            if (!silent) setState("success")
         } catch (error) {
             console.error("Error cargando vista Hoy:", error)
-            setState("error")
+            if (!silent) setState("error")
         }
     }, [])
 
@@ -249,6 +273,7 @@ export function TodayContent() {
                 today={today}
                 upcoming={upcoming}
                 upcomingDays={UPCOMING_DAYS}
+                onToggleSubtask={handleToggleSubtask}
             />
         </div>
     )
