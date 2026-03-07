@@ -177,11 +177,21 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="order-2 sm:order-1 flex-1 h-10 text-sm" disabled={isSubmitting}>
+                    <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-4 mt-auto">
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => { reset(); setOpen(false); }} 
+                            className="w-full sm:flex-1 h-10 text-sm" 
+                            disabled={isSubmitting}
+                        >
                             Cancelar
                         </Button>
-                        <Button type="submit" className="order-1 sm:order-2 flex-1 h-10 text-sm" disabled={isSubmitting}>
+                        <Button 
+                            type="submit" 
+                            className="w-full sm:flex-1 h-10 text-sm" 
+                            disabled={isSubmitting}
+                        >
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {activity ? "Guardar Cambios" : "Guardar Actividad"}
                         </Button>
