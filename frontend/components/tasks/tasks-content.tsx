@@ -246,7 +246,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     let result = filter === "all" ? activities : filter === "completed" ? activities.filter((a) => a.completed) : activities.filter((a) => !a.completed)
     
     if (typeFilter !== "all") {
-      result = result.filter(a => a.tags.includes(typeFilter))
+      result = result.filter(a => a.tags.some(tag => tag.toLowerCase() === typeFilter.toLowerCase()))
     }
 
     if (dateFilter !== "all") {
