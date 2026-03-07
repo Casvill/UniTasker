@@ -88,6 +88,7 @@ class HoyTareaSerializer(serializers.ModelSerializer):
     """
 
     actividad = serializers.CharField(source="actividad.titulo", read_only=True)
+    curso = serializers.CharField(source="actividad.curso", read_only=True)
 
     class Meta:
         model = Tarea
