@@ -51,8 +51,17 @@ export function TodayContent() {
     })
     const [allCourses, setAllCourses] = useState<string[]>([])
     const [query, setQuery] = useState("")
+    const [debouncedQuery, setDebouncedQuery] = useState("")
     const [courseFilter, setCourseFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("pendiente")
+
+    // Debounce query to avoid flickering and too many requests
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedQuery(query)
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [query])
 
     const mapBackendToSubtask = useCallback((tarea: TareaBackend): Subtask => ({
         id: tarea.id,
@@ -112,25 +121,25 @@ export function TodayContent() {
             const params = new URLSearchParams()
             if (courseFilter !== "all") params.append("curso", courseFilter)
             if (statusFilter !== "all") params.append("estado", statusFilter)
-            // search parameter support depends on backend implementation of 'search' query param
-            if (query.trim()) params.append("search", query.trim())
+            if (debouncedQuery.trim()) params.append("search", debouncedQuery.trim())
 
             const response = await apiFetch<TodayApiResponse>(`/tareas/hoy/?${params.toString()}`)
             setData(response)
             
-            if (!silent) setState("success")
+            if (!silent || state !== "success") setState("success")
         } catch (error) {
             console.error("Error cargando vista Hoy:", error)
             if (!silent) setState("error")
         }
-    }, [courseFilter, statusFilter, query])
+    }, [courseFilter, statusFilter, debouncedQuery, state])
 
     useEffect(() => {
         fetchCourses()
     }, [fetchCourses])
 
     useEffect(() => {
-        fetchTodayData()
+        // Silent update if we already have data (prevents flickering on search/filter)
+        fetchTodayData(state === "success")
     }, [fetchTodayData])
 
     const hasActiveFilters = query !== "" || courseFilter !== "all" || statusFilter !== "all"
