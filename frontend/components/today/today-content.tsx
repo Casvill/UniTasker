@@ -2,32 +2,32 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Loader2 } from "lucide-react"
+import { Loader2, Info } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
 import { TodayBoard, type Subtask, type SubtaskStatus } from "@/components/today/today-board"
 import { TodayFilters } from "@/components/today/today-filters"
 
-type ActividadApi = {
-    id: number
-    titulo: string
-    descripcion: string
-    tipo: string
-    curso: string
-    fecha_entrega: string
-    creada_en: string
-    usuario: number
-}
-
-type TareaApi = {
+type TareaBackend = {
     id: number
     nombre: string
     fecha_objetivo: string
     horas_estimadas: string | number | null
-    actividad: string | number
-    estado?: "pendiente" | "hecha" | "pospuesta"
+    estado: "pendiente" | "hecha" | "pospuesta"
+    actividad: string
+    curso: string
+    tipo?: string
+}
+
+type TodayApiResponse = {
+    vencidas: TareaBackend[]
+    para_hoy: TareaBackend[]
+    proximas: TareaBackend[]
+    total: number
+    mensaje: string | null
 }
 
 type LoadState = "loading" | "error" | "success"
@@ -40,50 +40,29 @@ function parseEffort(value: string | number | null | undefined): number | null {
     return Number.isNaN(parsed) ? null : parsed
 }
 
-function getTodayString() {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, "0")
-    const day = String(now.getDate()).padStart(2, "0")
-    return `${year}-${month}-${day}`
-}
-
-function addDays(dateString: string, days: number) {
-    const [year, month, day] = dateString.split("-").map(Number)
-    const date = new Date(year, month - 1, day)
-    date.setDate(date.getDate() + days)
-
-    const y = date.getFullYear()
-    const m = String(date.getMonth() + 1).padStart(2, "0")
-    const d = String(date.getDate()).padStart(2, "0")
-    return `${y}-${m}-${d}`
-}
-
-function compareByRule(a: Subtask, b: Subtask) {
-    if (a.target_date !== b.target_date) {
-        return a.target_date.localeCompare(b.target_date)
-    }
-
-    const aEffort = a.estimated_effort ?? Number.POSITIVE_INFINITY
-    const bEffort = b.estimated_effort ?? Number.POSITIVE_INFINITY
-
-    return aEffort - bEffort
-}
-
-function isActividadArray(data: unknown): data is ActividadApi[] {
-    return Array.isArray(data)
-}
-
-function isTareaArray(data: unknown): data is TareaApi[] {
-    return Array.isArray(data)
-}
-
 export function TodayContent() {
     const [state, setState] = useState<LoadState>("loading")
-    const [subtasks, setSubtasks] = useState<Subtask[]>([])
+    const [data, setData] = useState<TodayApiResponse>({
+        vencidas: [],
+        para_hoy: [],
+        proximas: [],
+        total: 0,
+        mensaje: null
+    })
     const [query, setQuery] = useState("")
     const [courseFilter, setCourseFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("pendiente")
+
+    const mapBackendToSubtask = useCallback((tarea: TareaBackend): Subtask => ({
+        id: tarea.id,
+        title: tarea.nombre || "Subtarea sin título",
+        target_date: tarea.fecha_objetivo,
+        estimated_effort: parseEffort(tarea.horas_estimadas),
+        actividad_title: tarea.actividad || "Actividad sin título",
+        course: tarea.curso || "Sin curso",
+        type: tarea.tipo || "Sin tipo",
+        status: (tarea.estado === "hecha" ? "finalizado" : "pendiente") as SubtaskStatus,
+    }), []);
 
     const handleToggleSubtask = useCallback(async (id: number, currentStatus: SubtaskStatus) => {
         try {
@@ -97,8 +76,14 @@ export function TodayContent() {
                 body: JSON.stringify({ estado: newStatus })
             });
 
-            // Actualizar localmente para respuesta inmediata
-            setSubtasks(prev => prev.map(s => s.id === id ? { ...s, status: newStatus === "hecha" ? "finalizado" : "pendiente" } : s));
+            // Actualizar localmente todas las categorías
+            setData(prev => ({
+                ...prev,
+                vencidas: prev.vencidas.map(s => s.id === id ? { ...s, estado: newStatus } : s),
+                para_hoy: prev.para_hoy.map(s => s.id === id ? { ...s, estado: newStatus } : s),
+                proximas: prev.proximas.map(s => s.id === id ? { ...s, estado: newStatus } : s),
+            }));
+
             toast.dismiss();
             toast.success(isHecha ? "Tarea marcada como pendiente" : "Tarea completada");
         } catch (error) {
@@ -112,41 +97,9 @@ export function TodayContent() {
         try {
             if (!silent) setState("loading")
 
-            const actividadesResponse = await apiFetch("/actividades/")
-            const actividadesList: ActividadApi[] = isActividadArray(actividadesResponse)
-                ? actividadesResponse
-                : []
-
-            const subtasksNested = await Promise.all(
-                actividadesList.map(async (actividad) => {
-                    const tareasResponse = await apiFetch(`/tareas/?actividad=${actividad.id}`)
-                    const tareasList: TareaApi[] = isTareaArray(tareasResponse) ? tareasResponse : []
-
-                    return tareasList
-                        .map((tarea): Subtask | null => {
-                            if (!tarea.fecha_objetivo) return null
-
-                            const actividadTitle =
-                                typeof tarea.actividad === "string" && Number.isNaN(Number(tarea.actividad))
-                                    ? tarea.actividad
-                                    : actividad.titulo || "Actividad sin título"
-
-                            return {
-                                id: tarea.id,
-                                title: tarea.nombre || "Subtarea sin título",
-                                target_date: tarea.fecha_objetivo,
-                                estimated_effort: parseEffort(tarea.horas_estimadas),
-                                actividad_title: actividadTitle,
-                                course: actividad.curso || "Sin curso",
-                                type: actividad.tipo || "Sin tipo",
-                                status: (tarea.estado === "hecha" ? "finalizado" : "pendiente") as SubtaskStatus,
-                            }
-                        })
-                        .filter((item): item is Subtask => item !== null)
-                })
-            )
-
-            setSubtasks(subtasksNested.flat())
+            const response = await apiFetch<TodayApiResponse>("/tareas/hoy/")
+            setData(response)
+            
             if (!silent) setState("success")
         } catch (error) {
             console.error("Error cargando vista Hoy:", error)
@@ -158,20 +111,21 @@ export function TodayContent() {
         fetchTodayData()
     }, [fetchTodayData])
 
+    const allSubtasks = useMemo(() => [
+        ...data.vencidas.map(mapBackendToSubtask),
+        ...data.para_hoy.map(mapBackendToSubtask),
+        ...data.proximas.map(mapBackendToSubtask),
+    ], [data, mapBackendToSubtask])
+
     const availableCourses = useMemo(() => {
-        return Array.from(new Set(subtasks.map((task) => task.course).filter(Boolean))).sort()
-    }, [subtasks])
+        return Array.from(new Set(allSubtasks.map((task) => task.course).filter(Boolean))).sort()
+    }, [allSubtasks])
 
-    const filteredSubtasks = useMemo(() => {
+    const filterTasks = useCallback((tasks: TareaBackend[]) => {
         const normalizedQuery = query.trim().toLowerCase()
-
-        return subtasks.filter((task) => {
-            const matchesCourse =
-                courseFilter === "all" || task.course === courseFilter
-
-            const matchesStatus =
-                statusFilter === "all" || task.status === statusFilter
-
+        return tasks.map(mapBackendToSubtask).filter((task) => {
+            const matchesCourse = courseFilter === "all" || task.course === courseFilter
+            const matchesStatus = statusFilter === "all" || task.status === statusFilter
             const matchesQuery =
                 normalizedQuery.length === 0 ||
                 task.title.toLowerCase().includes(normalizedQuery) ||
@@ -180,36 +134,17 @@ export function TodayContent() {
 
             return matchesCourse && matchesStatus && matchesQuery
         })
-    }, [subtasks, courseFilter, statusFilter, query])
+    }, [query, courseFilter, statusFilter, mapBackendToSubtask])
 
-    const { overdue, today, upcoming } = useMemo(() => {
-        const todayString = getTodayString()
-        const upcomingLimit = addDays(todayString, UPCOMING_DAYS)
-
-        const overdue = filteredSubtasks
-            .filter((subtask) => subtask.target_date < todayString)
-            .sort(compareByRule)
-
-        const today = filteredSubtasks
-            .filter((subtask) => subtask.target_date === todayString)
-            .sort(compareByRule)
-
-        const upcoming = filteredSubtasks
-            .filter(
-                (subtask) =>
-                    subtask.target_date > todayString &&
-                    subtask.target_date <= upcomingLimit
-            )
-            .sort(compareByRule)
-
-        return { overdue, today, upcoming }
-    }, [filteredSubtasks])
+    const filteredOverdue = useMemo(() => filterTasks(data.vencidas), [data.vencidas, filterTasks])
+    const filteredToday = useMemo(() => filterTasks(data.para_hoy), [data.para_hoy, filterTasks])
+    const filteredUpcoming = useMemo(() => filterTasks(data.proximas), [data.proximas, filterTasks])
 
     const isEmpty =
         state === "success" &&
-        overdue.length === 0 &&
-        today.length === 0 &&
-        upcoming.length === 0
+        filteredOverdue.length === 0 &&
+        filteredToday.length === 0 &&
+        filteredUpcoming.length === 0
 
     if (state === "loading") {
         return (
@@ -225,39 +160,21 @@ export function TodayContent() {
                 <p className="max-w-md text-sm text-muted-foreground">
                     No pudimos cargar las tareas de la vista de hoy. Intenta nuevamente.
                 </p>
-                <Button onClick={fetchTodayData}>Reintentar</Button>
-            </div>
-        )
-    }
-
-    if (isEmpty) {
-        return (
-            <div className="space-y-6">
-                <TodayFilters
-                    query={query}
-                    courseFilter={courseFilter}
-                    statusFilter={statusFilter}
-                    availableCourses={availableCourses}
-                    onQueryChange={setQuery}
-                    onCourseChange={setCourseFilter}
-                    onStatusChange={setStatusFilter}
-                />
-
-                <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
-                    <p className="max-w-md text-sm text-muted-foreground">
-                        Para hoy no tienes tareas programadas. ¿Quieres crear una?
-                    </p>
-
-                    <Button asChild>
-                        <Link href="/tasks">Crear tareas</Link>
-                    </Button>
-                </div>
+                <Button onClick={() => fetchTodayData()}>Reintentar</Button>
             </div>
         )
     }
 
     return (
         <div className="space-y-6">
+            {data.mensaje && (
+                <Alert variant="default" className="bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertTitle>Información</AlertTitle>
+                    <AlertDescription>{data.mensaje}</AlertDescription>
+                </Alert>
+            )}
+
             <TodayFilters
                 query={query}
                 courseFilter={courseFilter}
@@ -268,13 +185,25 @@ export function TodayContent() {
                 onStatusChange={setStatusFilter}
             />
 
-            <TodayBoard
-                overdue={overdue}
-                today={today}
-                upcoming={upcoming}
-                upcomingDays={UPCOMING_DAYS}
-                onToggleSubtask={handleToggleSubtask}
-            />
+            {isEmpty ? (
+                <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
+                    <p className="max-w-[320px] text-sm text-muted-foreground">
+                        No se encontraron tareas que coincidan con los filtros o no tienes tareas programadas.
+                    </p>
+
+                    <Button asChild variant="outline">
+                        <Link href="/tasks">Ir a Actividades</Link>
+                    </Button>
+                </div>
+            ) : (
+                <TodayBoard
+                    overdue={filteredOverdue}
+                    today={filteredToday}
+                    upcoming={filteredUpcoming}
+                    upcomingDays={UPCOMING_DAYS}
+                    onToggleSubtask={handleToggleSubtask}
+                />
+            )}
         </div>
     )
 }
