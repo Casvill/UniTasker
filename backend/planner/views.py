@@ -119,7 +119,23 @@ class TareaViewSet(viewsets.ModelViewSet):
         para_hoy = HoyTareaSerializer(para_hoy_qs, many=True, context={"request": request}).data
         proximas = HoyTareaSerializer(proximas_qs, many=True, context={"request": request}).data
 
-        return Response({"vencidas": vencidas, "para_hoy": para_hoy, "proximas": proximas}) 
+        total = len(vencidas) + len(para_hoy) + len(proximas)
+
+        # Mensaje
+        mensaje = None
+        if total == 0:
+            if curso_filter or estado_filter:
+                mensaje = "No se encontraron tareas con los filtros aplicados"
+            else:
+                mensaje = "No tienes tareas programadas"
+
+        return Response({
+            "vencidas": vencidas,
+            "para_hoy": para_hoy,
+            "proximas": proximas,
+            "total": total,
+            "mensaje": mensaje,
+        })
 
 # ------------------------------------------------------------------------------------
 
