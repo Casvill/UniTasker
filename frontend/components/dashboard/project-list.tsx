@@ -15,7 +15,7 @@ const projects = [
 export function ProjectList() {
   return (
     <Card
-      className="p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up"
+      className="p-4 sm:p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up"
       style={{ animationDelay: "700ms" }}
     >
       <div className="flex items-center justify-between mb-6">

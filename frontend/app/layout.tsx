@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -26,12 +26,18 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5, // Permitir zoom pero empezar en 1
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body className={`${_geist.variable} ${_geistMono.variable} font-sans antialiased`}>
+    <html lang="es" suppressHydrationWarning className="overflow-x-hidden">
+      <body className={`${_geist.variable} ${_geistMono.variable} font-sans antialiased overflow-x-hidden w-full`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -49,7 +55,7 @@ export default function RootLayout({
             closeButton
             duration={5000}
             toastOptions={{
-              className: "text-lg px-8 py-5 rounded-2xl shadow-2xl border bg-card",
+              className: "text-sm md:text-lg px-4 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl shadow-2xl border bg-card w-[calc(100vw-2rem)] md:w-auto",
             }}
           />
         </ThemeProvider>

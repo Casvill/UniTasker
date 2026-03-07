@@ -90,23 +90,23 @@ export function LoginForm() {
       {/* Right panel - Login form */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-background">
         <div className="w-full max-w-md space-y-8">
-          <div className="flex items-center justify-center mb-10">
+          <div className="flex items-center justify-center mb-12">
             {/* Logo dinámico según el tema */}
             <Image
               src="/unitasker.svg"
               alt="Logo UniTasker"
-              width={300}
-              height={300}
+              width={600}
+              height={600}
               priority
-              className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl block dark:hidden"
+              className="w-[70vw] max-w-[380px] sm:max-w-[420px] md:max-w-[480px] h-auto drop-shadow-2xl block dark:hidden transition-all duration-500 hover:scale-105"
             />
             <Image
               src="/unitaskerv2.svg"
               alt="Logo UniTasker Dark"
-              width={300}
-              height={300}
+              width={600}
+              height={600}
               priority
-              className="w-24 md:w-32 lg:w-48 h-auto drop-shadow-xl hidden dark:block"
+              className="w-[70vw] max-w-[380px] sm:max-w-[420px] md:max-w-[480px] h-auto drop-shadow-2xl hidden dark:block transition-all duration-500 hover:scale-105"
             />
           </div>
 

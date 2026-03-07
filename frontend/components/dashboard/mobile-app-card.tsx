@@ -7,7 +7,7 @@ import { Smartphone, Apple } from "lucide-react"
 export function MobileAppCard() {
   return (
     <Card
-      className="bg-foreground text-background p-4 transition-all duration-500 hover:shadow-2xl animate-slide-in-up overflow-hidden relative group"
+      className="bg-foreground text-background p-3 sm:p-4 transition-all duration-500 hover:shadow-2xl animate-slide-in-up overflow-hidden relative group"
       style={{ animationDelay: "900ms" }}
     >
       <div className="absolute bottom-0 left-0 right-0 h-24 overflow-hidden">

@@ -68,7 +68,7 @@ export function TodayTaskCard({
     return (
         <article
             className={cn(
-                "rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
+                "rounded-xl sm:rounded-2xl border bg-background p-3 sm:p-4 shadow-sm transition hover:shadow-md",
                 "dark:bg-white/[0.035] dark:border-white/10 dark:shadow-none dark:hover:bg-white/[0.055]",
                 variant === "overdue" && "border-destructive/20 dark:border-red-500/20",
                 variant === "today" && "border-amber-500/20 dark:border-amber-400/20",
@@ -76,37 +76,37 @@ export function TodayTaskCard({
                 isChecked && "opacity-75"
             )}
         >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2 sm:gap-3">
                 <Checkbox
                     checked={isChecked}
                     onCheckedChange={onToggle}
-                    className="mt-1"
+                    className="mt-1 shrink-0"
                     aria-label={`Marcar ${task.title} como finalizada`}
                 />
 
-                <div className="min-w-0 flex-1 space-y-3">
-                    <div className="space-y-1">
+                <div className="min-w-0 flex-1 space-y-2 sm:space-y-3">
+                    <div className="space-y-0.5 sm:space-y-1">
                         <h4
                             className={cn(
-                                "text-base font-semibold leading-snug text-foreground",
+                                "text-sm sm:text-base font-semibold leading-snug text-foreground",
                                 isChecked && "line-through text-muted-foreground"
                             )}
                         >
                             {task.title || "Subtarea sin título"}
                         </h4>
 
-                        <p className="text-sm text-muted-foreground dark:text-zinc-300/90">
+                        <p className="text-[10px] sm:text-sm text-muted-foreground dark:text-zinc-300/90 truncate">
                             {task.actividad_title || "Actividad sin título"}
                         </p>
 
-                        <p className="text-xs text-muted-foreground dark:text-zinc-400">
+                        <p className="text-[10px] text-muted-foreground dark:text-zinc-400 truncate">
                             {task.course || "Sin curso"}
                         </p>
                     </div>
 
-                    <div className="flex flex-col gap-2 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground dark:text-zinc-300/80">
-                            <Clock3 className="h-4 w-4" />
+                    <div className="flex flex-col gap-1 sm:gap-2 text-[10px] sm:text-sm">
+                        <div className="flex items-center gap-1.5 text-muted-foreground dark:text-zinc-300/80">
+                            <Clock3 className="h-3.5 w-3.5" />
                             <span>
                                 {task.estimated_effort == null
                                     ? "Esfuerzo no definido"
@@ -116,13 +116,13 @@ export function TodayTaskCard({
 
                         <div
                             className={cn(
-                                "flex items-center gap-2 font-medium",
+                                "flex items-center gap-1.5 font-medium",
                                 variant === "overdue" && "text-destructive dark:text-red-400",
                                 variant === "today" && "text-amber-700 dark:text-amber-300",
                                 variant === "upcoming" && "text-blue-700 dark:text-blue-300"
                             )}
                         >
-                            <CalendarDays className="h-4 w-4" />
+                            <CalendarDays className="h-3.5 w-3.5" />
                             <span>{dateLabel}</span>
                         </div>
                     </div>

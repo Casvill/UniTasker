@@ -35,7 +35,7 @@ export function ProjectAnalytics() {
 
   return (
     <Card
-      className="p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up bg-gradient-to-br from-background to-muted/20"
+      className="p-4 sm:p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up bg-gradient-to-br from-background to-muted/20"
       style={{ animationDelay: "400ms" }}
     >
       <div className="flex items-center justify-between mb-6">

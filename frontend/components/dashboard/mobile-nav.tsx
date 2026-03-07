@@ -2,7 +2,7 @@
 
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Sidebar } from "./sidebar"
 
 export function MobileNav() {
@@ -15,6 +15,10 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-64">
+        <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
+        <SheetDescription className="sr-only">
+          Accede a las diferentes secciones de UniTasker
+        </SheetDescription>
         <Sidebar className="border-none w-full" />
       </SheetContent>
     </Sheet>

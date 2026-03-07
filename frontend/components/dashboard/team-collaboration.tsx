@@ -43,7 +43,7 @@ const members = [
 export function TeamCollaboration() {
   return (
     <Card
-      className="p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up"
+      className="p-4 sm:p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up"
       style={{ animationDelay: "600ms" }}
     >
       <div className="flex items-center justify-between mb-6">

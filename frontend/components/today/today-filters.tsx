@@ -59,9 +59,9 @@ export function TodayFilters({
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="gap-2 bg-transparent">
-                            <Filter className="h-4 w-4" />
-                            {selectedCourseLabel}
+                        <Button variant="outline" className="gap-2 bg-transparent max-w-[140px] sm:max-w-none">
+                            <Filter className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{selectedCourseLabel}</span>
                         </Button>
                     </DropdownMenuTrigger>
 
@@ -83,9 +83,9 @@ export function TodayFilters({
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="gap-2 bg-transparent">
-                            <CheckCircle2 className="h-4 w-4" />
-                            {selectedStatusLabel}
+                        <Button variant="outline" className="gap-2 bg-transparent max-w-[140px] sm:max-w-none">
+                            <CheckCircle2 className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{selectedStatusLabel}</span>
                         </Button>
                     </DropdownMenuTrigger>
 

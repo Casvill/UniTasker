@@ -327,9 +327,9 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar actividades..." className="pl-10" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[165px] bg-transparent border-input">
+            <SelectTrigger className="w-full sm:w-[165px] bg-transparent border-input">
               <div className="flex items-center gap-2 truncate">
                 <Filter className="w-4 h-4 shrink-0" />
                 <SelectValue placeholder="Tipo" />
@@ -345,7 +345,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
             </SelectContent>
           </Select>
           <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="w-[185px] bg-transparent border-input">
+            <SelectTrigger className="w-full sm:w-[185px] bg-transparent border-input">
               <div className="flex items-center gap-2 truncate">
                 <Calendar className="w-4 h-4 shrink-0" />
                 <SelectValue placeholder="Fecha" />
@@ -363,10 +363,10 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">Todos ({activities.length})</Button>
-        <Button variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")} size="sm">Por hacer ({activities.filter(a => !a.completed).length})</Button>
-        <Button variant={filter === "completed" ? "default" : "outline"} onClick={() => setFilter("completed")} size="sm">Completado ({activities.filter(a => a.completed).length})</Button>
+      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm" className="shrink-0">Todos ({activities.length})</Button>
+        <Button variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")} size="sm" className="shrink-0">Por hacer ({activities.filter(a => !a.completed).length})</Button>
+        <Button variant={filter === "completed" ? "default" : "outline"} onClick={() => setFilter("completed")} size="sm" className="shrink-0">Completado ({activities.filter(a => a.completed).length})</Button>
       </div>
 
       <div className="grid gap-4">

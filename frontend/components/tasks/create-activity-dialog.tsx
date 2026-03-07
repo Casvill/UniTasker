@@ -110,79 +110,82 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                 </DialogTrigger>
             )}
 
-            <DialogContent className="sm:max-w-[520px]">
-                <DialogHeader>
-                    <DialogTitle>{activity ? "Editar actividad" : "Nueva actividad"}</DialogTitle>
-                    <DialogDescription className="mb-2 text-sm text-muted-foreground">
-                        {activity ? "Modifica los detalles de tu actividad." : "A continuación, ingresa los detalles de tu nueva actividad."}
+            <DialogContent className="h-full sm:h-auto sm:max-h-[90vh] overflow-hidden border-0 sm:border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[520px] flex flex-col">
+                <DialogHeader className="border-b border-border px-4 sm:px-6 py-4 shrink-0">
+                    <DialogTitle className="text-xl sm:text-2xl font-bold">{activity ? "Editar actividad" : "Nueva actividad"}</DialogTitle>
+                    <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+                        {activity ? "Modifica los detalles de tu actividad." : "Ingresa los detalles de tu nueva actividad."}
                     </DialogDescription>
                 </DialogHeader>
 
-                <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4" >
-                    <Label>1. Información general </Label>
-                    <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="title">¿Nombre de la actividad? *</Label>
-                            <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} />
-                            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="course">¿A qué curso pertenece? *</Label>
-                            <Input id="course" placeholder="Ej: Matemáticas II" {...register("course")} />
-                            {errors.course && <p className="text-sm text-destructive">{errors.course.message}</p>}
-                        </div>
-                        
-                    </div>
-
-                    <div className="border-t-2 border-dotted border-gray-300 my-3"></div>
-                    
-                    <Label>2. Evaluación y entrega</Label>
-                    <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
-                        <div className="space-y-1.5">
-                            <Label>¿Cómo te van a evaluar? * </Label>
-                            <Select
-                                defaultValue={activity?.tags?.[0]}
-                                onValueChange={(v) => setValue("type", v as ActivityFormValues["type"], { shouldValidate: true })}
-                            >
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecciona un tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="examen">Examen</SelectItem>
-                                <SelectItem value="quiz">Quiz</SelectItem>
-                                <SelectItem value="taller">Taller</SelectItem>
-                                <SelectItem value="proyecto">Proyecto</SelectItem>
-                                <SelectItem value="otro">Otro</SelectItem>
-                            </SelectContent>
-                        </Select>
-                            {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="dueDate">¿En que fecha? *</Label>
-                            <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
-                            {errors.dueDate && <p className="text-sm text-destructive">{errors.dueDate.message}</p>}
-                        </div>
-                    </div>
-                    
-                    <div className="border-t-2 border-dotted border-gray-300 my-3"></div>
-                    
-                    <Label>3. Detalles o indicaciones</Label>
-                    <div className="space-y-1.5 sm:space-y-0 sm:grid sm:gap-4">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="description">¿Quieres agregar algún detalle adicional? </Label>
-                            <Input id="description" placeholder="Ej: Temas 1-3, llevar calculadora" {...register("description")} />
+                <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 no-scrollbar" >
+                    <div className="space-y-4">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-primary">1. Información general</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="title" className="text-sm">¿Nombre de la actividad? *</Label>
+                                <Input id="title" placeholder="Ej: Parcial de Cálculo" {...register("title")} className="h-9 text-sm" />
+                                {errors.title && <p className="text-[10px] text-destructive">{errors.title.message}</p>}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="course" className="text-sm">¿A qué curso pertenece? *</Label>
+                                <Input id="course" placeholder="Ej: Matemáticas II" {...register("course")} className="h-9 text-sm" />
+                                {errors.course && <p className="text-[10px] text-destructive">{errors.course.message}</p>}
+                            </div>
                         </div>
                     </div>
 
-                    <DialogFooter className="gap-3 mt-8">
-                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1" disabled={isSubmitting}>
+                    <div className="border-t border-dashed border-border my-2"></div>
+                    
+                    <div className="space-y-4">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-primary">2. Evaluación y entrega</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-sm">¿Cómo te van a evaluar? *</Label>
+                                <Select
+                                    defaultValue={activity?.tags?.[0]}
+                                    onValueChange={(v) => setValue("type", v as ActivityFormValues["type"], { shouldValidate: true })}
+                                >
+                                    <SelectTrigger className="w-full h-9 text-sm">
+                                        <SelectValue placeholder="Tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="examen">Examen</SelectItem>
+                                        <SelectItem value="quiz">Quiz</SelectItem>
+                                        <SelectItem value="taller">Taller</SelectItem>
+                                        <SelectItem value="proyecto">Proyecto</SelectItem>
+                                        <SelectItem value="otro">Otro</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {errors.type && <p className="text-[10px] text-destructive">{errors.type.message}</p>}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="dueDate" className="text-sm">¿En qué fecha? *</Label>
+                                <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} className="h-9 text-xs" />
+                                {errors.dueDate && <p className="text-[10px] text-destructive">{errors.dueDate.message}</p>}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="border-t border-dashed border-border my-2"></div>
+                    
+                    <div className="space-y-4 pb-4">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-primary">3. Detalles o indicaciones</Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="description" className="text-sm">¿Algún detalle adicional?</Label>
+                            <Input id="description" placeholder="Ej: Temas 1-3, llevar calculadora" {...register("description")} className="h-9 text-sm" />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="order-2 sm:order-1 flex-1 h-10 text-sm" disabled={isSubmitting}>
                             Cancelar
                         </Button>
-                        <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                        <Button type="submit" className="order-1 sm:order-2 flex-1 h-10 text-sm" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {activity ? "Guardar Cambios" : "Guardar Actividad"}
                         </Button>
-                    </DialogFooter>
+                    </div>
                 </form>
             </DialogContent>
         </Dialog>

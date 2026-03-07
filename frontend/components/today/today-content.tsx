@@ -208,12 +208,12 @@ export function TodayContent() {
             />
 
             {isEmpty ? (
-                <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
-                    <div className="rounded-full bg-muted/30 p-4 mb-2"><Search className="h-8 w-8 text-muted-foreground opacity-20" /></div>
-                    <p className="max-w-[320px] text-base font-medium text-foreground">{hasActiveFilters ? "No encontramos resultados" : "No tienes tareas programadas"}</p>
-                    <div className="flex gap-3 mt-2">
-                        {hasActiveFilters && <Button onClick={handleClearFilters}>Limpiar filtros</Button>}
-                        <Button asChild variant={hasActiveFilters ? "outline" : "default"}><Link href="/tasks">Ir a Actividades</Link></Button>
+                <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center px-4">
+                    <div className="rounded-full bg-muted/30 p-4 mb-2 shrink-0"><Search className="h-8 w-8 text-muted-foreground opacity-20" /></div>
+                    <p className="max-w-xs text-base font-medium text-foreground">{hasActiveFilters ? "No encontramos resultados" : "No tienes tareas programadas"}</p>
+                    <div className="flex flex-wrap justify-center gap-3 mt-2">
+                        {hasActiveFilters && <Button onClick={handleClearFilters} size="sm">Limpiar filtros</Button>}
+                        <Button asChild variant={hasActiveFilters ? "outline" : "default"} size="sm"><Link href="/tasks">Ir a Actividades</Link></Button>
                     </div>
                 </div>
             ) : (

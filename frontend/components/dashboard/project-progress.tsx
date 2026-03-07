@@ -21,7 +21,7 @@ export function ProjectProgress() {
 
   return (
     <Card
-      className="p-4 transition-all duration-500 hover:shadow-xl animate-slide-in-up overflow-hidden"
+      className="p-3 sm:p-4 transition-all duration-500 hover:shadow-xl animate-slide-in-up overflow-hidden"
       style={{ animationDelay: "800ms" }}
     >
       <h2 className="text-lg font-semibold text-foreground mb-4">Project Progress</h2>

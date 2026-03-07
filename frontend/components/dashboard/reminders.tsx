@@ -7,7 +7,7 @@ import { Video } from "lucide-react"
 export function Reminders() {
   return (
     <Card
-      className="p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up"
+      className="p-4 sm:p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up"
       style={{ animationDelay: "500ms" }}
     >
       <h2 className="text-xl font-semibold text-foreground mb-6">Reminders</h2>

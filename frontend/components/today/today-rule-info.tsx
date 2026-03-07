@@ -20,7 +20,7 @@ export function TodayRuleInfo() {
                     </Button>
                 </TooltipTrigger>
 
-                <TooltipContent side="bottom" align="center" className="max-w-xs">
+                <TooltipContent side="bottom" align="center" className="max-w-[280px]">
                     <p className="text-sm">
                         Las subtareas se agrupan en <strong>Vencidas</strong>,{" "}
                         <strong>Para hoy</strong> y <strong>Próximas</strong>. Dentro de cada

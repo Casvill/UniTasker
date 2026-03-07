@@ -280,28 +280,28 @@ export function ManageTasksDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[620px]">
-        <DialogHeader className="border-b border-border px-6 py-3">
-          <div className="space-y-1 pr-8">
-            <DialogTitle className="text-2xl font-bold leading-tight text-foreground">
+      <DialogContent className="h-full sm:h-auto sm:max-h-[90vh] overflow-hidden border-0 sm:border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[620px] flex flex-col">
+        <DialogHeader className="border-b border-border px-4 sm:px-6 py-3 shrink-0">
+          <div className="space-y-1 pr-8 text-left">
+            <DialogTitle className="text-xl sm:text-2xl font-bold leading-tight text-foreground truncate">
               {activity?.title || "Actividad sin título"}
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+            <DialogDescription className="text-xs sm:text-sm text-muted-foreground truncate">
               Administra sus tareas y detalles principales.
             </DialogDescription>
           </div>
         </DialogHeader>
 
-        <div className="max-h-[calc(90vh-76px)] overflow-y-auto px-6 py-4 space-y-4">
-          <section className="rounded-2xl border border-border bg-background/40 p-4 space-y-3">
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <span className="flex items-center gap-2 font-semibold text-foreground">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                {activity?.project || "Sin curso"}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 no-scrollbar">
+          <section className="rounded-xl sm:rounded-2xl border border-border bg-background/40 p-3 sm:p-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+              <span className="flex items-center gap-2 font-semibold text-foreground truncate max-w-full">
+                <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                <span className="truncate">{activity?.project || "Sin curso"}</span>
               </span>
 
-              <span className="flex items-center gap-2 font-semibold text-foreground">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="flex items-center gap-2 font-semibold text-foreground shrink-0">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
                 {activity?.dueDate
                   ? formatDate(activity.dueDate)
                   : "Sin fecha límite"}
@@ -317,9 +317,10 @@ export function ManageTasksDialog({
                     type="button"
                     variant="ghost"
                     size="sm"
+                    className="h-8 text-xs"
                     onClick={() => setIsEditingDescription(true)}
                   >
-                    <Pencil className="mr-2 h-4 w-4" />
+                    <Pencil className="mr-1.5 h-3.5 w-3.5" />
                     Editar
                   </Button>
                 ) : null}
@@ -331,7 +332,7 @@ export function ManageTasksDialog({
                     value={activityDescription}
                     onChange={(e) => setActivityDescription(e.target.value)}
                     placeholder="Describe brevemente la actividad"
-                    className="min-h-[88px]"
+                    className="min-h-[88px] text-sm"
                   />
 
                   <div className="flex justify-end gap-2">
@@ -339,6 +340,7 @@ export function ManageTasksDialog({
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="text-xs h-8"
                       onClick={() => {
                         setActivityDescription(activity?.description || "")
                         setIsEditingDescription(false)
@@ -349,14 +351,15 @@ export function ManageTasksDialog({
                     <Button
                       type="button"
                       size="sm"
+                      className="text-xs h-8"
                       onClick={handleUpdateDescription}
                     >
-                      Guardar descripción
+                      Guardar
                     </Button>
                   </div>
                 </div>
               ) : (
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
                   {activity?.description?.trim()
                     ? activity.description
                     : "Esta actividad no tiene descripción."}
@@ -364,9 +367,10 @@ export function ManageTasksDialog({
               )}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-2">
               <Button
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                size="sm"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9"
                 onClick={handleMarkAllAsDone}
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -376,31 +380,32 @@ export function ManageTasksDialog({
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-base font-semibold text-foreground">
+            <h3 className="text-sm sm:text-base font-semibold text-foreground">
               Nueva tarea
             </h3>
 
             <form
               noValidate
               onSubmit={handleSubmit(onSubmitTask)}
-              className="space-y-3 rounded-2xl border border-border bg-background/40 p-4"
+              className="space-y-3 rounded-xl sm:rounded-2xl border border-border bg-background/40 p-3 sm:p-4"
             >
               <div className="space-y-2">
                 <Input
                   id="title"
                   placeholder="Nombre de la tarea"
                   {...register("title")}
+                  className="text-sm h-9"
                 />
                 {errors.title && (
-                  <p className="text-xs text-destructive">{errors.title.message}</p>
+                  <p className="text-[10px] text-destructive">{errors.title.message}</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+              <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-3">
                 <div className="space-y-1">
-                  <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
+                  <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} className="text-xs h-9" />
                   {errors.dueDate && (
-                    <p className="text-xs text-destructive">
+                    <p className="text-[10px] text-destructive">
                       {errors.dueDate.message}
                     </p>
                   )}
@@ -412,17 +417,18 @@ export function ManageTasksDialog({
                     type="number"
                     min="0"
                     step="0.5"
-                    placeholder="Horas estimadas"
+                    placeholder="Horas"
                     {...register("estimatedHours")}
+                    className="text-xs h-9"
                   />
                   {errors.estimatedHours && (
-                    <p className="text-xs text-destructive">
+                    <p className="text-[10px] text-destructive">
                       {errors.estimatedHours.message}
                     </p>
                   )}
                 </div>
 
-                <Button type="submit" disabled={isSubmitting} className="sm:self-start">
+                <Button type="submit" disabled={isSubmitting} className="col-span-2 sm:col-span-1 h-9 text-xs sm:self-start">
                   {isSubmitting ? "Guardando..." : "Guardar"}
                 </Button>
               </div>

@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Tag, Calendar } from "lucide-react"
 import { Activity } from "./task-types"
+import { cn } from "@/lib/utils"
 
 interface TaskCardProps {
   task: Activity
@@ -37,34 +38,39 @@ export function TaskCard({
           onClick={(e) => e.stopPropagation()}
           className="mt-1 h-5 w-5" 
         />
-        <div className="flex-1 space-y-2">
-          <div className="flex items-start justify-between gap-4">
-            <h3 className={`text-lg font-semibold text-foreground ${task.completed ? "line-through opacity-60" : ""}`}>
+        <div className="flex-1 space-y-2 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+            <h3 className={cn(
+              "text-lg font-semibold text-foreground truncate",
+              task.completed && "line-through opacity-60"
+            )}>
               {task.title}
             </h3>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground "
-                onClick={(e) => onOpenEdit(e, task)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground "
-                onClick={(e) => onDelete(e, task.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <div className="flex gap-1.5 flex-wrap justify-end">
                 {task.tags.map((tag) => (
-                  <Badge key={tag} variant="default" className="shrink-0 text-sm">
+                  <Badge key={tag} variant="default" className="shrink-0 text-[10px] sm:text-xs px-1.5 py-0">
                     {tag.charAt(0).toUpperCase() + tag.slice(1)}
                   </Badge>
                 ))}
+              </div>
+              <div className="flex items-center gap-1 border-l pl-2 ml-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                  onClick={(e) => onOpenEdit(e, task)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => onDelete(e, task.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
           </div>

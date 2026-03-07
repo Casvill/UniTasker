@@ -27,7 +27,7 @@ export function TimeTracker() {
 
   return (
     <Card
-      className="bg-foreground text-background p-4 transition-all duration-500 hover:shadow-2xl animate-slide-in-up overflow-hidden relative group"
+      className="bg-foreground text-background p-3 sm:p-4 transition-all duration-500 hover:shadow-2xl animate-slide-in-up overflow-hidden relative group"
       style={{ animationDelay: "1000ms" }}
     >
       <div className="absolute top-0 right-0 w-48 h-full opacity-15">
