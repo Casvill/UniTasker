@@ -78,20 +78,21 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
         }
 
         try {
+            let result: any
             if (activity?.id) {
-                await apiFetch(`/actividades/${activity.id}/`, {
+                result = await apiFetch(`/actividades/${activity.id}/`, {
                     method: "PATCH",
                     body: JSON.stringify(payload),
                 })
                 toast.success("Actividad actualizada exitosamente.")
             } else {
-                await apiFetch("/actividades/", {
+                result = await apiFetch("/actividades/", {
                     method: "POST",
                     body: JSON.stringify(payload),
                 })
                 toast.success("Actividad creada exitosamente.")
             }
-            onCreated?.()
+            onCreated?.(result)
             reset()
             setOpen(false)
         } catch (e: any) {

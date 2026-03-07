@@ -33,7 +33,7 @@ type ManageTasksDialogProps = {
   onOpenChange: (open: boolean) => void
   activity: Activity | null
   onActivityUpdate: (updatedActivity: Activity) => void
-  onRefresh: () => void
+  onRefresh: (silent?: boolean) => void
 }
 
 function formatDate(date?: string | null) {
@@ -105,7 +105,7 @@ export function ManageTasksDialog({
           ...activity,
           description: updated.descripcion ?? activityDescription,
         })
-        onRefresh()
+        onRefresh(true)
         setIsEditingDescription(false)
         return "Descripción actualizada"
       },
@@ -133,7 +133,7 @@ export function ManageTasksDialog({
     })
 
     await promise
-    onRefresh()
+    onRefresh(true)
     reset()
   }
 
@@ -152,7 +152,7 @@ export function ManageTasksDialog({
     toast.promise(promise, {
       loading: "Actualizando tarea...",
       success: () => {
-        onRefresh()
+        onRefresh(true)
         setEditingId(null)
         return "Tarea actualizada"
       },
@@ -168,7 +168,7 @@ export function ManageTasksDialog({
     toast.promise(promise, {
       loading: "Eliminando tarea...",
       success: () => {
-        onRefresh()
+        onRefresh(true)
         return "Tarea eliminada"
       },
       error: "Error al eliminar la tarea",
@@ -215,7 +215,7 @@ export function ManageTasksDialog({
         toast.success("Tarea completada")
       }
 
-      onRefresh()
+      onRefresh(true)
     } catch {
       toast.dismiss();
       toast.error("No se pudo actualizar el estado de la tarea")
@@ -271,7 +271,7 @@ export function ManageTasksDialog({
 
       toast.dismiss()
       toast.success("Actividad completada")
-      onRefresh()
+      onRefresh(true)
     } catch {
       toast.dismiss()
       toast.error("No se pudo completar la actividad")
