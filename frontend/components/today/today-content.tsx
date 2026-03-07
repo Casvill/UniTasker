@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Loader2, Info } from "lucide-react"
+import { Loader2, Info, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -76,10 +76,6 @@ export function TodayContent() {
         }
     }, [])
 
-    useEffect(() => {
-        fetchCourses()
-    }, [fetchCourses])
-
     const handleToggleSubtask = useCallback(async (id: number, currentStatus: SubtaskStatus) => {
         try {
             const isHecha = currentStatus === "finalizado";
@@ -92,7 +88,7 @@ export function TodayContent() {
                 body: JSON.stringify({ estado: newStatus })
             });
 
-            // Actualizar localmente todas las categorías
+            // Actualizar localmente para respuesta inmediata
             setData(prev => ({
                 ...prev,
                 vencidas: prev.vencidas.map(s => s.id === id ? { ...s, estado: newStatus } : s),
@@ -116,6 +112,7 @@ export function TodayContent() {
             const params = new URLSearchParams()
             if (courseFilter !== "all") params.append("curso", courseFilter)
             if (statusFilter !== "all") params.append("estado", statusFilter)
+            // search parameter support depends on backend implementation of 'search' query param
             if (query.trim()) params.append("search", query.trim())
 
             const response = await apiFetch<TodayApiResponse>(`/tareas/hoy/?${params.toString()}`)
@@ -129,10 +126,20 @@ export function TodayContent() {
     }, [courseFilter, statusFilter, query])
 
     useEffect(() => {
+        fetchCourses()
+    }, [fetchCourses])
+
+    useEffect(() => {
         fetchTodayData()
     }, [fetchTodayData])
 
-    const availableCourses = allCourses;
+    const hasActiveFilters = query !== "" || courseFilter !== "all" || statusFilter !== "all"
+
+    const handleClearFilters = () => {
+        setQuery("")
+        setCourseFilter("all")
+        setStatusFilter("all")
+    }
 
     const isEmpty =
         state === "success" &&
@@ -173,7 +180,7 @@ export function TodayContent() {
                 query={query}
                 courseFilter={courseFilter}
                 statusFilter={statusFilter}
-                availableCourses={availableCourses}
+                availableCourses={allCourses}
                 onQueryChange={setQuery}
                 onCourseChange={setCourseFilter}
                 onStatusChange={setStatusFilter}
@@ -181,13 +188,30 @@ export function TodayContent() {
 
             {isEmpty ? (
                 <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
-                    <p className="max-w-[320px] text-sm text-muted-foreground">
-                        No se encontraron tareas que coincidan con los filtros o no tienes tareas programadas.
+                    <div className="rounded-full bg-muted/30 p-4 mb-2">
+                        <Search className="h-8 w-8 text-muted-foreground opacity-20" />
+                    </div>
+                    <p className="max-w-[320px] text-base font-medium text-foreground">
+                        {hasActiveFilters 
+                            ? "No encontramos tareas con esos filtros" 
+                            : "No tienes tareas programadas"}
+                    </p>
+                    <p className="max-w-[280px] text-sm text-muted-foreground">
+                        {hasActiveFilters 
+                            ? "Intenta ajustando los criterios de búsqueda o limpia los filtros." 
+                            : "Relájate, hoy tienes el día libre o puedes crear una nueva actividad."}
                     </p>
 
-                    <Button asChild variant="outline">
-                        <Link href="/tasks">Ir a Actividades</Link>
-                    </Button>
+                    <div className="flex gap-3 mt-2">
+                        {hasActiveFilters && (
+                            <Button onClick={handleClearFilters} variant="default">
+                                Limpiar filtros
+                            </Button>
+                        )}
+                        <Button asChild variant={hasActiveFilters ? "outline" : "default"}>
+                            <Link href="/tasks">Ir a Actividades</Link>
+                        </Button>
+                    </div>
                 </div>
             ) : (
                 <TodayBoard
