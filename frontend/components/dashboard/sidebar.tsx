@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, CheckSquare, Calendar, BarChart3, Users, Settings, HelpCircle, LogOut, BookCheck } from "lucide-react"
+import { ListTodo, Calendar, Settings, HelpCircle, LogOut, BookCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import Link from "next/link"
@@ -8,9 +8,10 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: BookCheck, label: "Actividades", badge: "124", href: "/tasks" },
+  { icon: ListTodo, label: "Hoy", href: "/today" },
+  { icon: BookCheck, label: "Actividades", href: "/tasks" },
   { icon: Calendar, label: "Calendario", href: "/calendar" },
+
 ]
 
 const generalItems = [
@@ -70,11 +71,6 @@ export function Sidebar() {
                 >
                   <item.icon className="w-4 h-4" />
                   <span className="text-sm">{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-primary text-primary-foreground text-[10px] font-semibold px-1.5 py-0.5 rounded-full animate-pulse">
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               )
             })}

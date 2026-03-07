@@ -3,27 +3,27 @@ import { useState, useEffect } from 'react'
 
 function App() {
 
-const [data, setData] = useState([]);
-useEffect(() => {
-  async function fetchData() {
-    console.log(process.env.API_URL)
-    try {
-      const response = await fetch(`${process.env.API_URL}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+  const [data, setData] = useState([]);
+  useEffect(() => {
+    async function fetchData() {
+      console.log(process.env.API_URL)
+      try {
+        const response = await fetch(`${process.env.API_URL}`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const result = await response.json();
+        console.log(result)
+        setData(result);
+      } catch (error) {
+        console.error('Error fetching data:', error);
       }
-      const result = await response.json();
-      console.log(result)
-      setData(result);
-    } catch (error) {
-      console.error('Error fetching data:', error);
     }
-  }
 
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
-  return(
+  return (
     <div className="p-6 font-sans">
       <h1 className="text-2xl font-bold mb-4">Dashboard de UniTasker</h1>
 
@@ -46,7 +46,7 @@ useEffect(() => {
           </div>
         </div>
       ) : (
-        <p>Cargando datos del servidor...</p>
+        <p>Estamos cargando tus datos...</p>
       )}
     </div>
   )

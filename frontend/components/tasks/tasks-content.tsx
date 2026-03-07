@@ -11,7 +11,7 @@ import { CreateActivityDialog } from "./create-activity-dialog"
 import { ManageTasksDialog } from "./manage-tasks-dialog"
 import { SkeletonTasks } from "./task-skeleton"
 import { TaskCard } from "./task-card"
-import { Task, normalizePriority, formatDueDate } from "./task-types"
+import { Activity, normalizePriority, formatDueDate } from "./task-types"
 
 type TasksContentProps = {
   refreshKey: number
@@ -19,136 +19,143 @@ type TasksContentProps = {
 
 export function TasksContent({ refreshKey }: TasksContentProps) {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all")
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
-  
-  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<any>(null);
-  const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
-  const [activityToEdit, setActivityToEdit] = useState<any>(null);
 
-  const handleOpenManageDialog = (actividad: any) => {
-    setSelectedActivity(actividad);
+  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
+  const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
+
+  const handleOpenManageDialog = (activity: Activity) => {
+    setSelectedActivity(activity);
     setIsManageDialogOpen(true);
   };
 
-  const handleOpenEditActivity = (e: React.MouseEvent, activity: any) => {
+  const handleOpenEditActivity = (e: React.MouseEvent, activity: Activity) => {
     e.stopPropagation();
     setActivityToEdit(activity);
     setIsEditActivityOpen(true);
   };
 
-  const handleDeleteActivity = async (e: React.MouseEvent, taskId: number) => {
+  const handleDeleteActivity = async (e: React.MouseEvent, activityId: number) => {
     e.stopPropagation();
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad?")) return;
 
     try {
-      await apiFetch(`/actividades/${taskId}/`, { method: "DELETE" });
+      await apiFetch(`/actividades/${activityId}/`, { method: "DELETE" });
       toast.success("Actividad eliminada");
-      loadTasks();
+      loadActivities();
     } catch (error) {
       toast.error("No se pudo eliminar la actividad");
     }
   };
 
-  const handleToggleSubtask = async (activityId: number, subtaskId: number) => {
-    const targetTask = tasks.find(t => t.id === activityId);
-    if (!targetTask) return;
-    const subtask = targetTask.subtasks.find((s: any) => s.id === subtaskId);
-    if (!subtask) return;
+  const handleToggleTask = async (activityId: number, taskId: number) => {
+    const targetActivity = activities.find(a => a.id === activityId);
+    if (!targetActivity) return;
+    const task = targetActivity.tasks.find((t: any) => t.id === taskId);
+    if (!task) return;
 
     try {
-      if (!!subtask.registroId) {
-        await apiFetch(`/registros/${subtask.registroId}/`, { method: "DELETE" });
+      if (!!task.registrationId) {
+        await apiFetch(`/registros/${task.registrationId}/`, { method: "DELETE" });
         toast.info("Tarea marcada como pendiente");
       } else {
         await apiFetch("/registros/", {
           method: "POST",
           body: JSON.stringify({
-            tarea: subtaskId,
+            tarea: taskId,
             fecha: new Date().toISOString().split('T')[0],
             nota: "Completada",
-            horas_reales: subtask.horas_estimadas || 0
+            horas_reales: task.estimatedHours || 0
           }),
         });
         toast.success("Tarea completada");
       }
-      loadTasks();
+      loadActivities();
     } catch (error) {
-      toast.error("Error al sincronizar con el servidor");
+      toast.error("Algo salió mal al guardar. Por favor intenta otra vez.");
     }
   };
 
-  const handleToggleActivity = async (task: Task) => {
-    const shouldComplete = !task.completed;
+  const handleToggleActivity = async (activity: Activity) => {
+    const shouldComplete = !activity.completed;
     try {
       toast.loading(shouldComplete ? "Completando..." : "Actualizando...");
       if (shouldComplete) {
-        let subtasksToComplete = task.subtasks.filter(s => !s.registroId);
-        if (task.subtasks.length === 0) {
-          const newSub: any = await apiFetch("/tareas/", {
+        let tasksToComplete = activity.tasks.filter(t => !t.registrationId);
+        if (activity.tasks.length === 0) {
+          const newTask: any = await apiFetch("/tareas/", {
             method: "POST",
             body: JSON.stringify({
-              actividad: task.id,
+              actividad: activity.id,
               nombre: "General",
               fecha_objetivo: new Date().toISOString().split('T')[0],
               horas_estimadas: 1
             })
           });
-          subtasksToComplete = [{ id: newSub.id, horas_estimadas: 1 }];
+          tasksToComplete = [{ id: newTask.id, estimatedHours: 1 } as any];
         }
-        await Promise.all(subtasksToComplete.map(s => 
+        await Promise.all(tasksToComplete.map(t =>
           apiFetch("/registros/", {
             method: "POST",
             body: JSON.stringify({
-              tarea: s.id,
+              tarea: t.id,
               fecha: new Date().toISOString().split('T')[0],
               nota: "Actividad completada",
-              horas_reales: s.horas_estimadas || 0
+              horas_reales: t.estimatedHours || 0
             }),
           })
         ));
         toast.dismiss();
         toast.success("Actividad completada");
       } else {
-        const done = task.subtasks.filter(s => s.registroId);
+        const done = activity.tasks.filter(t => t.registrationId);
         if (done.length > 0) {
-          await Promise.all(done.map(s => apiFetch(`/registros/${s.registroId}/`, { method: "DELETE" })));
+          await Promise.all(done.map(t => apiFetch(`/registros/${t.registrationId}/`, { method: "DELETE" })));
         }
         toast.dismiss();
         toast.info("Actividad pendiente");
       }
-      loadTasks();
+      loadActivities();
     } catch (e) {
       toast.dismiss();
       toast.error("Error al actualizar estado");
     }
   };
 
-  const loadTasks = async () => {
+  const loadActivities = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [actRaw, tareasRaw, registrosRaw]: any = await Promise.all([
+      const [actRaw, tasksRaw, regsRaw]: any = await Promise.all([
         apiFetch("/actividades/"),
         apiFetch("/tareas/"),
         apiFetch("/registros/")
       ]);
 
-      const listaActividades = Array.isArray(actRaw) ? actRaw : actRaw?.results ?? [];
-      const listaTareas = Array.isArray(tareasRaw) ? tareasRaw : tareasRaw?.results ?? [];
-      const listaRegistros = Array.isArray(registrosRaw) ? registrosRaw : registrosRaw?.results ?? [];
+      const activitiesList = Array.isArray(actRaw) ? actRaw : actRaw?.results ?? [];
+      const tasksList = Array.isArray(tasksRaw) ? tasksRaw : tasksRaw?.results ?? [];
+      const regsList = Array.isArray(regsRaw) ? regsRaw : regsRaw?.results ?? [];
 
-      const mapped: Task[] = listaActividades.map((act: any) => {
-        const subtasks = listaTareas
+      const mapped: Activity[] = activitiesList.map((act: any) => {
+        const tasks = tasksList
           .filter((t: any) => t.actividad === act.id)
           .map((t: any) => {
-            const registro = listaRegistros.find((r: any) => r.tarea === t.id);
-            return { ...t, registroId: registro?.id || null };
+            const reg = regsList.find((r: any) => r.tarea === t.id);
+            return {
+              id: t.id,
+              title: t.nombre,
+              dueDate: t.fecha_objetivo,
+              estimatedHours: t.horas_estimadas,
+              completed: !!reg,
+              registrationId: reg?.id || null
+            };
           });
-        const isCompleted = subtasks.length > 0 && subtasks.every((s: any) => !!s.registroId);
+        const isCompleted = tasks.length > 0 && tasks.every((t: any) => t.completed);
 
         return {
           id: act.id,
@@ -158,37 +165,37 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           dueDate: formatDueDate(act.fecha_entrega),
           completed: isCompleted,
           tags: [act.tipo],
-          subtasks: subtasks,
+          tasks: tasks,
           description: act.descripcion || "",
         };
       });
 
-      setTasks(mapped);
+      setActivities(mapped);
       if (selectedActivity) {
         const updated = mapped.find(m => m.id === selectedActivity.id);
         if (updated) setSelectedActivity(updated);
       }
     } catch (e) {
-      setError("Error al sincronizar con el servidor.");
+      setError("Ocurrió un problema al cargar los datos. Vuelve a intentarlo.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadTasks();
+    loadActivities();
   }, [refreshKey]);
 
-  const filteredTasks = useMemo(() => {
-    const byStatus = filter === "all" ? tasks : filter === "completed" ? tasks.filter((t) => t.completed) : tasks.filter((t) => !t.completed)
+  const filteredActivities = useMemo(() => {
+    const byStatus = filter === "all" ? activities : filter === "completed" ? activities.filter((a) => a.completed) : activities.filter((a) => !a.completed)
     const q = query.trim().toLowerCase()
     if (!q) return byStatus
-    return byStatus.filter((t) => `${t.title} ${t.project} ${t.tags.join(" ")}`.toLowerCase().includes(q))
-  }, [filter, tasks, query])
+    return byStatus.filter((a) => `${a.title} ${a.project} ${a.tags.join(" ")}`.toLowerCase().includes(q))
+  }, [filter, activities, query])
 
-  const total = tasks.length
-  const totalActive = tasks.filter((t) => !t.completed).length
-  const totalCompleted = tasks.filter((t) => t.completed).length
+  const total = activities.length
+  const totalActive = activities.filter((a) => !a.completed).length
+  const totalCompleted = activities.filter((a) => a.completed).length
 
   if (loading) return <SkeletonTasks />
   if (error) return (
@@ -202,7 +209,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-4">
-        <CreateActivityDialog onCreated={loadTasks} />
+        <CreateActivityDialog onCreated={loadActivities} />
         <div className="flex-1 relative">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar actividades..." className="pl-10" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -210,7 +217,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 bg-transparent"><Filter className="w-4 h-4" /> Filtro</Button>
           <Button variant="outline" className="gap-2 bg-transparent"><Calendar className="w-4 h-4" /> Fecha</Button>
-          
+
         </div>
       </div>
 
@@ -221,16 +228,16 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       </div>
 
       <div className="grid gap-4">
-        {filteredTasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay tareas para mostrar.</p>
+        {filteredActivities.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay actividades para mostrar.</p>
         ) : (
-          filteredTasks.map((task, index) => (
-            <TaskCard 
-              key={task.id} 
-              task={task} 
-              index={index} 
+          filteredActivities.map((activity, index) => (
+            <TaskCard
+              key={activity.id}
+              task={activity}
+              index={index}
               onToggleActivity={handleToggleActivity}
-              onToggleSubtask={handleToggleSubtask}
+              onToggleSubtask={handleToggleTask}
               onOpenManage={handleOpenManageDialog}
               onOpenEdit={handleOpenEditActivity}
               onDelete={handleDeleteActivity}
@@ -239,15 +246,15 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         )}
       </div>
 
-      <ManageTasksDialog 
-        open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen} 
-        activity={selectedActivity} onRefresh={loadTasks}
+      <ManageTasksDialog
+        open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}
+        activity={selectedActivity} onRefresh={loadActivities}
         onActivityUpdate={(updated) => {
           setSelectedActivity(updated);
-          setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+          setActivities(prev => prev.map(a => a.id === updated.id ? updated : a));
         }}
       />
-      <CreateActivityDialog open={isEditActivityOpen} onOpenChange={setIsEditActivityOpen} activity={activityToEdit} onCreated={loadTasks} showTrigger={false} />
+      <CreateActivityDialog open={isEditActivityOpen} onOpenChange={setIsEditActivityOpen} activity={activityToEdit} onCreated={loadActivities} showTrigger={false} />
     </div>
   )
 }
