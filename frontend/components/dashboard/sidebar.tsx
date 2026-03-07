@@ -20,12 +20,12 @@ const generalItems = [
   { icon: LogOut, label: "Cerrar Sesion", href: "/logout" },
 ]
 
-export function Sidebar() {
+export function Sidebar({ className }: { className?: string }) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
 
   return (
-    <aside className="fixed top-0 left-0 w-64 bg-card border-r border-border p-4 h-screen overflow-y-auto lg:block">
+    <aside className={cn("w-64 bg-card border-r border-border p-4 h-full overflow-y-auto", className)}>
       <div className="flex items-center gap-2 mb-6 group cursor-pointer">
         <Link href="/today" className="flex items-center gap-2">
           {/* Logo claro para modo claro */}

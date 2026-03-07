@@ -38,7 +38,9 @@ export function TodayFilters({
             ? "Estado"
             : statusFilter === "pendiente"
                 ? "Pendiente"
-                : "Finalizado"
+                : statusFilter === "hecha" || statusFilter === "finalizado"
+                    ? "Finalizado"
+                    : statusFilter
 
     return (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
@@ -94,7 +96,7 @@ export function TodayFilters({
                         <DropdownMenuItem onClick={() => onStatusChange("pendiente")}>
                             Pendiente
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onStatusChange("finalizado")}>
+                        <DropdownMenuItem onClick={() => onStatusChange("hecha")}>
                             Finalizado
                         </DropdownMenuItem>
                     </DropdownMenuContent>
