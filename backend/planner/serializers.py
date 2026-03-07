@@ -88,12 +88,16 @@ class HoyTareaSerializer(serializers.ModelSerializer):
     """
 
     actividad = serializers.CharField(source="actividad.titulo", read_only=True)
+    curso = serializers.CharField(source="actividad.curso", read_only=True)
 
     class Meta:
         model = Tarea
-        fields = ["id", 
-                  "nombre", 
-                  "fecha_objetivo", 
-                  "horas_estimadas", 
-                  "actividad", 
-                  ]
+        fields = [
+            "id",
+            "nombre",
+            "fecha_objetivo",
+            "horas_estimadas",
+            "estado",
+            "actividad",
+            "curso",
+            ]
