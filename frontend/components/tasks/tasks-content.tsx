@@ -23,7 +23,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
-  
+
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
@@ -77,7 +77,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       }
       loadActivities();
     } catch (error) {
-      toast.error("Error al sincronizar con el servidor");
+      toast.error("Algo salió mal al guardar. Por favor intenta otra vez.");
     }
   };
 
@@ -99,7 +99,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           });
           tasksToComplete = [{ id: newTask.id, estimatedHours: 1 } as any];
         }
-        await Promise.all(tasksToComplete.map(t => 
+        await Promise.all(tasksToComplete.map(t =>
           apiFetch("/registros/", {
             method: "POST",
             body: JSON.stringify({
@@ -146,13 +146,13 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           .filter((t: any) => t.actividad === act.id)
           .map((t: any) => {
             const reg = regsList.find((r: any) => r.tarea === t.id);
-            return { 
+            return {
               id: t.id,
               title: t.nombre,
               dueDate: t.fecha_objetivo,
               estimatedHours: t.horas_estimadas,
               completed: !!reg,
-              registrationId: reg?.id || null 
+              registrationId: reg?.id || null
             };
           });
         const isCompleted = tasks.length > 0 && tasks.every((t: any) => t.completed);
@@ -176,7 +176,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         if (updated) setSelectedActivity(updated);
       }
     } catch (e) {
-      setError("Error al sincronizar con el servidor.");
+      setError("Ocurrió un problema al cargar los datos. Vuelve a intentarlo.");
     } finally {
       setLoading(false);
     }
@@ -217,7 +217,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 bg-transparent"><Filter className="w-4 h-4" /> Filtro</Button>
           <Button variant="outline" className="gap-2 bg-transparent"><Calendar className="w-4 h-4" /> Fecha</Button>
-          
+
         </div>
       </div>
 
@@ -232,10 +232,10 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           <p className="text-sm text-muted-foreground">No hay actividades para mostrar.</p>
         ) : (
           filteredActivities.map((activity, index) => (
-            <TaskCard 
-              key={activity.id} 
-              task={activity} 
-              index={index} 
+            <TaskCard
+              key={activity.id}
+              task={activity}
+              index={index}
               onToggleActivity={handleToggleActivity}
               onToggleSubtask={handleToggleTask}
               onOpenManage={handleOpenManageDialog}
@@ -246,8 +246,8 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         )}
       </div>
 
-      <ManageTasksDialog 
-        open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen} 
+      <ManageTasksDialog
+        open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}
         activity={selectedActivity} onRefresh={loadActivities}
         onActivityUpdate={(updated) => {
           setSelectedActivity(updated);

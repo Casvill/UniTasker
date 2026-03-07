@@ -18,28 +18,28 @@ const variantStyles: Record<
     }
 > = {
     overdue: {
-        badge: "bg-destructive/10 text-destructive dark:bg-destructive/15 dark:text-red-300",
+        badge: "bg-destructive/10 text-destructive dark:bg-red-500/15 dark:text-red-300",
         border: "border-destructive/20 dark:border-red-500/25",
         bg: "bg-destructive/5 dark:bg-white/[0.02]",
         accent: "text-destructive dark:text-red-400",
-        header: "bg-background/80 dark:bg-white/[0.03] dark:border-red-500/15",
-        emptyBox: "border-destructive/15 bg-destructive/[0.03] dark:border-red-500/15 dark:bg-red-500/[0.03]",
+        header: "bg-background/80 dark:bg-red-500/[0.04] dark:border-red-500/15",
+        emptyBox: "border-destructive/15 bg-destructive/[0.03] dark:border-red-500/20 dark:bg-red-500/[0.05]",
     },
     today: {
         badge: "bg-amber-500/10 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
         border: "border-amber-500/20 dark:border-amber-400/25",
         bg: "bg-amber-500/5 dark:bg-white/[0.02]",
         accent: "text-amber-700 dark:text-amber-300",
-        header: "bg-background/80 dark:bg-white/[0.03] dark:border-amber-400/15",
-        emptyBox: "border-amber-500/15 bg-amber-500/[0.03] dark:border-amber-400/15 dark:bg-amber-400/[0.03]",
+        header: "bg-background/80 dark:bg-amber-400/[0.04] dark:border-amber-400/15",
+        emptyBox: "border-amber-500/15 bg-amber-500/[0.03] dark:border-amber-400/20 dark:bg-amber-400/[0.05]",
     },
     upcoming: {
         badge: "bg-blue-500/10 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300",
         border: "border-blue-500/20 dark:border-blue-400/25",
-        bg: "bg-amber-500/5 dark:bg-white/[0.02]",
+        bg: "bg-blue-500/5 dark:bg-white/[0.02]",
         accent: "text-blue-700 dark:text-blue-300",
-        header: "bg-background/80 dark:bg-white/[0.03] dark:border-blue-400/15",
-        emptyBox: "border-blue-500/15 bg-blue-500/[0.03] dark:border-blue-400/15 dark:bg-blue-400/[0.03]",
+        header: "bg-background/80 dark:bg-blue-400/[0.04] dark:border-blue-400/15",
+        emptyBox: "border-blue-500/15 bg-blue-500/[0.03] dark:border-blue-400/20 dark:bg-blue-400/[0.05]",
     },
 }
 

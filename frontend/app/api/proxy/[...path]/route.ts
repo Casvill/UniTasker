@@ -18,7 +18,7 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
         const base = (process.env.API_URL || "http://127.0.0.1:8000/api").replace(/\/+$/, "")
         const finalPath = path.join("/")
         const queryString = req.nextUrl.search || ""
-        
+
         const url = `${base}/${finalPath}/${queryString}`.replace(/([^:]\/)\/+/g, "$1")
 
         console.log(`[proxy] ${req.method} -> ${url}`)
@@ -48,11 +48,11 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
         const raw = await upstream.text()
 
         if (upstream.status === 204) return new NextResponse(null, { status: 204 })
-        
+
         const responseHeaders = new Headers()
         if (contentType) responseHeaders.set("Content-Type", contentType)
 
-        return new NextResponse(raw, { 
+        return new NextResponse(raw, {
             status: upstream.status,
             headers: responseHeaders
         })
@@ -60,7 +60,7 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
     } catch (error: any) {
         console.error("[proxy] FATAL ERROR:", error.message)
         return NextResponse.json(
-            { detail: `Error de conexión con el servidor local: ${error.message}. Asegúrate de que Django esté corriendo en el puerto 8000.` },
+            { detail: "No se pudo conectar con el sistema. Intenta nuevamente." },
             { status: 502 }
         )
     }
