@@ -12,10 +12,6 @@ export default function TodayPage() {
                 />
 
                 <div className="mt-6">
-                    <TodayRuleInfo />
-                </div>
-
-                <div className="mt-6">
                     <TodayContent />
                 </div>
             </main>

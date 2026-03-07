@@ -3,6 +3,7 @@
 import { Search, Filter, CheckCircle2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { TodayRuleInfo } from "@/components/today/today-rule-info"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -40,7 +41,7 @@ export function TodayFilters({
                 : "Finalizado"
 
     return (
-        <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -51,7 +52,9 @@ export function TodayFilters({
                 />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+                <TodayRuleInfo />
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="gap-2 bg-transparent">

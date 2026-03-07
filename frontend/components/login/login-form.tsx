@@ -41,7 +41,7 @@ export function LoginForm() {
       })
 
       setTokens(data.access, data.refresh, email, remember)
-      router.push("/dashboard")
+      router.push("/today")
     } catch (err: any) {
       console.error("Login error:", err)
       setError(err.message || "Error al iniciar sesión. Por favor, verifica tus credenciales.")
@@ -198,17 +198,17 @@ export function LoginForm() {
               ) : (
                 "Iniciar sesion"
               )}
-          </Button>
-        </form>
+            </Button>
+          </form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          {"¿No tienes una cuenta? "}
-          <Link href="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
-            Registrate
-          </Link>
-        </p>
+          <p className="text-center text-sm text-muted-foreground">
+            {"¿No tienes una cuenta? "}
+            <Link href="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
+              Registrate
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
 }
