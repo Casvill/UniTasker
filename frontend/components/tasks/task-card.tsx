@@ -9,7 +9,7 @@ interface TaskCardProps {
   task: Activity
   index: number
   onToggleActivity: (activity: Activity) => void
-  onToggleTask: (activityId: number, taskId: number) => void
+  onToggleSubtask: (activityId: number, taskId: number) => void
   onOpenManage: (activity: Activity) => void
   onOpenEdit: (e: React.MouseEvent, activity: Activity) => void
   onDelete: (e: React.MouseEvent, activityId: number) => void
@@ -19,7 +19,7 @@ export function TaskCard({
   task, 
   index, 
   onToggleActivity, 
-  onToggleTask, 
+  onToggleSubtask, 
   onOpenManage, 
   onOpenEdit, 
   onDelete 
@@ -85,7 +85,7 @@ export function TaskCard({
                 <div className="flex items-center gap-2">
                   <Checkbox 
                     checked={t.completed} 
-                    onCheckedChange={() => onToggleTask(task.id, t.id)}
+                    onCheckedChange={() => onToggleSubtask(task.id, t.id)}
                     onClick={(e) => e.stopPropagation()}
                     className="h-3.5 w-3.5 rounded-full"
                   />

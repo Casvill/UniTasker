@@ -48,11 +48,13 @@ export function TodayColumn({
     variant,
     tasks,
     emptyText,
+    onToggleSubtask,
 }: {
     title: string
     variant: Variant
     tasks: Subtask[]
     emptyText: string
+    onToggleSubtask: (id: number, currentStatus: SubtaskStatus) => void
 }) {
     const styles = variantStyles[variant]
 
@@ -105,6 +107,7 @@ export function TodayColumn({
                             key={`${variant}-${task.id}-${task.target_date}`}
                             task={task}
                             variant={variant}
+                            onToggle={() => onToggleSubtask(task.id, task.status)}
                         />
                     ))
                 )}

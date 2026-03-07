@@ -8,6 +8,8 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,7 +33,7 @@ type ManageTasksDialogProps = {
   onOpenChange: (open: boolean) => void
   activity: Activity | null
   onActivityUpdate: (updatedActivity: Activity) => void
-  onRefresh: () => void
+  onRefresh: (silent?: boolean) => void
 }
 
 function formatDate(date?: string | null) {
@@ -59,6 +61,11 @@ export function ManageTasksDialog({
 
   const [isEditingDescription, setIsEditingDescription] = React.useState(false)
   const [activityDescription, setActivityDescription] = React.useState("")
+
+  const minDate = React.useMemo(() => {
+    const d = new Date()
+    return d.toISOString().split("T")[0]
+  }, [])
 
   React.useEffect(() => {
     if (activity) {
@@ -98,7 +105,7 @@ export function ManageTasksDialog({
           ...activity,
           description: updated.descripcion ?? activityDescription,
         })
-        onRefresh()
+        onRefresh(true)
         setIsEditingDescription(false)
         return "Descripción actualizada"
       },
@@ -126,7 +133,7 @@ export function ManageTasksDialog({
     })
 
     await promise
-    onRefresh()
+    onRefresh(true)
     reset()
   }
 
@@ -145,7 +152,7 @@ export function ManageTasksDialog({
     toast.promise(promise, {
       loading: "Actualizando tarea...",
       success: () => {
-        onRefresh()
+        onRefresh(true)
         setEditingId(null)
         return "Tarea actualizada"
       },
@@ -161,7 +168,7 @@ export function ManageTasksDialog({
     toast.promise(promise, {
       loading: "Eliminando tarea...",
       success: () => {
-        onRefresh()
+        onRefresh(true)
         return "Tarea eliminada"
       },
       error: "Error al eliminar la tarea",
@@ -175,10 +182,24 @@ export function ManageTasksDialog({
     if (!task) return
 
     try {
-      if (task.registrationId) {
-        await apiFetch(`/registros/${task.registrationId}/`, {
-          method: "DELETE",
-        })
+      const isCurrentlyDone = task.completed;
+      const newStatus = isCurrentlyDone ? "pendiente" : "hecha";
+      
+      toast.loading(isCurrentlyDone ? "Actualizando..." : "Completando...");
+
+      // Actualizar estado de la tarea en la BD
+      await apiFetch(`/tareas/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ estado: newStatus }),
+      });
+
+      if (isCurrentlyDone) {
+        if (task.registrationId) {
+          await apiFetch(`/registros/${task.registrationId}/`, {
+            method: "DELETE",
+          })
+        }
+        toast.dismiss();
         toast.info("Tarea marcada como pendiente")
       } else {
         await apiFetch("/registros/", {
@@ -190,11 +211,13 @@ export function ManageTasksDialog({
             horas_reales: task.estimatedHours || 0,
           }),
         })
+        toast.dismiss();
         toast.success("Tarea completada")
       }
 
-      onRefresh()
+      onRefresh(true)
     } catch {
+      toast.dismiss();
       toast.error("No se pudo actualizar el estado de la tarea")
     }
   }
@@ -205,7 +228,7 @@ export function ManageTasksDialog({
     try {
       toast.loading("Actualizando actividad...")
 
-      let pending = activity.tasks?.filter((t: any) => !t.registrationId) || []
+      let pending = activity.tasks?.filter((t: any) => !t.completed) || []
 
       if (!activity.tasks || activity.tasks.length === 0) {
         const newTask: any = await apiFetch("/tareas/", {
@@ -215,10 +238,21 @@ export function ManageTasksDialog({
             nombre: "General",
             fecha_objetivo: new Date().toISOString().split("T")[0],
             horas_estimadas: 1,
+            estado: "hecha"
           }),
         })
 
         pending = [{ id: newTask.id, estimatedHours: 1 } as any]
+      } else {
+        // Actualizar estado de las tareas pendientes
+        await Promise.all(
+          pending.map((t: any) =>
+            apiFetch(`/tareas/${t.id}/`, {
+              method: "PATCH",
+              body: JSON.stringify({ estado: "hecha" }),
+            })
+          )
+        )
       }
 
       await Promise.all(
@@ -237,7 +271,7 @@ export function ManageTasksDialog({
 
       toast.dismiss()
       toast.success("Actividad completada")
-      onRefresh()
+      onRefresh(true)
     } catch {
       toast.dismiss()
       toast.error("No se pudo completar la actividad")
@@ -249,12 +283,12 @@ export function ManageTasksDialog({
       <DialogContent className="max-h-[90vh] overflow-hidden border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[620px]">
         <DialogHeader className="border-b border-border px-6 py-3">
           <div className="space-y-1 pr-8">
-            <h2 className="text-2xl font-bold leading-tight text-foreground">
+            <DialogTitle className="text-2xl font-bold leading-tight text-foreground">
               {activity?.title || "Actividad sin título"}
-            </h2>
-            <p className="text-sm text-muted-foreground">
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
               Administra sus tareas y detalles principales.
-            </p>
+            </DialogDescription>
           </div>
         </DialogHeader>
 
@@ -364,7 +398,7 @@ export function ManageTasksDialog({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
                 <div className="space-y-1">
-                  <Input id="dueDate" type="date" {...register("dueDate")} />
+                  <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
                   {errors.dueDate && (
                     <p className="text-xs text-destructive">
                       {errors.dueDate.message}
@@ -434,6 +468,7 @@ export function ManageTasksDialog({
                             <Label>Fecha objetivo</Label>
                             <Input
                               type="date"
+                              min={minDate}
                               value={editingTask.dueDate}
                               onChange={(e) =>
                                 setEditingTask({

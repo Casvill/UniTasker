@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ActivitySchema, ActivityFormValues } from "./activity-schema"
+import { Loader2 } from "lucide-react"
 
 type CreateActivityDialogProps = {
     onCreated?: () => void
@@ -77,20 +78,21 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
         }
 
         try {
+            let result: any
             if (activity?.id) {
-                await apiFetch(`/actividades/${activity.id}/`, {
+                result = await apiFetch(`/actividades/${activity.id}/`, {
                     method: "PATCH",
                     body: JSON.stringify(payload),
                 })
                 toast.success("Actividad actualizada exitosamente.")
             } else {
-                await apiFetch("/actividades/", {
+                result = await apiFetch("/actividades/", {
                     method: "POST",
                     body: JSON.stringify(payload),
                 })
                 toast.success("Actividad creada exitosamente.")
             }
-            onCreated?.()
+            onCreated?.(result)
             reset()
             setOpen(false)
         } catch (e: any) {
@@ -173,11 +175,12 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                     </div>
 
                     <DialogFooter className="gap-3 mt-8">
-                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1">
+                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1" disabled={isSubmitting}>
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={isSubmitting} className="flex-1">
-                            {isSubmitting ? "Guardando..." : (activity ? "Guardar Cambios" : "Guardar Actividad")}
+                        <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {activity ? "Guardar Cambios" : "Guardar Actividad"}
                         </Button>
                     </DialogFooter>
                 </form>

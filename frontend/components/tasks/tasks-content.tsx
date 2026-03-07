@@ -29,6 +29,8 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
 
+  // --- HANDLERS ---
+
   const handleOpenManageDialog = (activity: Activity) => {
     setSelectedActivity(activity);
     setIsManageDialogOpen(true);
@@ -40,14 +42,33 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     setIsEditActivityOpen(true);
   };
 
+  // Esta es la función que querías implementar para abrir el diálogo tras crear
+  const handleOnCreated = (newActivity?: any) => {
+    loadActivities(true)
+    if (newActivity && !activityToEdit) {
+      const mappedActivity: Activity = {
+        id: newActivity.id,
+        title: newActivity.titulo ?? "Sin título",
+        project: newActivity.curso ?? "Sin curso",
+        priority: normalizePriority(newActivity.prioridad),
+        dueDate: formatDueDate(newActivity.fecha_entrega),
+        completed: false,
+        tags: [newActivity.tipo],
+        tasks: [],
+        description: newActivity.descripcion || "",
+      }
+      setSelectedActivity(mappedActivity)
+      setIsManageDialogOpen(true)
+    }
+  }
+
   const handleDeleteActivity = async (e: React.MouseEvent, activityId: number) => {
     e.stopPropagation();
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad?")) return;
-
     try {
       await apiFetch(`/actividades/${activityId}/`, { method: "DELETE" });
       toast.success("Actividad eliminada");
-      loadActivities();
+      loadActivities(true);
     } catch (error) {
       toast.error("No se pudo eliminar la actividad");
     }
@@ -60,8 +81,22 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     if (!task) return;
 
     try {
-      if (!!task.registrationId) {
-        await apiFetch(`/registros/${task.registrationId}/`, { method: "DELETE" });
+      const isCurrentlyDone = task.completed;
+      const newStatus = isCurrentlyDone ? "pendiente" : "hecha";
+      
+      toast.loading(isCurrentlyDone ? "Actualizando..." : "Completando...");
+
+      // Actualizar estado de la tarea
+      await apiFetch(`/tareas/${taskId}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ estado: newStatus }),
+      });
+
+      if (isCurrentlyDone) {
+        if (task.registrationId) {
+          await apiFetch(`/registros/${task.registrationId}/`, { method: "DELETE" });
+        }
+        toast.dismiss();
         toast.info("Tarea marcada como pendiente");
       } else {
         await apiFetch("/registros/", {
@@ -73,11 +108,13 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
             horas_reales: task.estimatedHours || 0
           }),
         });
+        toast.dismiss();
         toast.success("Tarea completada");
       }
-      loadActivities();
+      loadActivities(true);
     } catch (error) {
-      toast.error("Algo salió mal al guardar. Por favor intenta otra vez.");
+      toast.dismiss();
+      toast.error("Algo salió mal al guardar.");
     }
   };
 
@@ -86,7 +123,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     try {
       toast.loading(shouldComplete ? "Completando..." : "Actualizando...");
       if (shouldComplete) {
-        let tasksToComplete = activity.tasks.filter(t => !t.registrationId);
+        let tasksToComplete = activity.tasks.filter(t => !t.completed);
         if (activity.tasks.length === 0) {
           const newTask: any = await apiFetch("/tareas/", {
             method: "POST",
@@ -94,11 +131,21 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
               actividad: activity.id,
               nombre: "General",
               fecha_objetivo: new Date().toISOString().split('T')[0],
-              horas_estimadas: 1
+              horas_estimadas: 1,
+              estado: "hecha"
             })
           });
           tasksToComplete = [{ id: newTask.id, estimatedHours: 1 } as any];
+        } else {
+          // Actualizar estado de las tareas existentes
+          await Promise.all(tasksToComplete.map(t =>
+            apiFetch(`/tareas/${t.id}/`, {
+              method: "PATCH",
+              body: JSON.stringify({ estado: "hecha" }),
+            })
+          ));
         }
+
         await Promise.all(tasksToComplete.map(t =>
           apiFetch("/registros/", {
             method: "POST",
@@ -113,23 +160,29 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         toast.dismiss();
         toast.success("Actividad completada");
       } else {
-        const done = activity.tasks.filter(t => t.registrationId);
+        const done = activity.tasks.filter(t => t.completed);
         if (done.length > 0) {
-          await Promise.all(done.map(t => apiFetch(`/registros/${t.registrationId}/`, { method: "DELETE" })));
+          await Promise.all(done.map(t => 
+            apiFetch(`/tareas/${t.id}/`, {
+              method: "PATCH",
+              body: JSON.stringify({ estado: "pendiente" }),
+            })
+          ));
+          await Promise.all(done.map(t => t.registrationId ? apiFetch(`/registros/${t.registrationId}/`, { method: "DELETE" }) : Promise.resolve()));
         }
         toast.dismiss();
         toast.info("Actividad pendiente");
       }
-      loadActivities();
+      loadActivities(true);
     } catch (e) {
       toast.dismiss();
       toast.error("Error al actualizar estado");
     }
   };
 
-  const loadActivities = async () => {
+  const loadActivities = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const [actRaw, tasksRaw, regsRaw]: any = await Promise.all([
         apiFetch("/actividades/"),
@@ -151,7 +204,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
               title: t.nombre,
               dueDate: t.fecha_objetivo,
               estimatedHours: t.horas_estimadas,
-              completed: !!reg,
+              completed: t.estado === "hecha",
               registrationId: reg?.id || null
             };
           });
@@ -176,9 +229,9 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         if (updated) setSelectedActivity(updated);
       }
     } catch (e) {
-      setError("Ocurrió un problema al cargar los datos. Vuelve a intentarlo.");
+      setError("Ocurrió un problema al cargar los datos.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -193,10 +246,6 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     return byStatus.filter((a) => `${a.title} ${a.project} ${a.tags.join(" ")}`.toLowerCase().includes(q))
   }, [filter, activities, query])
 
-  const total = activities.length
-  const totalActive = activities.filter((a) => !a.completed).length
-  const totalCompleted = activities.filter((a) => a.completed).length
-
   if (loading) return <SkeletonTasks />
   if (error) return (
     <Alert variant="destructive">
@@ -209,7 +258,9 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-4">
-        <CreateActivityDialog onCreated={loadActivities} />
+        {/* Cambiado: ahora usamos handleOnCreated en lugar de loadActivities directamente */}
+        <CreateActivityDialog onCreated={handleOnCreated} />
+        
         <div className="flex-1 relative">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar actividades..." className="pl-10" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -217,14 +268,13 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 bg-transparent"><Filter className="w-4 h-4" /> Filtro</Button>
           <Button variant="outline" className="gap-2 bg-transparent"><Calendar className="w-4 h-4" /> Fecha</Button>
-
         </div>
       </div>
 
       <div className="flex gap-2">
-        <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">Todos ({total})</Button>
-        <Button variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")} size="sm">Por hacer ({totalActive})</Button>
-        <Button variant={filter === "completed" ? "default" : "outline"} onClick={() => setFilter("completed")} size="sm">Completado ({totalCompleted})</Button>
+        <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">Todos ({activities.length})</Button>
+        <Button variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")} size="sm">Por hacer ({activities.filter(a => !a.completed).length})</Button>
+        <Button variant={filter === "completed" ? "default" : "outline"} onClick={() => setFilter("completed")} size="sm">Completado ({activities.filter(a => a.completed).length})</Button>
       </div>
 
       <div className="grid gap-4">
@@ -254,7 +304,14 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           setActivities(prev => prev.map(a => a.id === updated.id ? updated : a));
         }}
       />
-      <CreateActivityDialog open={isEditActivityOpen} onOpenChange={setIsEditActivityOpen} activity={activityToEdit} onCreated={loadActivities} showTrigger={false} />
+      
+      <CreateActivityDialog 
+        open={isEditActivityOpen} 
+        onOpenChange={setIsEditActivityOpen} 
+        activity={activityToEdit} 
+        onCreated={loadActivities} 
+        showTrigger={false} 
+      />
     </div>
   )
 }

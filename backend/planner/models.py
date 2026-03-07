@@ -33,6 +33,12 @@ class Actividad(models.Model):
 
 class Tarea(models.Model):
 
+    ESTADO_CHOICES = [
+        ("pendiente", "Pendiente"),
+        ("hecha", "Hecha"),
+        ("pospuesta", "Pospuesta"),
+    ]
+
     actividad = models.ForeignKey(
         Actividad, on_delete=models.CASCADE, related_name="tareas"
     )
@@ -40,6 +46,11 @@ class Tarea(models.Model):
     nombre = models.CharField(max_length=255)
     fecha_objetivo = models.DateField()
     horas_estimadas = models.DecimalField(max_digits=5, decimal_places=2)
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default="pendiente",
+    )
     creada_en = models.DateTimeField(auto_now_add=True)
     actualizada_en = models.DateTimeField(auto_now=True)
 
