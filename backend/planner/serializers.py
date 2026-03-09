@@ -72,6 +72,16 @@ class TareaSerializer(serializers.ModelSerializer):
 # ------------------------------------------------------------------------------------
 
 
+class TareaUpdateStatusSerializer(serializers.ModelSerializer):
+    """
+    Serializer optimizado para cambios rápidos de estado (check/uncheck).
+    Solo incluye lo esencial para que la respuesta sea instantánea.
+    """
+    class Meta:
+        model = Tarea
+        fields = ["id", "estado"]
+        read_only_fields = ["id"]
+
 class RegistroAvanceSerializer(serializers.ModelSerializer):
 
     class Meta:

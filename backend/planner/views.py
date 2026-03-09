@@ -32,22 +32,42 @@ class TareaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         if getattr(self, 'swagger_fake_view', False):
-            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
             return Tarea.objects.none()
 
         actividad_id = self.request.query_params.get("actividad")
 
-        queryset = Tarea.objects.filter(actividad__usuario=self.request.user)
+        # Usamos select_related para que la carga del objeto al responder sea instantánea
+        queryset = Tarea.objects.select_related('actividad').filter(
+            actividad__usuario=self.request.user
+        )
 
         if actividad_id:
-            # Validamos que la actividad exista y sea del usuario
             get_object_or_404(Actividad, id=actividad_id, usuario=self.request.user)
-
             queryset = queryset.filter(actividad_id=actividad_id)
 
-        return queryset.order_by("fecha_objetivo")  
+        return queryset.order_by("fecha_objetivo")
+
+    def perform_update(self, serializer):
+        # Al actualizar una tarea (check/uncheck), el objeto se guarda
+        serializer.save()
+
+    def update(self, request, *args, **kwargs):
+        # Si es un PATCH y solo viene el campo 'estado', usamos el serializador ligero
+        if request.method == 'PATCH' and set(request.data.keys()) <= {'estado'}:
+            instance = self.get_object()
+            serializer = TareaUpdateStatusSerializer(instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            response = Response(serializer.data)
+        else:
+            # Para actualizaciones completas, usamos el comportamiento estándar
+            response = super().update(request, *args, **kwargs)
+        
+        # Como acaba de marcar una tarea, probablemente necesite refrescar la lista de 'hoy'
+        # o sus analíticas. Le decimos al navegador que las vaya buscando.
+        response['Link'] = '</api/tareas/hoy/>; rel=prefetch'
+        return response  
 
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
