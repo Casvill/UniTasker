@@ -85,22 +85,13 @@ export interface UserProfile {
     id: number
     username: string
     email: string
+    daily_hour_limit: number
 }
 
 export async function fetchProfile(): Promise<UserProfile | null> {
     try {
-        const email = getUserEmail()
-        const users = await apiFetch<UserProfile[]>("/usuarios/")
-        
-        if (Array.isArray(users)) {
-            if (email) {
-                // Buscamos el usuario que coincida con el email guardado
-                const found = users.find(u => u.email.toLowerCase() === email.toLowerCase())
-                if (found) return found
-            }
-            return users[0] || null
-        }
-        return users as unknown as UserProfile
+        // Usamos el nuevo endpoint de perfil que es más directo y seguro
+        return await apiFetch<UserProfile>("/usuarios/perfil/")
     } catch (e) {
         console.error("Error fetching profile:", e)
         return null

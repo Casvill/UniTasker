@@ -4,7 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .models import Actividad, Tarea, RegistroAvance
 from django.shortcuts import get_object_or_404
-from .serializers import ActividadSerializer, TareaSerializer, RegistroAvanceSerializer, HoyTareaSerializer
+from django.db.models import Sum
+from .serializers import ActividadSerializer, TareaSerializer, RegistroAvanceSerializer, HoyTareaSerializer, TareaUpdateStatusSerializer
 from datetime import date, timedelta
 
 # ------------------------------------------------------------------------------------
@@ -89,6 +90,53 @@ class TareaViewSet(viewsets.ModelViewSet):
         serializer.save(actividad=actividad)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"], url_path="validar-capacidad")
+    def validar_capacidad(self, request):
+        """
+        GET /api/tareas/validar-capacidad/?fecha=YYYY-MM-DD&exclude_id=ID
+        
+        Calcula la suma de horas estimadas de las tareas para una fecha específica.
+        Permite excluir una tarea (por ID) si se está reprogramando.
+        """
+        fecha_str = request.query_params.get("fecha")
+        exclude_id = request.query_params.get("exclude_id")
+
+        if not fecha_str:
+            return Response(
+                {"error": "El parámetro 'fecha' es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Filtramos las tareas del usuario para esa fecha
+            # Excluimos las tareas con estado 'pospuesta' si se desea, 
+            # pero usualmente las pospuestas ya no tienen fecha_objetivo en ese día 
+            # o no deberían contar para la carga activa.
+            queryset = Tarea.objects.filter(
+                actividad__usuario=request.user,
+                fecha_objetivo=fecha_str
+            ).exclude(estado="pospuesta")
+
+            if exclude_id:
+                try:
+                    queryset = queryset.exclude(id=int(exclude_id))
+                except ValueError:
+                    pass
+
+            # Sumamos las horas estimadas
+            total_horas = queryset.aggregate(total=Sum("horas_estimadas"))["total"] or 0
+            
+            return Response({
+                "fecha": fecha_str,
+                "total_planificado": float(total_horas),
+                "limite_diario": request.user.daily_hour_limit
+            })
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=["get"], url_path="hoy")
     def hoy(self, request):
