@@ -13,6 +13,11 @@ class UsuarioSerializer(serializers.ModelSerializer):
             "daily_hour_limit": {"required": False},
         }
 
+    def validate_daily_hour_limit(self, value):
+        if value < 1 or value > 16:
+            raise serializers.ValidationError("El límite de horas diarias debe estar entre 1 y 16.")
+        return value
+
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
