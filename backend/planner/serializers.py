@@ -10,7 +10,7 @@ class ActividadSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["usuario", "creada_en"]
 
-    # Validar título
+   # Validar título
     def validate_titulo(self, value):
         if not value.strip():
             raise serializers.ValidationError("El campo título es obligatorio.")
