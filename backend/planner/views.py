@@ -14,19 +14,14 @@ class ActividadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         if getattr(self, 'swagger_fake_view', False):
-            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
             return Actividad.objects.none()
-
         return Actividad.objects.filter(usuario=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
-
 # ------------------------------------------------------------------------------------
-
 
 class TareaViewSet(viewsets.ModelViewSet):
     serializer_class = TareaSerializer
@@ -35,192 +30,142 @@ class TareaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Tarea.objects.none()
-
         actividad_id = self.request.query_params.get("actividad")
-
-        # Usamos select_related para que la carga del objeto al responder sea instantánea
         queryset = Tarea.objects.select_related('actividad').filter(
             actividad__usuario=self.request.user
         )
-
         if actividad_id:
             get_object_or_404(Actividad, id=actividad_id, usuario=self.request.user)
             queryset = queryset.filter(actividad_id=actividad_id)
-
         return queryset.order_by("fecha_objetivo")
 
     def perform_update(self, serializer):
-        # Al actualizar una tarea (check/uncheck), el objeto se guarda
         serializer.save()
 
+    def _get_capacidad_detalle(self, user, fecha, exclude_id=None):
+        """Helper consolidado para calcular la carga de un día."""
+        if not fecha:
+            return None
+        
+        queryset = Tarea.objects.filter(
+            actividad__usuario=user,
+            fecha_objetivo=fecha
+        ).exclude(estado="pospuesta")
+        
+        if exclude_id:
+            try:
+                queryset = queryset.exclude(id=int(exclude_id))
+            except (ValueError, TypeError):
+                pass
+        
+        total_planificado = float(queryset.aggregate(total=Sum("horas_estimadas"))["total"] or 0)
+        limite = user.daily_hour_limit
+        hay_conflicto = total_planificado > limite
+        
+        return {
+            "fecha": str(fecha),
+            "conflict": hay_conflicto,
+            "planned_hours": total_planificado,
+            "daily_limit": limite,
+            "message": f"Quedarías con {total_planificado:g}h planificadas (límite {limite:g}h)" if hay_conflicto else ""
+        }
+
     def update(self, request, *args, **kwargs):
-        # Si es un PATCH y solo viene el campo 'estado', usamos el serializador ligero
         if request.method == 'PATCH' and set(request.data.keys()) <= {'estado'}:
             instance = self.get_object()
             serializer = TareaUpdateStatusSerializer(instance, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
-            response = Response(serializer.data)
+            response_data = serializer.data
         else:
-            # Para actualizaciones completas, usamos el comportamiento estándar
             response = super().update(request, *args, **kwargs)
+            response_data = response.data
+            instance = self.get_object()
         
-        # Como acaba de marcar una tarea, probablemente necesite refrescar la lista de 'hoy'
-        # o sus analíticas. Le decimos al navegador que las vaya buscando.
-        response['Link'] = '</api/tareas/hoy/>; rel=prefetch'
-        return response  
+        response_data["capacidad_diaria"] = self._get_capacidad_detalle(request.user, instance.fecha_objetivo)
+        return Response(response_data, headers={"Link": "</api/tareas/hoy/>; rel=prefetch"})
 
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
-
-        # Si no mandan actividad
         if not actividad_id:
-            return Response(
-                {"actividad": ["Este campo es obligatorio."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"actividad": ["Este campo es obligatorio."]}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Si actividad no existe → 404
-        actividad = get_object_or_404(
-            Actividad, id=actividad_id, usuario=request.user  
-        )
-
+        actividad = get_object_or_404(Actividad, id=actividad_id, usuario=request.user)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(actividad=actividad)
+        instance = serializer.save(actividad=actividad)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        response_data = serializer.data
+        response_data["capacidad_diaria"] = self._get_capacidad_detalle(request.user, instance.fecha_objetivo)
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get"], url_path="validar-capacidad")
     def validar_capacidad(self, request):
-        """
-        GET /api/tareas/validar-capacidad/?fecha=YYYY-MM-DD&exclude_id=ID
-        
-        Calcula la suma de horas estimadas de las tareas para una fecha específica.
-        Permite excluir una tarea (por ID) si se está reprogramando.
-        """
         fecha_str = request.query_params.get("fecha")
         exclude_id = request.query_params.get("exclude_id")
+        horas_nueva_str = request.query_params.get("horas")
 
         if not fecha_str:
-            return Response(
-                {"error": "El parámetro 'fecha' es obligatorio."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "El parámetro 'fecha' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Filtramos las tareas del usuario para esa fecha
-            # Excluimos las tareas con estado 'pospuesta' si se desea, 
-            # pero usualmente las pospuestas ya no tienen fecha_objetivo en ese día 
-            # o no deberían contar para la carga activa.
-            queryset = Tarea.objects.filter(
-                actividad__usuario=request.user,
-                fecha_objetivo=fecha_str
-            ).exclude(estado="pospuesta")
-
-            if exclude_id:
-                try:
-                    queryset = queryset.exclude(id=int(exclude_id))
-                except ValueError:
-                    pass
-
-            # Sumamos las horas estimadas
-            total_horas = queryset.aggregate(total=Sum("horas_estimadas"))["total"] or 0
+            # Obtenemos la base (excluyendo la tarea si se pide)
+            res = self._get_capacidad_detalle(request.user, fecha_str, exclude_id)
             
-            return Response({
-                "fecha": fecha_str,
-                "total_planificado": float(total_horas),
-                "limite_diario": request.user.daily_hour_limit
-            })
+            # Si se proporcionan horas, simulamos la nueva carga
+            if horas_nueva_str is not None:
+                horas_nueva = float(horas_nueva_str)
+                nuevo_total = res["planned_hours"] + horas_nueva
+                limite = res["daily_limit"]
+                hay_conflicto = nuevo_total > limite
+                
+                res["planned_hours"] = nuevo_total
+                res["conflict"] = hay_conflicto
+                res["message"] = f"Quedarías con {nuevo_total:g}h planificadas (límite {limite:g}h)" if hay_conflicto else ""
+
+            return Response(res)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["get"], url_path="hoy")
     def hoy(self, request):
-        """
-        GET /api/tareas/hoy/
-
-        Query params opcionales: (US-05)
-            - curso: filtra por nombre del curso (case-insensitive, coincidencia parcial)
-            - estado: filtra por estado de la tarea (pendiente, hecha, pospuesta)
-
-        Retorna:
-          {
-            "vencidas": [...],
-            "para_hoy": [...],
-            "proximas": [...]
-          }
-
-        Regla(susceptible a cambio): próximas = próximas 7 días (no trae tareas superiores a 7 días)
-        Los filtros se aplican ANTES de agrupar, manteniendo el orden definido.
-        """
         user = request.user
         today = date.today()
         window_end = today + timedelta(days=7)
-
-        # Query params
         curso_filter = request.query_params.get("curso", "").strip()
         estado_filter = request.query_params.get("estado", "").strip().lower()
 
         base_qs = Tarea.objects.filter(actividad__usuario=user)
-
-        # Aplicar filtro por curso (case-insensitive, coincidencia parcial)
         if curso_filter:
             base_qs = base_qs.filter(actividad__curso__icontains=curso_filter)
-
-        # Aplicar filtro por estado (coincidencia exacta)
         if estado_filter:
             valid_estados = ["pendiente", "hecha", "pospuesta"]
             if estado_filter in valid_estados:
                 base_qs = base_qs.filter(estado=estado_filter)
 
-        # Construir querysets por grupo con orden y desempate
         vencidas_qs = base_qs.filter(fecha_objetivo__lt=today).order_by("fecha_objetivo", "horas_estimadas")
         para_hoy_qs = base_qs.filter(fecha_objetivo=today).order_by("horas_estimadas")
         proximas_qs = base_qs.filter(fecha_objetivo__gt=today, fecha_objetivo__lte=window_end).order_by("fecha_objetivo", "horas_estimadas")
 
-        # Serializar (usamos HoyTareaSerializer para incluir flags)
         vencidas = HoyTareaSerializer(vencidas_qs, many=True, context={"request": request}).data
         para_hoy = HoyTareaSerializer(para_hoy_qs, many=True, context={"request": request}).data
         proximas = HoyTareaSerializer(proximas_qs, many=True, context={"request": request}).data
-
-        total = len(vencidas) + len(para_hoy) + len(proximas)
-
-        # Mensaje
-        mensaje = None
-        if total == 0:
-            if curso_filter or estado_filter:
-                mensaje = "No se encontraron tareas con los filtros aplicados"
-            else:
-                mensaje = "No tienes tareas programadas"
 
         return Response({
             "vencidas": vencidas,
             "para_hoy": para_hoy,
             "proximas": proximas,
-            "total": total,
-            "mensaje": mensaje,
+            "total": len(vencidas) + len(para_hoy) + len(proximas),
+            "mensaje": None if (len(vencidas) + len(para_hoy) + len(proximas)) > 0 else "No tienes tareas programadas",
         })
 
 # ------------------------------------------------------------------------------------
-
 
 class RegistroAvanceViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroAvanceSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         if getattr(self, 'swagger_fake_view', False):
-            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
             return RegistroAvance.objects.none()
-
-        return RegistroAvance.objects.filter(
-            tarea__actividad__usuario=self.request.user
-        )
-
-
-# ------------------------------------------------------------------------------------
+        return RegistroAvance.objects.filter(tarea__actividad__usuario=self.request.user)
