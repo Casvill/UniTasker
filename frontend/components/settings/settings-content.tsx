@@ -9,12 +9,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { fetchProfile, UserProfile } from "@/lib/api"
-import { User as UserIcon } from "lucide-react"
+import { User as UserIcon, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const [dailyLimit, setDailyLimit] = useState("6")
+  const [savedDailyLimit, setSavedDailyLimit] = useState("6")
+  const [capacityError, setCapacityError] = useState("")
+  const [isSavingCapacity, setIsSavingCapacity] = useState(false)
 
   useEffect(() => {
     async function loadUser() {
@@ -30,7 +36,6 @@ export function SettingsContent() {
     loadUser()
   }, [])
 
-  // Función para capitalizar la primera letra
   const capitalize = (str: string | undefined) => {
     if (!str) return ""
     return str.charAt(0).toUpperCase() + str.slice(1)
@@ -39,6 +44,50 @@ export function SettingsContent() {
   const getInitials = (username: string) => {
     return username.slice(0, 2).toUpperCase()
   }
+
+  const validateDailyLimit = (value: string) => {
+    if (!value.trim()) return "El límite debe estar entre 1 y 16 horas."
+
+    const parsed = Number(value)
+
+    if (!Number.isInteger(parsed)) {
+      return "Ingresa un número entero válido."
+    }
+
+    if (parsed < 1 || parsed > 16) {
+      return "El límite debe estar entre 1 y 16 horas."
+    }
+
+    return ""
+  }
+
+  const handleSaveDailyLimit = async () => {
+    const errorMessage = validateDailyLimit(dailyLimit)
+    setCapacityError(errorMessage)
+
+    if (errorMessage) {
+      toast.error(errorMessage)
+      return
+    }
+
+    try {
+      setIsSavingCapacity(true)
+
+      // Simulación de guardado mientras no exista endpoint
+      await new Promise((resolve) => setTimeout(resolve, 1200))
+
+      setSavedDailyLimit(dailyLimit)
+      setCapacityError("")
+      toast.success("Límite actualizado correctamente")
+    } catch (error) {
+      setCapacityError("No se pudo guardar el límite. Intenta nuevamente.")
+      toast.error("No se pudo guardar el límite. Intenta nuevamente.")
+    } finally {
+      setIsSavingCapacity(false)
+    }
+  }
+
+  const hasChanges = dailyLimit !== savedDailyLimit
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
@@ -54,36 +103,97 @@ export function SettingsContent() {
             </Avatar>
             <div>
               <Button variant="outline">Cambiar Foto</Button>
-              <p className="text-xs text-muted-foreground mt-2">JPG, PNG o GIF. Tamaño máx. 2MB</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                JPG, PNG o GIF. Tamaño máx. 2MB
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre de Usuario</Label>
-              <Input 
-                id="name" 
-                value={user ? capitalize(user.username) : ""} 
-                readOnly 
+              <Input
+                id="name"
+                value={user ? capitalize(user.username) : ""}
+                readOnly
                 className="bg-muted/50"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Correo Electrónico</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                value={user ? capitalize(user.email) : ""} 
-                readOnly 
+              <Input
+                id="email"
+                type="email"
+                value={user ? user.email : ""}
+                readOnly
                 className="bg-muted/50"
               />
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground">Nota: Estos datos se sincronizan con tu cuenta principal.</p>
+          <p className="text-xs text-muted-foreground">
+            Nota: Estos datos se sincronizan con tu cuenta principal.
+          </p>
         </div>
       </Card>
 
+      <Card className="p-6">
+        <h3 className="font-semibold text-lg mb-2">Capacidad diaria</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Configura cuántas horas al día puedes dedicar a tus actividades. Este valor
+          se usará más adelante para detectar sobrecarga en tu planificación.
+        </p>
+
+        <div className="space-y-4">
+          <div className="space-y-2 max-w-sm">
+            <Label htmlFor="daily-limit">Límite de horas por día</Label>
+            <Input
+              id="daily-limit"
+              type="number"
+              min={1}
+              max={16}
+              step={1}
+              value={dailyLimit}
+              onChange={(e) => {
+                setDailyLimit(e.target.value)
+                if (capacityError) setCapacityError("")
+              }}
+              disabled={isSavingCapacity}
+              aria-invalid={!!capacityError}
+            />
+            <p className="text-xs text-muted-foreground">
+              Ingresa un valor entre 1 y 16 horas. Si no lo cambias, se toma 6 horas
+              por defecto.
+            </p>
+
+            {capacityError && (
+              <p className="text-sm text-destructive">{capacityError}</p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleSaveDailyLimit}
+              disabled={isSavingCapacity || !hasChanges}
+            >
+              {isSavingCapacity ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                "Guardar cambios"
+              )}
+            </Button>
+
+            <p className="text-sm text-muted-foreground">
+              Límite actual: <span className="font-medium">{savedDailyLimit} h/día</span>
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/*
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-6">Notificaciones</h3>
         <div className="space-y-4">
@@ -106,6 +216,7 @@ export function SettingsContent() {
           ))}
         </div>
       </Card>
+      */}
 
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-6">Apariencia</h3>
@@ -115,7 +226,10 @@ export function SettingsContent() {
               <p className="font-medium">Modo Oscuro</p>
               <p className="text-sm text-muted-foreground">Activar el tema oscuro</p>
             </div>
-            <Switch checked={theme === "dark"} onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} />
+            <Switch
+              checked={theme === "dark"}
+              onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+            />
           </div>
         </div>
       </Card>
