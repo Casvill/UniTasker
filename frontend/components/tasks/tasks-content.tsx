@@ -308,7 +308,6 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
     return result.filter((a) => `${a.title} ${a.project} ${a.tags.join(" ")}`.toLowerCase().includes(q))
   }, [filter, typeFilter, dateFilter, activities, query])
 
-  if (loading) return <SkeletonTasks />
   if (error) return (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
@@ -363,30 +362,48 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">Todos ({activities.length})</Button>
-        <Button variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")} size="sm">Por hacer ({activities.filter(a => !a.completed).length})</Button>
-        <Button variant={filter === "completed" ? "default" : "outline"} onClick={() => setFilter("completed")} size="sm">Completado ({activities.filter(a => a.completed).length})</Button>
-      </div>
+      {!loading && (
+        <div className="flex gap-2">
+          <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">
+            Todos ({activities.length})
+          </Button>
+          <Button variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")} size="sm">
+            Por hacer ({activities.filter(a => !a.completed).length})
+          </Button>
+          <Button variant={filter === "completed" ? "default" : "outline"} onClick={() => setFilter("completed")} size="sm">
+            Completado ({activities.filter(a => a.completed).length})
+          </Button>
+        </div>
+      )}
 
-      <div className="grid gap-4">
-        {filteredActivities.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay actividades para mostrar.</p>
-        ) : (
-          filteredActivities.map((activity, index) => (
-            <TaskCard
-              key={activity.id}
-              task={activity}
-              index={index}
-              onToggleActivity={handleToggleActivity}
-              onToggleSubtask={handleToggleTask}
-              onOpenManage={handleOpenManageDialog}
-              onOpenEdit={handleOpenEditActivity}
-              onDelete={handleDeleteActivity}
-            />
-          ))
-        )}
-      </div>
+      {loading ? (
+        <SkeletonTasks />
+      ) : error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : (
+        <div className="grid gap-4">
+          {filteredActivities.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay actividades para mostrar.</p>
+          ) : (
+            filteredActivities.map((activity, index) => (
+              <TaskCard
+                key={activity.id}
+                task={activity}
+                index={index}
+                onToggleActivity={handleToggleActivity}
+                onToggleSubtask={handleToggleTask}
+                onOpenManage={handleOpenManageDialog}
+                onOpenEdit={handleOpenEditActivity}
+                onDelete={handleDeleteActivity}
+              />
+            ))
+          )}
+        </div>
+      )}
 
       <ManageTasksDialog
         open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}
