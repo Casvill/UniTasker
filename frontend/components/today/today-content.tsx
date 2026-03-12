@@ -10,6 +10,7 @@ import { apiFetch } from "@/lib/api"
 import { toast } from "sonner"
 import { TodayBoard, type Subtask, type SubtaskStatus } from "@/components/today/today-board"
 import { TodayFilters } from "@/components/today/today-filters"
+import { TodayColumnsSkeleton } from "@/components/today/today-columns-skeleton"
 
 type TareaBackend = {
     id: number
@@ -113,10 +114,9 @@ export function TodayContent() {
         }
     }, []);
 
-    const fetchTodayData = useCallback(async (silent = false) => {
+    const fetchTodayData = useCallback(async () => {
         try {
-            if (!silent) setState("loading")
-
+            setState("loading")
             const params = new URLSearchParams()
             if (courseFilter !== "all") params.append("curso", courseFilter)
             if (statusFilter !== "all") params.append("estado", statusFilter)
@@ -174,10 +174,6 @@ export function TodayContent() {
         displayData.para_hoy.length === 0 &&
         displayData.proximas.length === 0
 
-    if (state === "loading" && isFirstLoad.current) {
-        return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-    }
-
     if (state === "error") {
         return (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-3 text-center">
@@ -206,8 +202,10 @@ export function TodayContent() {
                 onCourseChange={setCourseFilter}
                 onStatusChange={setStatusFilter}
             />
-
-            {isEmpty ? (
+            
+            {state === "loading" ? (
+            <TodayColumnsSkeleton />
+            ) : isEmpty ? (
                 <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
                     <div className="rounded-full bg-muted/30 p-4 mb-2"><Search className="h-8 w-8 text-muted-foreground opacity-20" /></div>
                     <p className="max-w-[320px] text-base font-medium text-foreground">{hasActiveFilters ? "No encontramos resultados" : "No tienes tareas programadas"}</p>
