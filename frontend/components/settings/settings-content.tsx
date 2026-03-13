@@ -116,7 +116,7 @@ export function SettingsContent() {
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
       <Card className="p-6">
-        <h3 className="font-semibold text-lg mb-6">Información del Perfil</h3>
+        <h3 className="font-semibold text-lg mb-6">Tu perfil</h3>
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
@@ -126,7 +126,7 @@ export function SettingsContent() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <Button variant="outline">Cambiar Foto</Button>
+              <Button variant="outline">Actualizar foto</Button>
               <p className="text-xs text-muted-foreground mt-2">
                 JPG, PNG o GIF. Tamaño máx. 2MB
               </p>
