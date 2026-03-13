@@ -195,3 +195,10 @@ export async function updateDailyLimit(
         }),
     })
 }
+
+export async function reprogramTask(id: number, fecha: string, horas: number) {
+  return apiFetch(`/tareas/${id}/reprogramar/`, {
+    method: "PATCH",
+    body: JSON.stringify({ fecha_objetivo: fecha, horas_estimadas: horas }),
+  })
+}

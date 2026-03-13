@@ -27,6 +27,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { TaskSchema, TaskFormValues } from "./task-schema"
 import { Activity } from "./task-types"
+import { reprogramTask } from "@/lib/api"
+import { OverloadConflictDialog } from "@/components/conflict/overload-conflict-dialog"
 
 type ManageTasksDialogProps = {
   open: boolean
@@ -58,9 +60,17 @@ export function ManageTasksDialog({
     dueDate: "",
     estimatedHours: "",
   })
-
   const [isEditingDescription, setIsEditingDescription] = React.useState(false)
   const [activityDescription, setActivityDescription] = React.useState("")
+  const [showConflictModal, setShowConflictModal] = React.useState(false)
+  const [conflictData, setConflictData] = React.useState<null | {
+    taskId: number
+    task: any
+    day: string
+    scheduledHours: number
+    dailyLimit: number
+    message: string
+  }>(null)
 
   const minDate = React.useMemo(() => {
     const d = new Date()
@@ -113,26 +123,102 @@ export function ManageTasksDialog({
     })
   }
 
+  // const onSubmitTask = async (values: TaskFormValues) => {
+  //   if (!activity) return
+
+  //   // Validar sobrecarga antes de crear la tarea
+  //   try {
+  //     const result = await validateTaskCreation(values.dueDate, parseFloat(values.estimatedHours))
+  //     if (result.conflict) {
+  //       setConflictData({
+  //         open: true,
+  //         task: {
+  //           title: values.title,
+  //           date: values.dueDate,
+  //           effort: parseFloat(values.estimatedHours),
+  //         },
+  //         day: result.fecha,
+  //         scheduledHours: result.planned_hours,
+  //         dailyLimit: result.daily_limit,
+  //         onSave: handleSaveConflict,
+  //       })
+  //       return
+  //     }
+  //   } catch (e) {
+  //     toast.error("No se pudo validar la capacidad diaria.")
+  //     return
+  //   }
+
+  //   const promise = apiFetch<any>("/tareas/", {
+  //     method: "POST",
+  //     body: JSON.stringify({
+  //       nombre: values.title,
+  //       fecha_objetivo: values.dueDate,
+  //       horas_estimadas: parseFloat(values.estimatedHours),
+  //       actividad: activity.id,
+  //     }),
+  //   })
+
+  //   toast.promise(promise, {
+  //     loading: "Creando tarea...",
+  //     success: "Tarea creada",
+  //     error: "Error al crear la tarea",
+  //   })
+
+  //   await promise
+  //   onRefresh(true)
+  //   reset()
+  // }
+
   const onSubmitTask = async (values: TaskFormValues) => {
     if (!activity) return
 
-    const promise = apiFetch<any>("/tareas/", {
-      method: "POST",
-      body: JSON.stringify({
-        nombre: values.title,
-        fecha_objetivo: values.dueDate,
-        horas_estimadas: parseFloat(values.estimatedHours),
-        actividad: activity.id,
-      }),
-    })
+    // 1. Crear la tarea normalmente
+    let createdTask
+    try {
+      createdTask = await apiFetch<any>("/tareas/", {
+        method: "POST",
+        body: JSON.stringify({
+          nombre: values.title,
+          fecha_objetivo: values.dueDate,
+          horas_estimadas: parseFloat(values.estimatedHours),
+          actividad: activity.id,
+        }),
+      })
+    } catch (e) {
+      toast.error("Error al crear la tarea")
+      return
+    }
 
-    toast.promise(promise, {
-      loading: "Creando tarea...",
-      success: "Tarea creada",
-      error: "Error al crear la tarea",
-    })
+    // 2. Validar conflicto usando PATCH /tareas/{id}/reprogramar/
+    try {
+      const result = await reprogramTask(
+        createdTask.id,
+        createdTask.fecha_objetivo,
+        parseFloat(createdTask.horas_estimadas)
+      ) as { conflict: boolean; planned_hours: number; daily_limit: number; message: string };
 
-    await promise
+      if (result.conflict) {
+        setConflictData({
+          taskId: createdTask.id,
+          task: {
+            title: createdTask.nombre,
+            date: createdTask.fecha_objetivo,
+            effort: parseFloat(createdTask.horas_estimadas),
+          },
+          day: createdTask.fecha_objetivo,
+          scheduledHours: result.planned_hours,
+          dailyLimit: result.daily_limit,
+          message: result.message,
+        })
+        return // Bloquea la UI hasta que el usuario reprograma
+      }
+    } catch (e) {
+      toast.error("No se pudo validar la capacidad diaria.")
+      return
+    }
+
+    // 3. Si no hay conflicto, refresca y cierra
     onRefresh(true)
     reset()
   }
@@ -222,6 +308,47 @@ export function ManageTasksDialog({
     }
   }
 
+  const handleSaveConflict = async (newDate: string, newEffort: number) => {
+    if (!conflictData) return
+    try {
+      const result = await reprogramTask(conflictData.taskId, newDate, newEffort)as { conflict: boolean; planned_hours: number; daily_limit: number; message: string };
+      if (result.conflict) {
+        setConflictData({
+          ...conflictData,
+          task: {
+            ...conflictData.task,
+            date: newDate,
+            effort: newEffort,
+          },
+          day: newDate,
+          scheduledHours: result.planned_hours,
+          dailyLimit: result.daily_limit,
+          message: result.message,
+        })
+        toast.error(result.message)
+        return
+      }
+      // Si no hay conflicto, cierra el modal y refresca
+      setConflictData(null)
+      onRefresh(true)
+      reset()
+    } catch (e) {
+      toast.error("No se pudo reprogramar la tarea.")
+    }
+  }
+
+  const handleDeleteConflictTask = async () => {
+    if (!conflictData) return
+    try {
+      await apiFetch(`/tareas/${conflictData.taskId}/`, { method: "DELETE" })
+      setConflictData(null)
+      toast.success("Tarea eliminada")
+      onRefresh(true)
+    } catch (e) {
+      toast.error("No se pudo eliminar la tarea")
+    }
+  }
+
   const handleMarkAllAsDone = async () => {
     if (!activity) return
 
@@ -279,6 +406,7 @@ export function ManageTasksDialog({
   }
 
   return (
+  <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-hidden border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[620px]">
         <DialogHeader className="border-b border-border px-6 py-3">
@@ -594,5 +722,16 @@ export function ManageTasksDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <OverloadConflictDialog
+      open={!!conflictData}
+      onOpenChange={(open) => setConflictData(open ? conflictData : null)}
+      task={conflictData?.task || { title: "", date: "", effort: 1 }}
+      day={conflictData?.day || ""}
+      scheduledHours={conflictData?.scheduledHours || 0}
+      dailyLimit={conflictData?.dailyLimit || 0}
+      onSave={handleSaveConflict}
+      onDelete={handleDeleteConflictTask}
+    />
+    </>
   )
 }

@@ -246,7 +246,7 @@ export function TodayContent() {
                     </div>
                 </div>
             ) : (
-                <div className="transition-opacity">
+                <div className={"transition-opacity"}>
                     <TodayBoard
                         overdue={displayData.vencidas}
                         today={displayData.para_hoy}
