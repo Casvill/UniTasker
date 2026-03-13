@@ -60,6 +60,8 @@ class TareaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Las horas estimadas deben ser mayores a 0."
             )
+        if value > 16:
+            raise serializers.ValidationError("Las horas no pueden superar 16.")
         return value
 
     # Validar fecha válida (DRF ya valida formato automáticamente)
