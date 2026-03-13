@@ -32,6 +32,10 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("api/token/", SafeTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
     path("api/daily-limit/", DailyHourLimitView.as_view(), name="daily-limit"),
 ]

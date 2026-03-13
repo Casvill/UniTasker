@@ -82,6 +82,7 @@ class RegistroAvanceSerializer(serializers.ModelSerializer):
 
 # ------------------------------------------------------------------------------------
 
+
 class HoyTareaSerializer(serializers.ModelSerializer):
     """
     Serializer para la respuesta /tareas/hoy/
@@ -100,4 +101,4 @@ class HoyTareaSerializer(serializers.ModelSerializer):
             "estado",
             "actividad",
             "curso",
-            ]
+        ]

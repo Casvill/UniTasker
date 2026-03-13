@@ -12,7 +12,7 @@ class SafeTokenObtainPairSerializer(TokenObtainPairSerializer):
     }
 
     def validate(self, attrs):
-        email = (attrs.get("email")or"").strip().lower()
+        email = (attrs.get("email") or "").strip().lower()
         password = attrs.get("password") or ""
 
         generic_error = AuthenticationFailed("Credenciales inválidas.")
@@ -42,12 +42,13 @@ class SafeTokenObtainPairSerializer(TokenObtainPairSerializer):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
-    
+
         # pass
         # try:
         #     return super().validate(attrs)
         # except Exception:
         #     raise AuthenticationFailed("Credenciales inválidas.")
- 
+
+
 class SafeTokenObtainPairView(TokenObtainPairView):
     serializer_class = SafeTokenObtainPairSerializer
