@@ -11,6 +11,7 @@ from .serializers import (
     HoyTareaSerializer,
 )
 from datetime import date, timedelta
+from .services import detectar_conflicto_reprogramacion
 
 
 # ------------------------------------------------------------------------------------
@@ -39,6 +40,8 @@ class TareaViewSet(viewsets.ModelViewSet):
     serializer_class = TareaSerializer
     permission_classes = [IsAuthenticated]
 
+    # -------------------------------------------------------------------
+
     def get_queryset(self):
 
         if getattr(self, "swagger_fake_view", False):
@@ -59,6 +62,8 @@ class TareaViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by("fecha_objetivo")
 
+    # -------------------------------------------------------------------
+
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
 
@@ -77,6 +82,8 @@ class TareaViewSet(viewsets.ModelViewSet):
         serializer.save(actividad=actividad)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # -------------------------------------------------------------------
 
     @action(detail=False, methods=["get"], url_path="hoy")
     def hoy(self, request):
@@ -156,6 +163,43 @@ class TareaViewSet(viewsets.ModelViewSet):
                 "mensaje": mensaje,
             }
         )
+
+    # -------------------------------------------------------------------
+
+    @action(detail=True, methods=["patch"])
+    def reprogramar(self, request, pk=None):
+
+        tarea = self.get_object()
+        nueva_fecha = request.data.get("fecha_objetivo")
+
+        resultado = detectar_conflicto_reprogramacion(
+            usuario=request.user,
+            fecha=nueva_fecha,
+            horas_subtarea=tarea.horas_estimadas,
+            tarea_excluir_id=tarea.id,
+        )
+
+        # BE-03: respuesta cuando hay conflicto
+        if resultado["conflicto"]:
+            return Response(
+                {
+                    "conflict": True,
+                    "planned_hours": float(resultado["nuevo_total"]),
+                    "daily_limit": float(resultado["limite_diario"]),
+                    "message": f"Quedarías con {resultado['nuevo_total']}h planificadas (límite {resultado['limite_diario']}h)",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # si no hay conflicto, se guarda
+        tarea.fecha_objetivo = nueva_fecha
+        tarea.save()
+
+        return Response(
+            {"conflict": False, "message": "Tarea reprogramada correctamente"}
+        )
+
+    # -------------------------------------------------------------------
 
 
 # ------------------------------------------------------------------------------------
