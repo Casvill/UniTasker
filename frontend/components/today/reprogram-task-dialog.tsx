@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Loader2, CalendarDays } from "lucide-react"
 import { toast } from "sonner"
 
@@ -26,6 +26,14 @@ type ReprogramTaskDialogProps = {
     onSaved: () => Promise<void> | void
 }
 
+function getTodayString() {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    const day = String(now.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+}
+
 export function ReprogramTaskDialog({
     open,
     onOpenChange,
@@ -38,6 +46,8 @@ export function ReprogramTaskDialog({
     const [date, setDate] = useState(currentDate)
     const [isSaving, setIsSaving] = useState(false)
 
+    const today = useMemo(() => getTodayString(), [])
+
     useEffect(() => {
         if (open) {
             setDate(currentDate)
@@ -47,6 +57,11 @@ export function ReprogramTaskDialog({
     async function handleSave() {
         if (!date) {
             toast.error("Selecciona una fecha válida.")
+            return
+        }
+
+        if (date < today) {
+            toast.error("No puedes reprogramar una tarea a una fecha anterior a hoy.")
             return
         }
 
@@ -107,6 +122,7 @@ export function ReprogramTaskDialog({
                                 type="date"
                                 className="pl-10"
                                 value={date}
+                                min={today}
                                 onChange={(e) => setDate(e.target.value)}
                                 disabled={isSaving}
                             />
