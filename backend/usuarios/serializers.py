@@ -14,6 +14,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
+
 class DailyHourLimitSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

@@ -24,9 +24,7 @@ class DailyHourLimitView(APIView):
 
     def patch(self, request):
         serializer = DailyHourLimitSerializer(
-            request.user,
-            data=request.data,
-            partial=True
+            request.user, data=request.data, partial=True
         )
 
         if serializer.is_valid():

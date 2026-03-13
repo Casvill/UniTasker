@@ -4,8 +4,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .models import Actividad, Tarea, RegistroAvance
 from django.shortcuts import get_object_or_404
-from .serializers import ActividadSerializer, TareaSerializer, RegistroAvanceSerializer, HoyTareaSerializer
+from .serializers import (
+    ActividadSerializer,
+    TareaSerializer,
+    RegistroAvanceSerializer,
+    HoyTareaSerializer,
+)
 from datetime import date, timedelta
+
 
 # ------------------------------------------------------------------------------------
 class ActividadViewSet(viewsets.ModelViewSet):
@@ -14,8 +20,10 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
 
-        if getattr(self, 'swagger_fake_view', False):
-            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
+        if getattr(self, "swagger_fake_view", False):
+            print(
+                f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío."
+            )
             return Actividad.objects.none()
 
         return Actividad.objects.filter(usuario=self.request.user)
@@ -33,8 +41,10 @@ class TareaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
 
-        if getattr(self, 'swagger_fake_view', False):
-            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
+        if getattr(self, "swagger_fake_view", False):
+            print(
+                f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío."
+            )
             return Tarea.objects.none()
 
         actividad_id = self.request.query_params.get("actividad")
@@ -47,7 +57,7 @@ class TareaViewSet(viewsets.ModelViewSet):
 
             queryset = queryset.filter(actividad_id=actividad_id)
 
-        return queryset.order_by("fecha_objetivo")  
+        return queryset.order_by("fecha_objetivo")
 
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
@@ -60,9 +70,7 @@ class TareaViewSet(viewsets.ModelViewSet):
             )
 
         # Si actividad no existe → 404
-        actividad = get_object_or_404(
-            Actividad, id=actividad_id, usuario=request.user  
-        )
+        actividad = get_object_or_404(Actividad, id=actividad_id, usuario=request.user)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -110,14 +118,24 @@ class TareaViewSet(viewsets.ModelViewSet):
                 base_qs = base_qs.filter(estado=estado_filter)
 
         # Construir querysets por grupo con orden y desempate
-        vencidas_qs = base_qs.filter(fecha_objetivo__lt=today).order_by("fecha_objetivo", "horas_estimadas")
+        vencidas_qs = base_qs.filter(fecha_objetivo__lt=today).order_by(
+            "fecha_objetivo", "horas_estimadas"
+        )
         para_hoy_qs = base_qs.filter(fecha_objetivo=today).order_by("horas_estimadas")
-        proximas_qs = base_qs.filter(fecha_objetivo__gt=today, fecha_objetivo__lte=window_end).order_by("fecha_objetivo", "horas_estimadas")
+        proximas_qs = base_qs.filter(
+            fecha_objetivo__gt=today, fecha_objetivo__lte=window_end
+        ).order_by("fecha_objetivo", "horas_estimadas")
 
         # Serializar (usamos HoyTareaSerializer para incluir flags)
-        vencidas = HoyTareaSerializer(vencidas_qs, many=True, context={"request": request}).data
-        para_hoy = HoyTareaSerializer(para_hoy_qs, many=True, context={"request": request}).data
-        proximas = HoyTareaSerializer(proximas_qs, many=True, context={"request": request}).data
+        vencidas = HoyTareaSerializer(
+            vencidas_qs, many=True, context={"request": request}
+        ).data
+        para_hoy = HoyTareaSerializer(
+            para_hoy_qs, many=True, context={"request": request}
+        ).data
+        proximas = HoyTareaSerializer(
+            proximas_qs, many=True, context={"request": request}
+        ).data
 
         total = len(vencidas) + len(para_hoy) + len(proximas)
 
@@ -129,13 +147,16 @@ class TareaViewSet(viewsets.ModelViewSet):
             else:
                 mensaje = "No tienes tareas programadas"
 
-        return Response({
-            "vencidas": vencidas,
-            "para_hoy": para_hoy,
-            "proximas": proximas,
-            "total": total,
-            "mensaje": mensaje,
-        })
+        return Response(
+            {
+                "vencidas": vencidas,
+                "para_hoy": para_hoy,
+                "proximas": proximas,
+                "total": total,
+                "mensaje": mensaje,
+            }
+        )
+
 
 # ------------------------------------------------------------------------------------
 
@@ -146,8 +167,10 @@ class RegistroAvanceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
 
-        if getattr(self, 'swagger_fake_view', False):
-            print(f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío.")
+        if getattr(self, "swagger_fake_view", False):
+            print(
+                f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío."
+            )
             return RegistroAvance.objects.none()
 
         return RegistroAvance.objects.filter(
