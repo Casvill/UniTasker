@@ -9,16 +9,13 @@ import { useState } from "react"
 type OverloadConflictDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  task: {
-    title: string
-    date: string
-    effort: number
-  }
+  task: { title: string; date: string; effort: number }
   day: string
   scheduledHours: number
   dailyLimit: number
   onSave: (newDate: string, newEffort: number) => void
   onDelete: () => void
+  context: "create" | "edit" | "reprogram" // <--- NUEVO
 }
 
 export function OverloadConflictDialog({
@@ -30,6 +27,7 @@ export function OverloadConflictDialog({
   dailyLimit,
   onSave,
   onDelete,
+  context,
 }: OverloadConflictDialogProps) {
   const [mode, setMode] = useState<"initial" | "reprogram" | "reduce">("initial")
   const [newDate, setNewDate] = useState(task.date)
@@ -38,6 +36,9 @@ export function OverloadConflictDialog({
   // Habilita guardar solo si hay cambios válidos
   const canSaveReprogram = newDate !== task.date
   const canSaveReduce = newEffort > 0 && newEffort !== task.effort
+
+  const destructiveLabel =
+    context === "create" ? "Deshacer tarea" : "Deshacer cambio"
 
   function handleBack() {
     setMode("initial")
@@ -78,7 +79,7 @@ export function OverloadConflictDialog({
           <>
             <div className="grid grid-cols-2 gap-3 mb-2">
               <Button variant="outline" className="h-16" onClick={() => setMode("reprogram")}>
-                Reprogramar
+                Reprogramar a otra fecha
               </Button>
               <Button variant="outline" className="h-16" onClick={() => setMode("reduce")}>
                 Reducir esfuerzo
@@ -89,7 +90,7 @@ export function OverloadConflictDialog({
               className="w-full mt-2"
               onClick={onDelete}
             >
-              Deshacer tarea
+              {destructiveLabel}
             </Button>
           </>
         )}

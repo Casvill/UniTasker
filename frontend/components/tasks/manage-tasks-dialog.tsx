@@ -123,57 +123,9 @@ export function ManageTasksDialog({
     })
   }
 
-  // const onSubmitTask = async (values: TaskFormValues) => {
-  //   if (!activity) return
-
-  //   // Validar sobrecarga antes de crear la tarea
-  //   try {
-  //     const result = await validateTaskCreation(values.dueDate, parseFloat(values.estimatedHours))
-  //     if (result.conflict) {
-  //       setConflictData({
-  //         open: true,
-  //         task: {
-  //           title: values.title,
-  //           date: values.dueDate,
-  //           effort: parseFloat(values.estimatedHours),
-  //         },
-  //         day: result.fecha,
-  //         scheduledHours: result.planned_hours,
-  //         dailyLimit: result.daily_limit,
-  //         onSave: handleSaveConflict,
-  //       })
-  //       return
-  //     }
-  //   } catch (e) {
-  //     toast.error("No se pudo validar la capacidad diaria.")
-  //     return
-  //   }
-
-  //   const promise = apiFetch<any>("/tareas/", {
-  //     method: "POST",
-  //     body: JSON.stringify({
-  //       nombre: values.title,
-  //       fecha_objetivo: values.dueDate,
-  //       horas_estimadas: parseFloat(values.estimatedHours),
-  //       actividad: activity.id,
-  //     }),
-  //   })
-
-  //   toast.promise(promise, {
-  //     loading: "Creando tarea...",
-  //     success: "Tarea creada",
-  //     error: "Error al crear la tarea",
-  //   })
-
-  //   await promise
-  //   onRefresh(true)
-  //   reset()
-  // }
-
   const onSubmitTask = async (values: TaskFormValues) => {
     if (!activity) return
 
-    // 1. Crear la tarea normalmente
     let createdTask
     try {
       createdTask = await apiFetch<any>("/tareas/", {
@@ -190,7 +142,6 @@ export function ManageTasksDialog({
       return
     }
 
-    // 2. Validar conflicto usando PATCH /tareas/{id}/reprogramar/
     try {
       const result = await reprogramTask(
         createdTask.id,
@@ -211,20 +162,43 @@ export function ManageTasksDialog({
           dailyLimit: result.daily_limit,
           message: result.message,
         })
-        return // Bloquea la UI hasta que el usuario reprograma
+        return 
       }
     } catch (e) {
       toast.error("No se pudo validar la capacidad diaria.")
       return
     }
 
-    // 3. Si no hay conflicto, refresca y cierra
     onRefresh(true)
     reset()
   }
 
   const handleUpdateTask = async (id: number | string) => {
     if (!editingTask.title.trim()) return
+
+    try {
+      const result = await reprogramTask(
+        Number(id),
+        editingTask.dueDate,
+        parseFloat(editingTask.estimatedHours)
+      ) as { conflict: boolean; message: string };
+
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "conflict" in result &&
+        "message" in result
+      ) {
+        const { conflict, message } = result;
+        if (conflict) {
+          toast.error(message);
+          return;
+        }
+      }
+    } catch (e) {
+      toast.error("No se pudo validar la capacidad diaria.");
+      return;
+    }
 
     const promise = apiFetch<any>(`/tareas/${id}/`, {
       method: "PATCH",
@@ -730,6 +704,7 @@ export function ManageTasksDialog({
       dailyLimit={conflictData?.dailyLimit || 0}
       onSave={handleSaveConflict}
       onDelete={handleDeleteConflictTask}
+      context="create"
     />
     </>
   )

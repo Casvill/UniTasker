@@ -157,6 +157,7 @@ export function TodayTaskCard({
                 taskTitle={task.title}
                 activityTitle={task.actividad_title}
                 currentDate={task.target_date}
+                currentEffort={task.estimated_effort ?? 0}
                 onSaved={onTaskUpdated}
             />
         </>

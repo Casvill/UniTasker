@@ -14,8 +14,6 @@ import { SkeletonTasks } from "./task-skeleton"
 import { TaskCard } from "./task-card"
 import { Activity, normalizePriority, formatDueDate } from "./task-types"
 
-import { OverloadConflictDialog } from "@/components/conflict/overload-conflict-dialog"
-
 type TasksContentProps = {
   refreshKey: number
 }
@@ -72,11 +70,15 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const handleDeleteActivity = async (e: React.MouseEvent, activityId: number) => {
     e.stopPropagation();
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad?")) return;
+    const toastId = toast.loading("Eliminando actividad...");
     try {
       await apiFetch(`/actividades/${activityId}/`, { method: "DELETE" });
+      toast.dismiss(toastId);
       toast.success("Actividad eliminada");
-      loadActivities(true);
+      setLoading(true);
+      await loadActivities(false); 
     } catch (error) {
+      toast.dismiss(toastId);
       toast.error("No se pudo eliminar la actividad");
     }
   };
@@ -322,9 +324,6 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <Button variant="outline" onClick={() => setShowConflict(true)}>
-        Probar modal de conflicto
-      </Button>
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Cambiado: ahora usamos handleOnCreated en lugar de loadActivities directamente */}
         <CreateActivityDialog onCreated={handleOnCreated} />
@@ -430,18 +429,6 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         activity={activityToEdit} 
         onCreated={loadActivities} 
         showTrigger={false} 
-      />
-      <OverloadConflictDialog
-        open={showConflict}
-        onOpenChange={setShowConflict}
-        task={{ title: "Tarea ejemplo", date: "2026-06-28", effort: 2 }}
-        day="28/03/2026"
-        scheduledHours={6}
-        dailyLimit={6}
-        onSave={(date, effort) => {
-          setShowConflict(false)
-        }}
-        onShowDetail={() => alert("Detalle de conflicto (próximamente)")}
       />
     </div>
   )
