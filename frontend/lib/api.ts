@@ -3,14 +3,18 @@ type ApiError = {
     [key: string]: any
 }
 
-export function setTokens(access: string, refresh: string, email?: string, remember: boolean = false) {
+export function setTokens(
+    access: string,
+    refresh: string,
+    email?: string,
+    remember: boolean = false
+) {
     if (typeof window !== "undefined") {
         const storage = remember ? localStorage : sessionStorage
         storage.setItem("access_token", access)
         storage.setItem("refresh_token", refresh)
         if (email) storage.setItem("user_email", email)
-        
-        // Clear from other storage to avoid conflicts
+
         const otherStorage = remember ? sessionStorage : localStorage
         otherStorage.removeItem("access_token")
         otherStorage.removeItem("refresh_token")
@@ -20,16 +24,42 @@ export function setTokens(access: string, refresh: string, email?: string, remem
 
 export function getAccessToken() {
     if (typeof window !== "undefined") {
-        return localStorage.getItem("access_token") || sessionStorage.getItem("access_token")
+        return (
+            localStorage.getItem("access_token") ||
+            sessionStorage.getItem("access_token")
+        )
+    }
+    return null
+}
+
+export function getRefreshToken() {
+    if (typeof window !== "undefined") {
+        return (
+            localStorage.getItem("refresh_token") ||
+            sessionStorage.getItem("refresh_token")
+        )
     }
     return null
 }
 
 export function getUserEmail() {
     if (typeof window !== "undefined") {
-        return localStorage.getItem("user_email") || sessionStorage.getItem("user_email")
+        return (
+            localStorage.getItem("user_email") ||
+            sessionStorage.getItem("user_email")
+        )
     }
     return null
+}
+
+function updateAccessToken(newAccessToken: string) {
+    if (typeof window !== "undefined") {
+        if (localStorage.getItem("refresh_token")) {
+            localStorage.setItem("access_token", newAccessToken)
+        } else if (sessionStorage.getItem("refresh_token")) {
+            sessionStorage.setItem("access_token", newAccessToken)
+        }
+    }
 }
 
 export function logout() {
@@ -44,28 +74,65 @@ export function logout() {
     }
 }
 
+async function refreshAccessToken(): Promise<string | null> {
+    const refresh = getRefreshToken()
+    if (!refresh) return null
+
+    try {
+        const res = await fetch("/api/proxy/token/refresh/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ refresh }),
+        })
+
+        if (!res.ok) return null
+
+        const data = await res.json()
+        if (!data?.access) return null
+
+        updateAccessToken(data.access)
+        return data.access
+    } catch {
+        return null
+    }
+}
+
 export async function apiFetch<T>(
     path: string,
     options: RequestInit = {}
 ): Promise<T> {
-    const token = getAccessToken()
+    let token = getAccessToken()
 
-    const res = await fetch(`/api/proxy${path}`, {
+    let res = await fetch(`/api/proxy${path}`, {
         ...options,
         headers: {
             "Content-Type": "application/json",
-            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers ?? {}),
         },
     })
 
-    if (!res.ok) {
-        if (res.status === 401 && token) {
-            // Token is likely expired or invalid
+    if (res.status === 401 && token) {
+        const newAccessToken = await refreshAccessToken()
+
+        if (newAccessToken) {
+            res = await fetch(`/api/proxy${path}`, {
+                ...options,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${newAccessToken}`,
+                    ...(options.headers ?? {}),
+                },
+            })
+        } else {
             logout()
             throw new Error("Sesión expirada. Por favor, inicia sesión de nuevo.")
         }
+    }
 
+    if (!res.ok) {
         let data: ApiError | null = null
         try {
             data = await res.json()
@@ -74,6 +141,7 @@ export async function apiFetch<T>(
         const msg =
             data?.detail ??
             (data ? JSON.stringify(data) : `Error ${res.status} al consumir API`)
+
         throw new Error(msg)
     }
 
@@ -91,18 +159,39 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     try {
         const email = getUserEmail()
         const users = await apiFetch<UserProfile[]>("/usuarios/")
-        
+
         if (Array.isArray(users)) {
             if (email) {
-                // Buscamos el usuario que coincida con el email guardado
-                const found = users.find(u => u.email.toLowerCase() === email.toLowerCase())
+                const found = users.find(
+                    (u) => u.email.toLowerCase() === email.toLowerCase()
+                )
                 if (found) return found
             }
             return users[0] || null
         }
+
         return users as unknown as UserProfile
     } catch (e) {
         console.error("Error fetching profile:", e)
         return null
     }
+}
+
+export interface DailyLimitResponse {
+    daily_hour_limit: number
+}
+
+export async function fetchDailyLimit(): Promise<DailyLimitResponse> {
+    return apiFetch<DailyLimitResponse>("/daily-limit/")
+}
+
+export async function updateDailyLimit(
+    dailyHourLimit: number
+): Promise<DailyLimitResponse> {
+    return apiFetch<DailyLimitResponse>("/daily-limit/", {
+        method: "PATCH",
+        body: JSON.stringify({
+            daily_hour_limit: dailyHourLimit,
+        }),
+    })
 }

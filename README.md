@@ -90,7 +90,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Con esto ya estará andando el ba ckend de manera local en http://localhost:8000/
+Con esto ya estará andando el backend de manera local en http://localhost:8000/
 
 ## Frontend
 

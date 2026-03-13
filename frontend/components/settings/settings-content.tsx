@@ -8,7 +8,12 @@ import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
-import { fetchProfile, UserProfile } from "@/lib/api"
+import {
+  fetchProfile,
+  fetchDailyLimit,
+  updateDailyLimit,
+  UserProfile,
+} from "@/lib/api"
 import { User as UserIcon, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -21,19 +26,31 @@ export function SettingsContent() {
   const [savedDailyLimit, setSavedDailyLimit] = useState("6")
   const [capacityError, setCapacityError] = useState("")
   const [isSavingCapacity, setIsSavingCapacity] = useState(false)
+  const [isLoadingCapacity, setIsLoadingCapacity] = useState(true)
 
   useEffect(() => {
-    async function loadUser() {
+    async function loadData() {
       try {
-        const data = await fetchProfile()
-        if (data) setUser(data)
+        const [profileData, dailyLimitData] = await Promise.all([
+          fetchProfile(),
+          fetchDailyLimit(),
+        ])
+
+        if (profileData) setUser(profileData)
+
+        const currentLimit = String(dailyLimitData?.daily_hour_limit ?? 6)
+        setDailyLimit(currentLimit)
+        setSavedDailyLimit(currentLimit)
       } catch (err) {
-        console.error("No se pudo cargar el perfil en configuración", err)
+        console.error("No se pudo cargar la configuración", err)
+        toast.error("No se pudo cargar la configuración del usuario.")
       } finally {
         setLoading(false)
+        setIsLoadingCapacity(false)
       }
     }
-    loadUser()
+
+    loadData()
   }, [])
 
   const capitalize = (str: string | undefined) => {
@@ -73,15 +90,22 @@ export function SettingsContent() {
     try {
       setIsSavingCapacity(true)
 
-      // Simulación de guardado mientras no exista endpoint
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      const data = await updateDailyLimit(Number(dailyLimit))
 
-      setSavedDailyLimit(dailyLimit)
+      const updatedLimit = String(data?.daily_hour_limit ?? dailyLimit)
+      setDailyLimit(updatedLimit)
+      setSavedDailyLimit(updatedLimit)
       setCapacityError("")
+
       toast.success("Límite actualizado correctamente")
     } catch (error) {
-      setCapacityError("No se pudo guardar el límite. Intenta nuevamente.")
-      toast.error("No se pudo guardar el límite. Intenta nuevamente.")
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar el límite."
+
+      setCapacityError(message)
+      toast.error(message)
     } finally {
       setIsSavingCapacity(false)
     }
@@ -92,7 +116,7 @@ export function SettingsContent() {
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
       <Card className="p-6">
-        <h3 className="font-semibold text-lg mb-6">Información del Perfil</h3>
+        <h3 className="font-semibold text-lg mb-6">Tu perfil</h3>
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
@@ -102,7 +126,7 @@ export function SettingsContent() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <Button variant="outline">Cambiar Foto</Button>
+              <Button variant="outline">Actualizar foto</Button>
               <p className="text-xs text-muted-foreground mt-2">
                 JPG, PNG o GIF. Tamaño máx. 2MB
               </p>
@@ -141,7 +165,7 @@ export function SettingsContent() {
         <h3 className="font-semibold text-lg mb-2">Capacidad diaria</h3>
         <p className="text-sm text-muted-foreground mb-6">
           Configura cuántas horas al día puedes dedicar a tus actividades. Este valor
-          se usará más adelante para detectar sobrecarga en tu planificación.
+          se usará para detectar sobrecarga según tu planificación.
         </p>
 
         <div className="space-y-4">
@@ -158,12 +182,11 @@ export function SettingsContent() {
                 setDailyLimit(e.target.value)
                 if (capacityError) setCapacityError("")
               }}
-              disabled={isSavingCapacity}
+              disabled={isSavingCapacity || isLoadingCapacity}
               aria-invalid={!!capacityError}
             />
             <p className="text-xs text-muted-foreground">
-              Ingresa un valor entre 1 y 16 horas. Si no lo cambias, se toma 6 horas
-              por defecto.
+              Ingresa un valor entre 1 y 16 horas. Si no hay uno guardado, se usa 6 horas por defecto.
             </p>
 
             {capacityError && (
@@ -174,7 +197,7 @@ export function SettingsContent() {
           <div className="flex items-center gap-3">
             <Button
               onClick={handleSaveDailyLimit}
-              disabled={isSavingCapacity || !hasChanges}
+              disabled={isSavingCapacity || isLoadingCapacity || !hasChanges}
             >
               {isSavingCapacity ? (
                 <>
@@ -186,9 +209,13 @@ export function SettingsContent() {
               )}
             </Button>
 
-            <p className="text-sm text-muted-foreground">
-              Límite actual: <span className="font-medium">{savedDailyLimit} h/día</span>
-            </p>
+            {isLoadingCapacity ? (
+              <p className="text-sm text-muted-foreground">Cargando límite actual...</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Límite actual: <span className="font-medium">{savedDailyLimit} h/día</span>
+              </p>
+            )}
           </div>
         </div>
       </Card>

@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { TodayTaskCard } from "@/components/today/today-task-card"
-import type { Subtask } from "@/components/today/today-board"
+import type { Subtask, SubtaskStatus } from "@/components/today/today-board"
 
 type Variant = "overdue" | "today" | "upcoming"
 
@@ -49,12 +49,14 @@ export function TodayColumn({
     tasks,
     emptyText,
     onToggleSubtask,
+    onTaskUpdated,
 }: {
     title: string
     variant: Variant
     tasks: Subtask[]
     emptyText: string
     onToggleSubtask: (id: number, currentStatus: SubtaskStatus) => void
+    onTaskUpdated: () => Promise<void> | void
 }) {
     const styles = variantStyles[variant]
 
@@ -108,6 +110,7 @@ export function TodayColumn({
                             task={task}
                             variant={variant}
                             onToggle={() => onToggleSubtask(task.id, task.status)}
+                            onTaskUpdated={onTaskUpdated}
                         />
                     ))
                 )}
