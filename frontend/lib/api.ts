@@ -9,7 +9,7 @@ export function setTokens(access: string, refresh: string, email?: string, remem
         storage.setItem("access_token", access)
         storage.setItem("refresh_token", refresh)
         if (email) storage.setItem("user_email", email)
-        
+
         // Clear from other storage to avoid conflicts
         const otherStorage = remember ? sessionStorage : localStorage
         otherStorage.removeItem("access_token")
@@ -91,7 +91,7 @@ export async function fetchProfile(): Promise<UserProfile | null> {
     try {
         const email = getUserEmail()
         const users = await apiFetch<UserProfile[]>("/usuarios/")
-        
+
         if (Array.isArray(users)) {
             if (email) {
                 // Buscamos el usuario que coincida con el email guardado
@@ -105,4 +105,23 @@ export async function fetchProfile(): Promise<UserProfile | null> {
         console.error("Error fetching profile:", e)
         return null
     }
+}
+
+export interface DailyLimitResponse {
+    daily_hour_limit: number
+}
+
+export async function fetchDailyLimit(): Promise<DailyLimitResponse> {
+    return apiFetch<DailyLimitResponse>("/daily-limit/")
+}
+
+export async function updateDailyLimit(
+    dailyHourLimit: number
+): Promise<DailyLimitResponse> {
+    return apiFetch<DailyLimitResponse>("/daily-limit/", {
+        method: "PATCH",
+        body: JSON.stringify({
+            daily_hour_limit: dailyHourLimit,
+        }),
+    })
 }
