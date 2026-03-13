@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Subtask } from "@/components/today/today-board"
 import { ReprogramTaskDialog } from "@/components/today/reprogram-task-dialog"
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 
 type Variant = "overdue" | "today" | "upcoming"
 
@@ -76,13 +77,33 @@ export function TodayTaskCard({
         <>
             <article
                 className={cn(
-                    "rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
+                    "relative rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
                     variant === "overdue" && "border-destructive/20",
                     variant === "today" && "border-amber-500/20",
                     variant === "upcoming" && "border-blue-500/20",
                     isChecked && "opacity-75"
                 )}
             >
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="absolute top-3 right-3 text-muted-foreground hover:text-primary"
+                            onClick={() => setIsDialogOpen(true)}
+                            aria-label="Reprogramar subtarea"
+                        >
+                            <CalendarClock className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" align="center">
+                        Reprogramar
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+
                 <div className="flex items-start gap-3">
                     <Checkbox
                         checked={isChecked}
@@ -132,19 +153,6 @@ export function TodayTaskCard({
                                 <CalendarDays className="h-4 w-4" />
                                 <span>{dateLabel}</span>
                             </div>
-                        </div>
-
-                        <div className="pt-1">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="gap-2 bg-transparent"
-                                onClick={() => setIsDialogOpen(true)}
-                            >
-                                <CalendarClock className="h-4 w-4" />
-                                Reprogramar
-                            </Button>
                         </div>
                     </div>
                 </div>

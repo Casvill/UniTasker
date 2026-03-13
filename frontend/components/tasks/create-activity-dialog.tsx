@@ -22,7 +22,7 @@ import { ActivitySchema, ActivityFormValues } from "./activity-schema"
 import { Loader2 } from "lucide-react"
 
 type CreateActivityDialogProps = {
-    onCreated?: () => void
+    onCreated?: (result?: any) => void
     activity?: any
     open?: boolean
     onOpenChange?: (open: boolean) => void
@@ -57,16 +57,20 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
     const selectedType = watch("type")
 
     React.useEffect(() => {
-        if (activity) {
-            reset({
-                title: activity.title,
-                type: activity.tags?.[0] || "",
-                course: activity.project,
-                dueDate: activity.dueDate ? (activity.dueDate.includes('/') ? activity.dueDate.split('/').reverse().join('-') : activity.dueDate) : "",
-                description: activity.description || "",
-            })
-        }
-    }, [activity, reset])
+    if (!open) {
+        reset({
+        title: activity?.title || "",
+        type: activity?.tags?.[0] || "",
+        course: activity?.project || "",
+        dueDate: activity?.dueDate
+            ? (activity.dueDate.includes('/')
+                ? activity.dueDate.split('/').reverse().join('-')
+                : activity.dueDate)
+            : "",
+        description: activity?.description || "",
+        });
+    }
+    }, [open, activity, reset]);
 
     const onSubmit = async (values: ActivityFormValues) => {
         const payload = {
@@ -111,7 +115,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
             )}
 
             <DialogContent className="sm:max-w-[520px]">
-                <DialogHeader>
+                <DialogHeader className="border-b border-border px-1 py-1">
                     <DialogTitle>{activity ? "Editar actividad" : "Nueva actividad"}</DialogTitle>
                     <DialogDescription className="mb-2 text-sm text-muted-foreground">
                         {activity ? "Modifica los detalles de tu actividad." : "A continuación, ingresa los detalles de tu nueva actividad."}
@@ -134,7 +138,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                         
                     </div>
 
-                    <div className="border-t-2 border-dotted border-gray-300 my-3"></div>
+                    <div className="border-b border-border"></div>
                     
                     <Label>2. Evaluación y entrega</Label>
                     <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
@@ -164,7 +168,7 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                         </div>
                     </div>
                     
-                    <div className="border-t-2 border-dotted border-gray-300 my-3"></div>
+                    <div className="border-b border-border"></div>
                     
                     <Label>3. Detalles o indicaciones</Label>
                     <div className="space-y-1.5 sm:space-y-0 sm:grid sm:gap-4">
@@ -175,9 +179,9 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
                     </div>
 
                     <DialogFooter className="gap-3 mt-8">
-                        <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1" disabled={isSubmitting}>
+                        {/* <Button type="button" variant="outline" onClick={() => { reset(); setOpen(false); }} className="flex-1" disabled={isSubmitting}>
                             Cancelar
-                        </Button>
+                        </Button> */}
                         <Button type="submit" className="flex-1" disabled={isSubmitting}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {activity ? "Guardar Cambios" : "Guardar Actividad"}

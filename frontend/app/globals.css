@@ -11,7 +11,7 @@
   --card-foreground: oklch(0.25 0.02 120);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.25 0.02 120);
-  --primary: oklch(0.2624 0.0743 260.79);
+  --primary: oklch(24.451% 0.06766 260.619);
   --primary-foreground: oklch(0.98 0.01 155);
   --secondary: oklch(0.96 0.01 120);
   --secondary-foreground: oklch(0.25 0.02 120);
@@ -38,6 +38,8 @@
   --sidebar-accent-foreground: oklch(0.25 0.02 120);
   --sidebar-border: oklch(0.92 0.01 120);
   --sidebar-ring: oklch(0.2624 0.0743 260.79);
+  --tooltip-bg: oklch(21.34% 0.05719 261.11);
+  --tooltip-text: oklch(0.98 0.005 120);
 }
 
 .dark {
@@ -74,6 +76,8 @@
   --sidebar-accent-foreground: oklch(0.98 0.005 155);
   --sidebar-border: oklch(0.25 0.02 155);
   --sidebar-ring: oklch(64.582% 0.1356 163.841);
+  --tooltip-bg: oklch(0.98 0.005 120);
+  --tooltip-text: oklch(20.313% 0.05196 260.324);
 }
 
 @theme inline {
@@ -207,4 +211,35 @@
 
 .animate-fade-in {
   animation: fade-in 0.2s ease-out forwards;
+}
+
+/* Animaciones para el modal de conflicto */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(32px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+@keyframes fadeOutDown {
+  from { opacity: 1; transform: translateY(0);}
+  to { opacity: 0; transform: translateY(32px);}
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.35s cubic-bezier(.4,0,.2,1) both;
+}
+.fade-out-down {
+  animation: fadeOutDown 0.35s cubic-bezier(.4,0,.2,1) both;
+}
+
+.custom-tooltip,
+[data-slot="tooltip-content"] {
+  background: var(--tooltip-bg) !important;
+  color: var(--tooltip-text) !important;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.tooltip-arrow,
+[data-slot="tooltip-content"] > .tooltip-arrow {
+  background: var(--tooltip-bg) !important;
+  fill: var(--tooltip-bg) !important;
 }

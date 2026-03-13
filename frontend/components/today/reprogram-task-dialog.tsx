@@ -184,7 +184,7 @@ export function ReprogramTaskDialog({
                     <DialogHeader>
                         <DialogTitle>Reprogramar subtarea</DialogTitle>
                         <DialogDescription>
-                            Selecciona una nueva fecha objetivo para esta subtarea.
+                            A veces es mejor mejor dejarlo para otro día...
                         </DialogDescription>
                     </DialogHeader>
 
@@ -195,9 +195,9 @@ export function ReprogramTaskDialog({
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Nueva fecha objetivo</label>
+                            <label className="text-sm font-medium">¿Para cuando reprogramar?</label>
 
-                            <div className="relative">
+                            <div className="relative mt-1">
                                 <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     type="date"
@@ -210,9 +210,9 @@ export function ReprogramTaskDialog({
                             </div>
                         </div>
                     </div>
-
-                    <DialogFooter className="gap-2 sm:gap-0">
+                    <DialogFooter className="gap-3 mt-4">
                         <Button
+                            className="flex-1"
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                             disabled={isSaving}
@@ -220,14 +220,14 @@ export function ReprogramTaskDialog({
                             Cancelar
                         </Button>
 
-                        <Button onClick={handleSave} disabled={isSaving}>
+                        <Button onClick={handleSave} disabled={isSaving} className="flex-1">
                             {isSaving ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Guardando...
+                                    Reprogramando...
                                 </>
                             ) : (
-                                "Guardar cambios"
+                                "Reprogramar"
                             )}
                         </Button>
                     </DialogFooter>
@@ -235,7 +235,10 @@ export function ReprogramTaskDialog({
             </Dialog>
             <OverloadConflictDialog
             open={!!conflictData}
-            onOpenChange={(open) => setConflictData(open ? conflictData : null)}
+            onOpenChange={(open) => {
+                if (!open) handleUndoChange()
+                else setConflictData(conflictData)
+            }}
             task={conflictData?.task || { title: "", date: "", effort: 1 }}
             day={conflictData?.day || ""}
             scheduledHours={conflictData?.scheduledHours || 0}

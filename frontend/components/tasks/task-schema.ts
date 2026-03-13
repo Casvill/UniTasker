@@ -20,7 +20,7 @@ export const TaskSchema = z.object({
 
   estimatedHours: z
     .string()
-    .min(1, { message: "Ingresa horas estimadas." })
+    .min(1, { message: "No dejes este campo vacío." })
     .refine((v) => !Number.isNaN(Number(v)), { message: "Debe ser un número válido." })
     .refine((v) => Number(v) > 0, { message: "Las horas deben ser mayores a 0." }),
 })

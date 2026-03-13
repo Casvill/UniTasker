@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -91,8 +92,14 @@ export function ManageTasksDialog({
     defaultValues: { title: "", dueDate: "", estimatedHours: "" },
     mode: "onTouched",
   })
-
   const { register, handleSubmit, formState, reset } = form
+
+  React.useEffect(() => {
+    if (!open || !activity) {
+      reset({ title: "", dueDate: "", estimatedHours: "" })
+    }
+  }, [open, activity, reset])
+
   const { errors, isSubmitting } = formState
 
   const visibleTasks =
@@ -127,19 +134,27 @@ export function ManageTasksDialog({
     if (!activity) return
 
     let createdTask
+    const promise = apiFetch<any>("/tareas/", {
+      method: "POST",
+      body: JSON.stringify({
+        nombre: values.title,
+        fecha_objetivo: values.dueDate,
+        horas_estimadas: parseFloat(values.estimatedHours),
+        actividad: activity.id,
+      }),
+    })
+
+    await toast.promise(promise, {
+      loading: "Creando tarea...",
+      success: "Tarea creada",
+      error: "Error al crear la tarea",
+    })
+
     try {
-      createdTask = await apiFetch<any>("/tareas/", {
-        method: "POST",
-        body: JSON.stringify({
-          nombre: values.title,
-          fecha_objetivo: values.dueDate,
-          horas_estimadas: parseFloat(values.estimatedHours),
-          actividad: activity.id,
-        }),
-      })
+      createdTask = await promise;
     } catch (e) {
-      toast.error("Error al crear la tarea")
-      return
+    
+      return;
     }
 
     try {
@@ -162,15 +177,15 @@ export function ManageTasksDialog({
           dailyLimit: result.daily_limit,
           message: result.message,
         })
-        return 
+        return;
       }
     } catch (e) {
-      toast.error("No se pudo validar la capacidad diaria.")
-      return
+      toast.error("No se pudo validar la capacidad diaria.");
+      return;
     }
 
-    onRefresh(true)
-    reset()
+    onRefresh(true);
+    reset();
   }
 
   const handleUpdateTask = async (id: number | string) => {
@@ -285,7 +300,16 @@ export function ManageTasksDialog({
   const handleSaveConflict = async (newDate: string, newEffort: number) => {
     if (!conflictData) return
     try {
-      const result = await reprogramTask(conflictData.taskId, newDate, newEffort)
+      const result = await reprogramTask(
+        conflictData.taskId,
+        newDate,
+        newEffort
+      ) as {
+        conflict: boolean
+        planned_hours: number
+        daily_limit: number
+        message: string
+      }
       if (result.conflict) {
         setConflictData({
           ...conflictData,
@@ -388,7 +412,7 @@ export function ManageTasksDialog({
               {activity?.title || "Actividad sin título"}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Administra sus tareas y detalles principales.
+              Administra subtareas y detalles principales de esta actividad.
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -478,7 +502,7 @@ export function ManageTasksDialog({
 
           <section className="space-y-2">
             <h3 className="text-base font-semibold text-foreground">
-              Nueva tarea
+              Nueva subtarea
             </h3>
 
             <form
@@ -489,7 +513,7 @@ export function ManageTasksDialog({
               <div className="space-y-2">
                 <Input
                   id="title"
-                  placeholder="Nombre de la tarea"
+                  placeholder="Nombre de la subtarea"
                   {...register("title")}
                 />
                 {errors.title && (
@@ -508,14 +532,21 @@ export function ManageTasksDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <Input
-                    id="estimatedHours"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    placeholder="Horas estimadas"
-                    {...register("estimatedHours")}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Input
+                        id="estimatedHours"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="Esfuerzo"
+                        {...register("estimatedHours")}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Esfuerzo son las horas estimadas para esta tarea.
+                    </TooltipContent>
+                  </Tooltip>
                   {errors.estimatedHours && (
                     <p className="text-xs text-destructive">
                       {errors.estimatedHours.message}
@@ -538,7 +569,7 @@ export function ManageTasksDialog({
               <p className="text-sm text-muted-foreground">
                 {visibleTasks.length === 0
                   ? "Aún no has agregado tareas."
-                  : `${visibleTasks.length} tarea${visibleTasks.length === 1 ? "" : "s"} registradas.`}
+                  : `${visibleTasks.length} subtarea${visibleTasks.length === 1 ? "" : "s"} registradas.`}
               </p>
             </div>
 
@@ -581,7 +612,7 @@ export function ManageTasksDialog({
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Horas estimadas</Label>
+                            <Label>Esfuerzo</Label>
                             <Input
                               type="number"
                               min="0"
@@ -643,7 +674,7 @@ export function ManageTasksDialog({
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
                                 {task.estimatedHours
-                                  ? `${task.estimatedHours}h`
+                                  ? `${parseInt(task.estimatedHours)}h`
                                   : "Sin estimación"}
                               </span>
                             </div>
