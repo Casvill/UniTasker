@@ -311,7 +311,7 @@ export function ManageTasksDialog({
   const handleSaveConflict = async (newDate: string, newEffort: number) => {
     if (!conflictData) return
     try {
-      const result = await reprogramTask(conflictData.taskId, newDate, newEffort)as { conflict: boolean; planned_hours: number; daily_limit: number; message: string };
+      const result = await reprogramTask(conflictData.taskId, newDate, newEffort)
       if (result.conflict) {
         setConflictData({
           ...conflictData,
@@ -328,7 +328,6 @@ export function ManageTasksDialog({
         toast.error(result.message)
         return
       }
-      // Si no hay conflicto, cierra el modal y refresca
       setConflictData(null)
       onRefresh(true)
       reset()
