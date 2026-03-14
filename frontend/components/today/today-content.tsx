@@ -205,13 +205,13 @@ export function TodayContent() {
 
     return (
         <div className="space-y-6">
-            {data.mensaje && !hasActiveFilters && (
+            {/* {data.mensaje && !hasActiveFilters && (
                 <Alert variant="default" className="border-primary/20 bg-primary/5">
                     <Info className="h-4 w-4 text-primary" />
                     <AlertTitle>Información</AlertTitle>
                     <AlertDescription>{data.mensaje}</AlertDescription>
                 </Alert>
-            )}
+            )} */}
 
             <TodayFilters
                 query={query}
@@ -232,7 +232,7 @@ export function TodayContent() {
                     </div>
 
                     <p className="max-w-[320px] text-base font-medium text-foreground">
-                        {hasActiveFilters ? "No encontramos resultados" : "No tienes tareas programadas"}
+                        {hasActiveFilters ? "No encontramos resultados" : "Nada por aquí, nada por allá..."}
                     </p>
 
                     <div className="mt-2 flex gap-3">
@@ -246,7 +246,7 @@ export function TodayContent() {
                     </div>
                 </div>
             ) : (
-                <div className="transition-opacity">
+                <div className={"transition-opacity"}>
                     <TodayBoard
                         overdue={displayData.vencidas}
                         today={displayData.para_hoy}

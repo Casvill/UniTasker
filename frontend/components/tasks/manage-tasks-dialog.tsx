@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -27,6 +28,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { TaskSchema, TaskFormValues } from "./task-schema"
 import { Activity } from "./task-types"
+import { reprogramTask } from "@/lib/api"
+import { OverloadConflictDialog } from "@/components/conflict/overload-conflict-dialog"
 
 type ManageTasksDialogProps = {
   open: boolean
@@ -58,9 +61,17 @@ export function ManageTasksDialog({
     dueDate: "",
     estimatedHours: "",
   })
-
   const [isEditingDescription, setIsEditingDescription] = React.useState(false)
   const [activityDescription, setActivityDescription] = React.useState("")
+  const [showConflictModal, setShowConflictModal] = React.useState(false)
+  const [conflictData, setConflictData] = React.useState<null | {
+    taskId: number
+    task: any
+    day: string
+    scheduledHours: number
+    dailyLimit: number
+    message: string
+  }>(null)
 
   const minDate = React.useMemo(() => {
     const d = new Date()
@@ -81,8 +92,14 @@ export function ManageTasksDialog({
     defaultValues: { title: "", dueDate: "", estimatedHours: "" },
     mode: "onTouched",
   })
-
   const { register, handleSubmit, formState, reset } = form
+
+  React.useEffect(() => {
+    if (!open || !activity) {
+      reset({ title: "", dueDate: "", estimatedHours: "" })
+    }
+  }, [open, activity, reset])
+
   const { errors, isSubmitting } = formState
 
   const visibleTasks =
@@ -116,6 +133,7 @@ export function ManageTasksDialog({
   const onSubmitTask = async (values: TaskFormValues) => {
     if (!activity) return
 
+    let createdTask
     const promise = apiFetch<any>("/tareas/", {
       method: "POST",
       body: JSON.stringify({
@@ -126,19 +144,76 @@ export function ManageTasksDialog({
       }),
     })
 
-    toast.promise(promise, {
+    await toast.promise(promise, {
       loading: "Creando tarea...",
       success: "Tarea creada",
       error: "Error al crear la tarea",
     })
 
-    await promise
-    onRefresh(true)
-    reset()
+    try {
+      createdTask = await promise;
+    } catch (e) {
+    
+      return;
+    }
+
+    try {
+      const result = await reprogramTask(
+        createdTask.id,
+        createdTask.fecha_objetivo,
+        parseFloat(createdTask.horas_estimadas)
+      ) as { conflict: boolean; planned_hours: number; daily_limit: number; message: string };
+
+      if (result.conflict) {
+        setConflictData({
+          taskId: createdTask.id,
+          task: {
+            title: createdTask.nombre,
+            date: createdTask.fecha_objetivo,
+            effort: parseFloat(createdTask.horas_estimadas),
+          },
+          day: createdTask.fecha_objetivo,
+          scheduledHours: result.planned_hours,
+          dailyLimit: result.daily_limit,
+          message: result.message,
+        })
+        return;
+      }
+    } catch (e) {
+      toast.error("No se pudo validar la capacidad diaria.");
+      return;
+    }
+
+    onRefresh(true);
+    reset();
   }
 
   const handleUpdateTask = async (id: number | string) => {
     if (!editingTask.title.trim()) return
+
+    try {
+      const result = await reprogramTask(
+        Number(id),
+        editingTask.dueDate,
+        parseFloat(editingTask.estimatedHours)
+      ) as { conflict: boolean; message: string };
+
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        "conflict" in result &&
+        "message" in result
+      ) {
+        const { conflict, message } = result;
+        if (conflict) {
+          toast.error(message);
+          return;
+        }
+      }
+    } catch (e) {
+      toast.error("No se pudo validar la capacidad diaria.");
+      return;
+    }
 
     const promise = apiFetch<any>(`/tareas/${id}/`, {
       method: "PATCH",
@@ -222,6 +297,55 @@ export function ManageTasksDialog({
     }
   }
 
+  const handleSaveConflict = async (newDate: string, newEffort: number) => {
+    if (!conflictData) return
+    try {
+      const result = await reprogramTask(
+        conflictData.taskId,
+        newDate,
+        newEffort
+      ) as {
+        conflict: boolean
+        planned_hours: number
+        daily_limit: number
+        message: string
+      }
+      if (result.conflict) {
+        setConflictData({
+          ...conflictData,
+          task: {
+            ...conflictData.task,
+            date: newDate,
+            effort: newEffort,
+          },
+          day: newDate,
+          scheduledHours: result.planned_hours,
+          dailyLimit: result.daily_limit,
+          message: result.message,
+        })
+        toast.error(result.message)
+        return
+      }
+      setConflictData(null)
+      onRefresh(true)
+      reset()
+    } catch (e) {
+      toast.error("No se pudo reprogramar la tarea.")
+    }
+  }
+
+  const handleDeleteConflictTask = async () => {
+    if (!conflictData) return
+    try {
+      await apiFetch(`/tareas/${conflictData.taskId}/`, { method: "DELETE" })
+      setConflictData(null)
+      toast.success("Tarea eliminada")
+      onRefresh(true)
+    } catch (e) {
+      toast.error("No se pudo eliminar la tarea")
+    }
+  }
+
   const handleMarkAllAsDone = async () => {
     if (!activity) return
 
@@ -279,6 +403,7 @@ export function ManageTasksDialog({
   }
 
   return (
+  <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-hidden border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[620px]">
         <DialogHeader className="border-b border-border px-6 py-3">
@@ -287,7 +412,7 @@ export function ManageTasksDialog({
               {activity?.title || "Actividad sin título"}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Administra sus tareas y detalles principales.
+              Administra subtareas y detalles principales de esta actividad.
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -377,7 +502,7 @@ export function ManageTasksDialog({
 
           <section className="space-y-2">
             <h3 className="text-base font-semibold text-foreground">
-              Nueva tarea
+              Nueva subtarea
             </h3>
 
             <form
@@ -388,7 +513,7 @@ export function ManageTasksDialog({
               <div className="space-y-2">
                 <Input
                   id="title"
-                  placeholder="Nombre de la tarea"
+                  placeholder="Nombre de la subtarea"
                   {...register("title")}
                 />
                 {errors.title && (
@@ -407,14 +532,21 @@ export function ManageTasksDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <Input
-                    id="estimatedHours"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    placeholder="Horas estimadas"
-                    {...register("estimatedHours")}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Input
+                        id="estimatedHours"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="Esfuerzo"
+                        {...register("estimatedHours")}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Esfuerzo son las horas estimadas para esta tarea.
+                    </TooltipContent>
+                  </Tooltip>
                   {errors.estimatedHours && (
                     <p className="text-xs text-destructive">
                       {errors.estimatedHours.message}
@@ -437,7 +569,7 @@ export function ManageTasksDialog({
               <p className="text-sm text-muted-foreground">
                 {visibleTasks.length === 0
                   ? "Aún no has agregado tareas."
-                  : `${visibleTasks.length} tarea${visibleTasks.length === 1 ? "" : "s"} registradas.`}
+                  : `${visibleTasks.length} subtarea${visibleTasks.length === 1 ? "" : "s"} registradas.`}
               </p>
             </div>
 
@@ -451,7 +583,7 @@ export function ManageTasksDialog({
                     {editingId === task.id ? (
                       <div className="space-y-3">
                         <div className="space-y-2">
-                          <Label>Nombre de la tarea</Label>
+                          <Label>Nombre de la subtarea</Label>
                           <Input
                             value={editingTask.title}
                             onChange={(e) =>
@@ -480,7 +612,7 @@ export function ManageTasksDialog({
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Horas estimadas</Label>
+                            <Label>Esfuerzo</Label>
                             <Input
                               type="number"
                               min="0"
@@ -542,7 +674,7 @@ export function ManageTasksDialog({
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
                                 {task.estimatedHours
-                                  ? `${task.estimatedHours}h`
+                                  ? `${parseInt(task.estimatedHours)}h`
                                   : "Sin estimación"}
                               </span>
                             </div>
@@ -594,5 +726,17 @@ export function ManageTasksDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <OverloadConflictDialog
+      open={!!conflictData}
+      onOpenChange={(open) => setConflictData(open ? conflictData : null)}
+      task={conflictData?.task || { title: "", date: "", effort: 1 }}
+      day={conflictData?.day || ""}
+      scheduledHours={conflictData?.scheduledHours || 0}
+      dailyLimit={conflictData?.dailyLimit || 0}
+      onSave={handleSaveConflict}
+      onDelete={handleDeleteConflictTask}
+      context="create"
+    />
+    </>
   )
 }

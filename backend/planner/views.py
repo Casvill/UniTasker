@@ -166,20 +166,27 @@ class TareaViewSet(viewsets.ModelViewSet):
 
     # -------------------------------------------------------------------
 
+
+    # -------------------------------------------------------------------
+
     @action(detail=True, methods=["patch"])
     def reprogramar(self, request, pk=None):
-
         tarea = self.get_object()
-        nueva_fecha = request.data.get("fecha_objetivo")
+        nueva_fecha = request.data.get("fecha_objetivo", tarea.fecha_objetivo)
+        nuevas_horas = request.data.get("horas_estimadas", tarea.horas_estimadas)
+
+        try:
+            nuevas_horas = float(nuevas_horas)
+        except (TypeError, ValueError):
+            nuevas_horas = float(tarea.horas_estimadas)
 
         resultado = detectar_conflicto_reprogramacion(
             usuario=request.user,
             fecha=nueva_fecha,
-            horas_subtarea=tarea.horas_estimadas,
+            horas_subtarea=nuevas_horas,
             tarea_excluir_id=tarea.id,
         )
 
-        # BE-03: respuesta cuando hay conflicto
         if resultado["conflicto"]:
             return Response(
                 {
@@ -193,15 +200,12 @@ class TareaViewSet(viewsets.ModelViewSet):
 
         # si no hay conflicto, se guarda
         tarea.fecha_objetivo = nueva_fecha
+        tarea.horas_estimadas = nuevas_horas
         tarea.save()
 
         return Response(
             {"conflict": False, "message": "Tarea reprogramada correctamente"}
         )
-
-    # -------------------------------------------------------------------
-
-
 # ------------------------------------------------------------------------------------
 
 

@@ -32,6 +32,8 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
 
+  const [showConflict, setShowConflict] = useState(false)
+
   // --- HANDLERS ---
 
   const handleOpenManageDialog = (activity: Activity) => {
@@ -68,11 +70,15 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const handleDeleteActivity = async (e: React.MouseEvent, activityId: number) => {
     e.stopPropagation();
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad?")) return;
+    const toastId = toast.loading("Eliminando actividad...");
     try {
       await apiFetch(`/actividades/${activityId}/`, { method: "DELETE" });
+      toast.dismiss(toastId);
       toast.success("Actividad eliminada");
-      loadActivities(true);
+      setLoading(true);
+      await loadActivities(false); 
     } catch (error) {
+      toast.dismiss(toastId);
       toast.error("No se pudo eliminar la actividad");
     }
   };

@@ -21,6 +21,7 @@ export function TodayRuleInfo() {
                 </TooltipTrigger>
 
                 <TooltipContent side="bottom" align="center" className="max-w-xs">
+                    <div className="mb-1 text-base font-semibold">¿Como se agrupa esto?</div>
                     <p className="text-sm">
                         Las subtareas se agrupan en <strong>Vencidas</strong>,{" "}
                         <strong>Para hoy</strong> y <strong>Próximas</strong>. Dentro de cada
