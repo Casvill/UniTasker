@@ -14,8 +14,10 @@ import {
   updateDailyLimit,
   UserProfile,
 } from "@/lib/api"
-import { User as UserIcon, Loader2 } from "lucide-react"
+import { User as UserIcon, Loader2} from "lucide-react"
+import { CircleAlert } from "lucide-react"
 import { toast } from "sonner"
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
@@ -118,7 +120,7 @@ export function SettingsContent() {
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-6">Tu perfil</h3>
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
               <AvatarImage src="" alt={user?.username || "Usuario"} />
               <AvatarFallback className="text-xl bg-primary/10 text-primary">
@@ -131,7 +133,7 @@ export function SettingsContent() {
                 JPG, PNG o GIF. Tamaño máx. 2MB
               </p>
             </div>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -170,24 +172,41 @@ export function SettingsContent() {
 
         <div className="space-y-4">
           <div className="space-y-2 max-w-sm">
-            <Label htmlFor="daily-limit">Límite de horas por día</Label>
-            <Input
-              id="daily-limit"
-              type="number"
-              min={1}
-              max={16}
-              step={1}
-              value={dailyLimit}
-              onChange={(e) => {
-                setDailyLimit(e.target.value)
-                if (capacityError) setCapacityError("")
-              }}
-              disabled={isSavingCapacity || isLoadingCapacity}
-              aria-invalid={!!capacityError}
-            />
-            <p className="text-xs text-muted-foreground">
-              Ingresa un valor entre 1 y 16 horas. Si no hay uno guardado, se usa 6 horas por defecto.
-            </p>
+            <div className="inline-flex items-center gap-1 mb-1">
+              <Label htmlFor="daily-limit">Límite de horas por día</Label>
+              <span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-pointer align-middle"><CircleAlert className="inline w-4 h-4 text-muted-foreground mb-1 ml-0.5" /></span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center" className="xs">
+                      Ingresa un valor entre 1 y 16 horas. Si no hay uno guardado, se usa 6 horas por defecto.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </span>
+            </div>
+            <div className="relative">
+              <Input
+                id="daily-limit"
+                type="number"
+                min={1}
+                max={16}
+                step={1}
+                value={isLoadingCapacity ? "" : dailyLimit}
+                onChange={(e) => {
+                  setDailyLimit(e.target.value)
+                  if (capacityError) setCapacityError("")
+                }}
+                disabled={isSavingCapacity || isLoadingCapacity}
+                aria-invalid={!!capacityError}
+                // className={isLoadingCapacity ? "pr-10" : ""}
+              />
+              {isLoadingCapacity && (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground pointer-events-none" />
+              )}
+            </div>
 
             {capacityError && (
               <p className="text-sm text-destructive">{capacityError}</p>

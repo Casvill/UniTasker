@@ -3,8 +3,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock3, CalendarClock, ArrowDownCircle, Loader2, AlertTriangle, CircleHelp } from "lucide-react"
+import { Calendar, Clock3, CalendarClock, ArrowDownCircle, Loader2, ClockAlert, CircleHelp } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 
 type OverloadConflictDialogProps = {
@@ -16,7 +18,7 @@ type OverloadConflictDialogProps = {
   dailyLimit: number
   onSave: (newDate: string, newEffort: number) => void
   onDelete: () => void
-  context: "create" | "edit" | "reprogram" // <--- NUEVO
+  context: "create" | "edit" | "reprogram"
 }
 
 export function OverloadConflictDialog({
@@ -31,6 +33,7 @@ export function OverloadConflictDialog({
   context,
 }: OverloadConflictDialogProps) {
   const [mode, setMode] = useState<"initial" | "reprogram" | "reduce">("initial")
+  const router = useRouter();
   const [newDate, setNewDate] = useState(task.date)
   const [newEffort, setNewEffort] = useState(task.effort)
   const [pendingMode, setPendingMode] = useState<null | "reprogram" | "reduce">(null)
@@ -84,8 +87,8 @@ export function OverloadConflictDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
             <div className="flex flex-col items-center mb-2">
-              <AlertTriangle className="w-8 h-8 text-destructive mb-1" />
-              <DialogTitle className="text-destructive text-center">¡No te sobrecargues!</DialogTitle>
+              <ClockAlert className="w-8 h-8 text-destructive mb-2" />
+              <DialogTitle className="text-destructive text-center">¿Tiempo para un descanso?</DialogTitle>
             </div>
           <DialogDescription>
             Quedarías con <b>{scheduledHours} horas </b> programadas para el <b>{day}</b>. Estarías excediendo tu límite diario de <b>{dailyLimit} horas.</b>
@@ -96,7 +99,19 @@ export function OverloadConflictDialog({
                     <span className="cursor-pointer align-middle"><CircleHelp className="inline w-4 h-4 text-muted-foreground mb-1" /></span>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" align="center" className="xs">
-                    Puedes configurar tu límite diario en la pestaña de <b>Configuración</b>
+                    <>
+                      Puedes cambiar tu límite diario en la pestaña de{" "}
+                      <button
+                        className="underline text-secondary font-semibold"
+                        type="button"
+                        onClick={() => {
+                          onOpenChange(false);
+                          router.push("/settings");
+                        }}
+                      >
+                        Configuración
+                      </button>
+                    </>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -129,19 +144,19 @@ export function OverloadConflictDialog({
               <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Prueba alguna de estas opciones</span>
               <div className="flex-1 border-t border-border" />
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-1.5">
+            <div className="grid grid-cols-2 gap-3 mb-0.5">
               <Button
-                variant="outline"
+                // variant="outline"
                 onClick={() => handleModeChange("reprogram")}
-                className="flex items-center py-8 text-[16px]"
+                className="flex items-center py-8.5 text-[16px]"
               >
                 <CalendarClock/>
                 Reprogramar la fecha
               </Button>
               <Button
-                variant="outline"
+                // variant="outline"
                 onClick={() => handleModeChange("reduce")}
-                className="flex items-center py-8 text-[16px]"
+                className="flex items-center py-8.5 text-[16px]"
               >
                 <ArrowDownCircle/>
                 Reducir el esfuerzo
@@ -160,14 +175,15 @@ export function OverloadConflictDialog({
         {/* Opcion secundaria: Reprogramar */}
         {pendingMode === "reprogram" && showForm && (
           <div className={anim === "out" ? "fade-out-down" : "fade-in-up"}>
-            <label className="block text-sm font-medium mb-2">¿Para cuando reprogramar la subtarea?</label>
+            <label className="block text-sm font-medium mb-1.5">¿Para cuando reprogramar la subtarea?</label>
             <Input
+              className="mb-1"
               type="date"
               min={todayString}
               value={newDate}
               onChange={e => setNewDate(e.target.value)}
             />
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-2 gap-2 mt-1">
               <Button variant="outline" onClick={handleBack}>Atrás</Button>
               <Button
                 onClick={async () => {
@@ -193,16 +209,17 @@ export function OverloadConflictDialog({
         {/* Opcion secundaria: Reducir esfuerzo */}
         {pendingMode === "reduce" && showForm && (
           <div className={anim === "out" ? "fade-out-down" : "fade-in-up"}>
-            <label className="block text-sm font-medium mb-2">¿A cuantas horas reducir la subtarea?</label>
+            <label className="block text-sm font-medium mb-1.5">¿A cuantas horas reducir la subtarea?</label>
             <Input
+              className="mb-1"
               type="number"
               min={0.5}
               step={0.5}
               value={newEffort === 0 ? "" : newEffort}
               onChange={e => setNewEffort(Number(e.target.value))}
             />
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <Button type="submit" variant="outline" onClick={handleBack}>Atrás</Button>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <Button variant="outline" onClick={handleBack}>Atrás</Button>
               <Button
                 onClick={async () => {
                   setIsSaving(true);

@@ -583,7 +583,7 @@ export function ManageTasksDialog({
                     {editingId === task.id ? (
                       <div className="space-y-3">
                         <div className="space-y-2">
-                          <Label>Nombre de la tarea</Label>
+                          <Label>Nombre de la subtarea</Label>
                           <Input
                             value={editingTask.title}
                             onChange={(e) =>
