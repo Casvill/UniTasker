@@ -177,6 +177,7 @@ export function ManageTasksDialog({
           dailyLimit: result.daily_limit,
           message: result.message,
         })
+        toast.error("Límite diario excedido")
         return;
       }
     } catch (e) {

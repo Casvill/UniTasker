@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Calendar, Clock3, CalendarClock, ArrowDownCircle, Loader2, ClockAlert, CircleHelp } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 
 type OverloadConflictDialogProps = {
@@ -40,6 +40,7 @@ export function OverloadConflictDialog({
   const [showForm, setShowForm] = useState(false)
   const [anim, setAnim] = useState<"in" | "out" | null>(null)
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const canSaveReprogram = newDate !== task.date
   const canSaveReduce = !!newEffort && Number(newEffort) > 0 && Number(newEffort) !== task.effort
@@ -82,43 +83,63 @@ export function OverloadConflictDialog({
     setTimeout(() => setAnim(null), 700)
   }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-            <div className="flex flex-col items-center mb-2">
-              <ClockAlert className="w-8 h-8 text-destructive mb-2" />
-              <DialogTitle className="text-destructive text-center">¿Tiempo para un descanso?</DialogTitle>
-            </div>
-          <DialogDescription>
-            Quedarías con <b>{scheduledHours} horas </b> programadas para el <b>{day}</b>. Estarías excediendo tu límite diario de <b>{dailyLimit} horas.</b>
-            <span className="inline-block align-middle ml-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="cursor-pointer align-middle"><CircleHelp className="inline w-4 h-4 text-muted-foreground mb-1" /></span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" align="center" className="xs">
-                    <>
-                      Puedes cambiar tu límite diario en la pestaña de{" "}
-                      <button
-                        className="underline text-secondary font-semibold"
-                        type="button"
-                        onClick={() => {
-                          onOpenChange(false);
-                          router.push("/settings");
-                        }}
-                      >
-                        Configuración
-                      </button>
-                    </>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </span>
-          </DialogDescription>
-        </DialogHeader>
+  async function handleDialogClose(nextOpen: boolean) {
+    if (!nextOpen && context === "create") {
+      if (
+        window.confirm(
+          "Al no resolver el conflicto se elimina la subtarea, ¿estás seguro?"
+        )
+      ) {
+        onOpenChange(false);
+        setIsDeleting(true);
+        const toastId = toast.loading("Eliminando tarea...");
+        await onDelete();
+        toast.dismiss(toastId); 
+        setIsDeleting(false);
+      }
+      return;
+    }
+    onOpenChange(nextOpen);
+  }
 
+  return (
+    <Dialog open={open} onOpenChange={handleDialogClose}>
+      <DialogContent className="max-w-md" showCloseButton={!isDeleting}>
+        <fieldset disabled={isDeleting} style={{ opacity: isDeleting ? 0.6 : 1 }}>
+          <DialogHeader>
+              <div className="flex flex-col items-center mb-2">
+                <ClockAlert className="w-8 h-8 text-destructive mb-2" />
+                <DialogTitle className="text-destructive text-center">¿Tiempo para un descanso?</DialogTitle>
+              </div>
+            <DialogDescription>
+              Quedarías con <b>{scheduledHours} horas </b> programadas para el <b>{day}</b>. Estarías excediendo tu límite diario de <b>{dailyLimit} horas.</b>
+              <span className="inline-block align-middle ml-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-pointer align-middle"><CircleHelp className="inline w-4 h-4 text-muted-foreground mb-1" /></span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" align="center" className="xs">
+                      <>
+                        Puedes cambiar tu límite diario en la pestaña de{" "}
+                        <button
+                          className="underline text-secondary font-semibold"
+                          type="button"
+                          onClick={() => {
+                            onOpenChange(false);
+                            router.push("/settings");
+                          }}
+                        >
+                          Configuración
+                        </button>
+                      </>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+        </fieldset>
 
         {/* Recuadro con la tarea */}
         <div className="rounded-xl border bg-muted/10 p-4 mb-2 space-y-2">

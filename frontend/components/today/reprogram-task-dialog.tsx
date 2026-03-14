@@ -160,6 +160,7 @@ export function ReprogramTaskDialog({
                 message: result.message,
             })
             toast.dismiss(toastId)
+            toast.error("Límite diario excedido")
             return
         }
 
