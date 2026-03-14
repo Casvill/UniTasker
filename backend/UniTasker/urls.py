@@ -38,4 +38,5 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("api/daily-limit/", DailyHourLimitView.as_view(), name="daily-limit"),
+    path("accounts/", include("rest_framework.urls")),
 ]
