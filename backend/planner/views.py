@@ -32,16 +32,50 @@ class ActividadViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
+    @action(detail=True, methods=["get"], url_path="progreso")
+    def progreso(self, request, pk=None):
+        actividad = self.get_object()
+        tareas = actividad.tareas.all()
+
+        total = tareas.count()
+        hechas = tareas.filter(estado="hecha").count()
+        pospuestas = tareas.filter(estado="pospuesta").count()
+        pendientes = tareas.filter(estado="pendiente").count()
+
+        if total == 0:
+            return Response(
+                {
+                    "total_subtareas": 0,
+                    "hechas": 0,
+                    "pospuestas": 0,
+                    "pendientes": 0,
+                    "progreso_porcentaje": 0,
+                    "mensaje": "No hay subtareas",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        progreso = round((hechas / total) * 100)
+
+        return Response(
+            {
+                "total_subtareas": total,
+                "hechas": hechas,
+                "pospuestas": pospuestas,
+                "pendientes": pendientes,
+                "progreso_porcentaje": progreso,
+                "mensaje": f"Actividad completada en un {progreso}%",
+            },
+            status=status.HTTP_200_OK,
+        )
+
 
 # ------------------------------------------------------------------------------------
-
-
 class TareaViewSet(viewsets.ModelViewSet):
     serializer_class = TareaSerializer
     permission_classes = [IsAuthenticated]
 
     # -------------------------------------------------------------------
-
     def get_queryset(self):
 
         if getattr(self, "swagger_fake_view", False):
@@ -55,26 +89,21 @@ class TareaViewSet(viewsets.ModelViewSet):
         queryset = Tarea.objects.filter(actividad__usuario=self.request.user)
 
         if actividad_id:
-            # Validamos que la actividad exista y sea del usuario
             get_object_or_404(Actividad, id=actividad_id, usuario=self.request.user)
-
             queryset = queryset.filter(actividad_id=actividad_id)
 
         return queryset.order_by("fecha_objetivo")
 
     # -------------------------------------------------------------------
-
     def create(self, request, *args, **kwargs):
         actividad_id = request.data.get("actividad")
 
-        # Si no mandan actividad
         if not actividad_id:
             return Response(
                 {"actividad": ["Este campo es obligatorio."]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Si actividad no existe → 404
         actividad = get_object_or_404(Actividad, id=actividad_id, usuario=request.user)
 
         serializer = self.get_serializer(data=request.data)
@@ -84,15 +113,14 @@ class TareaViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     # -------------------------------------------------------------------
-
     @action(detail=False, methods=["get"], url_path="hoy")
     def hoy(self, request):
         """
         GET /api/tareas/hoy/
 
-        Query params opcionales: (US-05)
-            - curso: filtra por nombre del curso (case-insensitive, coincidencia parcial)
-            - estado: filtra por estado de la tarea (pendiente, hecha, pospuesta)
+        Query params opcionales:
+            - curso
+            - estado
 
         Retorna:
           {
@@ -100,31 +128,24 @@ class TareaViewSet(viewsets.ModelViewSet):
             "para_hoy": [...],
             "proximas": [...]
           }
-
-        Regla(susceptible a cambio): próximas = próximas 7 días (no trae tareas superiores a 7 días)
-        Los filtros se aplican ANTES de agrupar, manteniendo el orden definido.
         """
         user = request.user
         today = date.today()
         window_end = today + timedelta(days=7)
 
-        # Query params
         curso_filter = request.query_params.get("curso", "").strip()
         estado_filter = request.query_params.get("estado", "").strip().lower()
 
         base_qs = Tarea.objects.filter(actividad__usuario=user)
 
-        # Aplicar filtro por curso (case-insensitive, coincidencia parcial)
         if curso_filter:
             base_qs = base_qs.filter(actividad__curso__icontains=curso_filter)
 
-        # Aplicar filtro por estado (coincidencia exacta)
         if estado_filter:
             valid_estados = ["pendiente", "hecha", "pospuesta"]
             if estado_filter in valid_estados:
                 base_qs = base_qs.filter(estado=estado_filter)
 
-        # Construir querysets por grupo con orden y desempate
         vencidas_qs = base_qs.filter(fecha_objetivo__lt=today).order_by(
             "fecha_objetivo", "horas_estimadas"
         )
@@ -133,7 +154,6 @@ class TareaViewSet(viewsets.ModelViewSet):
             fecha_objetivo__gt=today, fecha_objetivo__lte=window_end
         ).order_by("fecha_objetivo", "horas_estimadas")
 
-        # Serializar (usamos HoyTareaSerializer para incluir flags)
         vencidas = HoyTareaSerializer(
             vencidas_qs, many=True, context={"request": request}
         ).data
@@ -146,7 +166,6 @@ class TareaViewSet(viewsets.ModelViewSet):
 
         total = len(vencidas) + len(para_hoy) + len(proximas)
 
-        # Mensaje
         mensaje = None
         if total == 0:
             if curso_filter or estado_filter:
@@ -165,10 +184,47 @@ class TareaViewSet(viewsets.ModelViewSet):
         )
 
     # -------------------------------------------------------------------
+    @action(detail=True, methods=["patch"], url_path="registrar-avance")
+    def registrar_avance(self, request, pk=None):
+        tarea = self.get_object()
 
+        estado = request.data.get("estado")
+        nota = request.data.get("nota", None)
+
+        estados_validos = ["pendiente", "hecha", "pospuesta"]
+
+        if not estado:
+            return Response(
+                {"estado": ["Este campo es obligatorio."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if estado not in estados_validos:
+            return Response(
+                {"estado": ["Estado no válido."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tarea.estado = estado
+
+        # Solo actualiza la nota si viene en el request.
+        # Así no borras una nota anterior por accidente.
+        if nota is not None:
+            tarea.nota = nota.strip()
+
+        tarea.save()
+
+        return Response(
+            {
+                "message": "Tarea actualizada",
+                "id": tarea.id,
+                "estado": tarea.estado,
+                "nota": tarea.nota,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     # -------------------------------------------------------------------
-
     @action(detail=True, methods=["patch"])
     def reprogramar(self, request, pk=None):
         tarea = self.get_object()
@@ -198,7 +254,6 @@ class TareaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_200_OK,
             )
 
-        # si no hay conflicto, se guarda
         tarea.fecha_objetivo = nueva_fecha
         tarea.horas_estimadas = nuevas_horas
         tarea.save()
@@ -206,9 +261,9 @@ class TareaViewSet(viewsets.ModelViewSet):
         return Response(
             {"conflict": False, "message": "Tarea reprogramada correctamente"}
         )
+
+
 # ------------------------------------------------------------------------------------
-
-
 class RegistroAvanceViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroAvanceSerializer
     permission_classes = [IsAuthenticated]
