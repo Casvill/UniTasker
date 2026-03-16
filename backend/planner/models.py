@@ -51,6 +51,7 @@ class Tarea(models.Model):
         choices=ESTADO_CHOICES,
         default="pendiente",
     )
+    nota = models.TextField(blank=True, default="")
     creada_en = models.DateTimeField(auto_now_add=True)
     actualizada_en = models.DateTimeField(auto_now=True)
 
