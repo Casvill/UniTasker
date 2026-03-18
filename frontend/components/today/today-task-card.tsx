@@ -1,14 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { CalendarDays, Clock3, CalendarClock } from "lucide-react"
+import { useState, useRef } from "react"
+import { CalendarDays, Clock3, CalendarClock, RotateCcw, ChevronDown, ChevronUp } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Subtask } from "@/components/today/today-board"
 import { ReprogramTaskDialog } from "@/components/today/reprogram-task-dialog"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Input } from "@/components/ui/input"
 type Variant = "overdue" | "today" | "upcoming"
 
 function formatDate(dateString?: string | null) {
@@ -73,6 +74,22 @@ export function TodayTaskCard({
     const dateLabel = getDateLabel(task.target_date, variant)
     const isChecked = task.status === "finalizado"
 
+    const [isPostponeOpen, setIsPostponeOpen] = useState(false)
+    const [postponeNote, setPostponeNote] = useState("")
+    const inputRef = useRef<HTMLInputElement>(null)
+    const [showActions, setShowActions] = useState(false)
+    const [actionsAnim, setActionsAnim] = useState<"fade-in-up" | "fade-out-up" | "fade-in-down">("fade-in-up")
+
+    function handleToggleActions() {
+    if (showActions) {
+        setActionsAnim("fade-out-up")
+        setTimeout(() => setShowActions(false), 350) // Duración de la animación
+    } else {
+        setShowActions(true)
+        setActionsAnim("fade-in-down")
+    }
+    }
+
     return (
         <>
             <article
@@ -83,32 +100,117 @@ export function TodayTaskCard({
                     variant === "upcoming" && "border-blue-500/20",
                     isChecked && "opacity-75"
                 )}
-            >
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
+                >
+                <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="absolute top-3 right-3 text-muted-foreground hover:text-primary z-10"
+                aria-label={showActions ? "Ocultar acciones" : "Mostrar acciones"}
+                onClick={handleToggleActions}
+                >
+                {showActions ? <ChevronUp className="h-6 w-6" /> : <ChevronDown className="h-6 w-6" />}
+                </Button>
+
+                {(showActions || actionsAnim === "fade-out-up") && (
+                    <div
+                        className={cn(
+                        "absolute right-3 top-14 flex flex-col gap-2 z-20",
+                        actionsAnim,
+                        !showActions && "pointer-events-none"
+                        )}
+                    >
+                    <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
                         <Button
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="absolute top-3 right-3 text-muted-foreground hover:text-primary"
+                            className="text-muted-foreground hover:text-primary"
                             onClick={() => setIsDialogOpen(true)}
                             aria-label="Reprogramar subtarea"
                         >
                             <CalendarClock className="h-5 w-5" />
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" align="center">
+                        </TooltipTrigger>
+                        <TooltipContent side="left" align="center">
                         Reprogramar
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+                        </TooltipContent>
+                    </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                    <Popover open={isPostponeOpen} onOpenChange={setIsPostponeOpen}>
+                        <Tooltip>
+                        <PopoverTrigger asChild>
+                            <TooltipTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="text-muted-foreground hover:text-primary"
+                                aria-label="Posponer subtarea"
+                                onClick={() => setIsPostponeOpen(true)}
+                            >
+                                <RotateCcw className="h-5 w-5" />
+                            </Button>
+                            </TooltipTrigger>
+                        </PopoverTrigger>
+                        <TooltipContent side="left" align="center">
+                            Posponer
+                        </TooltipContent>
+                        </Tooltip>
+                        <PopoverContent
+                        side="bottom"
+                        align="center"
+                        sideOffset={8}
+                        className="w-64 p-4"
+                        onOpenAutoFocus={() => inputRef.current?.focus()}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                        >
+                        <div className="mb-2 font-medium text-foreground">¿Por qué pospones?</div>
+                        <Input
+                            ref={inputRef}
+                            type="text"
+                            className="w-full text-sm mb-2"
+                            placeholder="Agrega una nota (opcional)"
+                            value={postponeNote}
+                            onChange={e => setPostponeNote(e.target.value)}
+                        />
+                        <div className="flex gap-2 justify-end">
+                            <Button
+                            className="flex-1"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                                setIsPostponeOpen(false)
+                                setPostponeNote("")
+                            }}
+                            >
+                            Cancelar
+                            </Button>
+                            <Button
+                            className="flex-1"
+                            size="sm"
+                            onClick={() => {
+                                setIsPostponeOpen(false)
+                                setPostponeNote("")
+                            }}
+                            >
+                            Posponer
+                            </Button>
+                        </div>
+                        </PopoverContent>
+                    </Popover>
+                    </TooltipProvider>
+                </div>
+                )}
 
                 <div className="flex items-start gap-3">
                     <Checkbox
                         checked={isChecked}
                         onCheckedChange={onToggle}
-                        className="mt-1"
+                        className="mt-0.5 h-5 w-5"
                         aria-label={`Marcar ${task.title} como finalizada`}
                     />
 
