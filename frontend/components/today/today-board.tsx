@@ -2,7 +2,7 @@
 
 import { TodayColumn } from "@/components/today/today-column"
 
-export type SubtaskStatus = "pendiente" | "finalizado"
+export type SubtaskStatus = "pendiente" | "finalizado" | "pospuesta"
 
 export type Subtask = {
     id: number
@@ -13,6 +13,7 @@ export type Subtask = {
     course: string
     type: string
     status: SubtaskStatus
+    nota?: string
 }
 
 export function TodayBoard({
