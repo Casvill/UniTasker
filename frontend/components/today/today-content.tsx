@@ -21,6 +21,7 @@ type TareaBackend = {
     actividad: string
     curso: string
     tipo?: string
+    nota?: string 
 }
 
 type TodayApiResponse = {
@@ -75,7 +76,13 @@ export function TodayContent() {
             actividad_title: tarea.actividad || "Actividad sin título",
             course: tarea.curso || "Sin curso",
             type: tarea.tipo || "Sin tipo",
-            status: (tarea.estado === "hecha" ? "finalizado" : "pendiente") as SubtaskStatus,
+            status:
+            tarea.estado === "hecha"
+                ? "finalizado"
+                : tarea.estado === "pospuesta"
+                ? "pospuesta"
+                : "pendiente",
+            nota: tarea.nota ?? "", 
         }),
         []
     )
