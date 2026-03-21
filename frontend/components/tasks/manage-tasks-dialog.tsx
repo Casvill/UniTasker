@@ -41,6 +41,15 @@ type ManageTasksDialogProps = {
   onRefresh: (silent?: boolean) => void
 }
 
+type ProgressData = {
+  total_subtareas: number
+  hechas: number
+  pospuestas: number
+  pendientes: number
+  progreso_porcentaje: number
+  mensaje: string
+}
+
 function formatDate(date?: string | null) {
   if (!date) return "Sin fecha límite"
 
@@ -76,6 +85,22 @@ export function ManageTasksDialog({
   }>(null)
   const [isFormOpen, setIsFormOpen] = React.useState(true)
   const [hasInitializedFormOpen, setHasInitializedFormOpen] = React.useState(false);
+  const [progress, setProgress] = React.useState<ProgressData | null>(null)
+
+  function ProgressBar({ hechas, pospuestas, pendientes, total }: { hechas: number, pospuestas: number, pendientes: number, total: number }) {
+    if (total === 0) return <div className="h-3 rounded-full bg-muted/40 w-full" />
+    const pctHechas = (hechas / total) * 100
+    const pctPospuestas = (pospuestas / total) * 100
+    const pctPendientes = (pendientes / total) * 100
+
+    return (
+      <div className="flex w-full h-3 rounded-full overflow-hidden bg-muted/40">
+        <div style={{ width: `${pctHechas}%` }} className="bg-emerald-500 transition-all " />
+        <div style={{ width: `${pctPospuestas}%` }} className="bg-emerald-200 transition-all" />
+        <div style={{ width: `${pctPendientes}%` }} className="bg-muted/40 transition-all" />
+      </div>
+    )
+  }
 
   const minDate = React.useMemo(() => {
     const d = new Date()
@@ -135,6 +160,16 @@ export function ManageTasksDialog({
   }
 
   React.useEffect(() => {
+    if (!open || !activity) {
+      setProgress(null)
+      return
+    }
+    apiFetch<ProgressData>(`/actividades/${activity.id}/progreso/`)
+      .then(setProgress)
+      .catch(() => setProgress(null))
+  }, [activity, open])
+
+  React.useEffect(() => {
     if (open && !hasInitializedFormOpen) {
       setIsFormOpen(visibleTasks.length === 0);
       setHasInitializedFormOpen(true);
@@ -144,6 +179,16 @@ export function ManageTasksDialog({
     }
   }, [open]);
 
+  const refreshProgress = async () => {
+    if (!activity) return
+    try {
+      const data = await apiFetch<ProgressData>(`/actividades/${activity.id}/progreso/`)
+      setProgress(data)
+    } catch {
+      setProgress(null)
+    }
+  }
+  
   const onSubmitTask = async (values: TaskFormValues) => {
     if (!activity) return
 
@@ -200,6 +245,7 @@ export function ManageTasksDialog({
     }
 
     onRefresh(true);
+    refreshProgress();
     reset();
   }
 
@@ -243,6 +289,7 @@ export function ManageTasksDialog({
       loading: "Actualizando tarea...",
       success: () => {
         onRefresh(true)
+        refreshProgress();
         setEditingId(null)
         return "Tarea actualizada"
       },
@@ -259,6 +306,7 @@ export function ManageTasksDialog({
       loading: "Eliminando tarea...",
       success: () => {
         onRefresh(true)
+        refreshProgress();
         return "Tarea eliminada"
       },
       error: "Error al eliminar la tarea",
@@ -305,7 +353,8 @@ export function ManageTasksDialog({
         toast.success("Tarea completada")
       }
 
-      onRefresh(true)
+      onRefresh(true);
+      refreshProgress();
     } catch {
       toast.dismiss();
       toast.error("No se pudo actualizar el estado de la tarea")
@@ -341,8 +390,9 @@ export function ManageTasksDialog({
         toast.error(result.message)
         return
       }
-      setConflictData(null)
-      onRefresh(true)
+      setConflictData(null);
+      onRefresh(true);
+      refreshProgress();
       reset()
     } catch (e) {
       toast.error("No se pudo reprogramar la tarea.")
@@ -355,7 +405,8 @@ export function ManageTasksDialog({
       await apiFetch(`/tareas/${conflictData.taskId}/`, { method: "DELETE" })
       setConflictData(null)
       toast.success("Tarea eliminada")
-      onRefresh(true)
+      onRefresh(true);
+      refreshProgress();
     } catch (e) {
       toast.error("No se pudo eliminar la tarea")
     }
@@ -408,9 +459,10 @@ export function ManageTasksDialog({
         )
       )
 
-      toast.dismiss()
-      toast.success("Actividad completada")
-      onRefresh(true)
+      toast.dismiss();
+      toast.success("Actividad completada");
+      onRefresh(true);
+      refreshProgress();
     } catch {
       toast.dismiss()
       toast.error("No se pudo completar la actividad")
@@ -522,16 +574,43 @@ export function ManageTasksDialog({
                     onClick={handleMarkAllAsDone}
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    Marcar todas
+                    Completar todas
                   </Button>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
+              {/* <p className="text-sm text-muted-foreground">
                 {visibleTasks.length === 0
                   ? "Aún no has agregado subtareas"
                   : `${visibleTasks.length} subtarea${visibleTasks.length === 1 ? "" : "s"} registradas.`}
-              </p>
-            </div>
+              </p> */}
+              {progress === null ? (
+                <div className="flex items-center gap-0.5 mb-1 mt-2">
+                  <div className="relative h-3 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent animate-[shimmer_1.5s_infinite]" />
+                  </div>
+                  <span className="text-xs text-muted-foreground min-w-[80px] text-right mr-2">
+                    Cargando
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-0.5 mb-1 mt-2">
+                  <ProgressBar
+                    hechas={progress.hechas}
+                    pospuestas={progress.pospuestas}
+                    pendientes={progress.pendientes}
+                    total={progress.total_subtareas}
+                  />
+                  <span className="text-xs text-muted-foreground min-w-[80px] text-right mr-2">
+                    {progress.progreso_porcentaje}% hecho
+                  </span>
+                </div>
+              )}
+              {/* <p className="text-sm text-muted-foreground">
+                {progress
+                  ? progress.mensaje
+                  : "Cargando progreso..."}
+              </p> */}
+              </div>
             <Collapsible open={isFormOpen} onOpenChange={setIsFormOpen}>
               <div className="rounded-2xl border border-border bg-background/40 overflow-hidden">
                 <CollapsibleTrigger asChild>
