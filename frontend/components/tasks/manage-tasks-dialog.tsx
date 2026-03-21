@@ -97,7 +97,7 @@ export function ManageTasksDialog({
       <div className="flex w-full h-3 rounded-full overflow-hidden bg-muted/40">
         <div style={{ width: `${pctHechas}%` }} className="bg-emerald-500 transition-all " />
         <div style={{ width: `${pctPospuestas}%` }} className="bg-emerald-200 transition-all" />
-        <div style={{ width: `${pctPendientes}%` }} className="bg-muted/40 transition-all" />
+        <div style={{ width: `${pctPendientes}%` }} className="bg-muted/70 transition-all" />
       </div>
     )
   }
@@ -570,7 +570,7 @@ export function ManageTasksDialog({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-7 px-2 text-xs flex items-center gap-1 text-emerald-400 border-emerald-600 hover:bg-emerald-50"
+                    className="h-7 px-2 text-xs flex items-center gap-1 text-emerald-400 border-emerald-600"
                     onClick={handleMarkAllAsDone}
                   >
                     <CheckCircle2 className="h-4 w-4" />
