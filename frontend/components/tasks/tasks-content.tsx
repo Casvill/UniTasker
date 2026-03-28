@@ -196,7 +196,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       const [actRaw, tasksRaw, regsRaw]: any = await Promise.all([
         apiFetch("/actividades/"),
         apiFetch("/tareas/"),
-        apiFetch("/registros/")
+        // apiFetch("/registros/")
       ]);
 
       const activitiesList = Array.isArray(actRaw) ? actRaw : actRaw?.results ?? [];
