@@ -109,7 +109,7 @@ export function TodayContent() {
             const toastId = toast.loading(loadingMessage)
 
             try {
-                await apiFetch(`/tareas/${id}/`, {
+                const res = await apiFetch<any>(`/tareas/${id}/registrar-avance/`, {
                     method: "PATCH",
                     body: JSON.stringify({ estado: newStatus }),
                 })
@@ -121,12 +121,22 @@ export function TodayContent() {
                     proximas: prev.proximas.map((s) => (s.id === id ? { ...s, estado: newStatus } : s)),
                 }))
 
-                toast.success(isHecha ? "Tarea marcada como pendiente" : "Tarea completada", {
-                    id: toastId,
-                })
+                toast.success(
+                    res?.mensaje ||
+                    res?.message ||
+                    (isHecha ? "Tarea marcada como pendiente" : "Tarea completada"),
+                    { id: toastId }
+                )
             } catch (error) {
                 console.error("Error al actualizar la tarea:", error)
-                toast.error("Error al actualizar la tarea", { id: toastId })
+                const data = (error as any)?.response?.data
+                toast.error(
+                    data?.detail ||
+                    data?.message ||
+                    data?.mensaje ||
+                    "Error al actualizar la tarea",
+                    { id: toastId }
+                )
             }
         },
         []
