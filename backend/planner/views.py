@@ -207,23 +207,30 @@ class TareaViewSet(viewsets.ModelViewSet):
 
         tarea.estado = estado
 
-        # Solo actualiza la nota si viene en el request.
-        # Así no borras una nota anterior por accidente.
+        # Solo actualiza la nota si viene en el request
         if nota is not None:
             tarea.nota = nota.strip()
 
         tarea.save()
 
+        # Mensajes UX-02
+        message_map = {
+            "hecha": "Subtarea marcada como completada",
+            "pendiente": "Subtarea marcada como pendiente",
+            "pospuesta": "Subtarea pospuesta correctamente",
+        }
+
+        message = message_map.get(estado, "Tarea actualizada")
+
         return Response(
             {
-                "message": "Tarea actualizada",
+                "message": message,
                 "id": tarea.id,
                 "estado": tarea.estado,
                 "nota": tarea.nota,
             },
             status=status.HTTP_200_OK,
         )
-
     # -------------------------------------------------------------------
     @action(detail=True, methods=["patch"])
     def reprogramar(self, request, pk=None):
