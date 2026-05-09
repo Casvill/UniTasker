@@ -11,10 +11,7 @@ import { Button } from "@/components/ui/button"
 
 export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen bg-background">
-
-
-      <main className="flex-1 p-3 md:p-4 lg:p-5 lg:ml-64">
+      <>
         <Header
           title="Dashboard"
           description="Plan, prioritize, and accomplish your tasks with ease."
@@ -54,7 +51,6 @@ export default function DashboardPage() {
             <TimeTracker />
           </div>
         </div>
-      </main>
-    </div>
+      </>
   )
 }

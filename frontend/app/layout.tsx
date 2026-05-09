@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeToggle } from "@/components/theme-toggle"
+// TypeScript may complain about missing type declarations for this global CSS import.
+// @ts-expect-error: global stylesheet import
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 

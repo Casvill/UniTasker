@@ -1,6 +1,6 @@
 "use client"
 
-import { ListTodo, Calendar, Settings, HelpCircle, LogOut, BookCheck } from "lucide-react"
+import { ListTodo, Calendar, Settings, HelpCircle, LogOut, BookCheck, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import Link from "next/link"
@@ -20,33 +20,99 @@ const generalItems = [
   { icon: LogOut, label: "Cerrar Sesion", href: "/logout" },
 ]
 
-export function Sidebar({ className }: { className?: string }) {
+interface SidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
+  className?: string; 
+  onClose?: () => void;
+}
+
+export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
 
   return (
-    <aside className={cn("w-64 bg-card border-r border-border p-4 h-full overflow-y-auto", className)}>
+    <aside 
+      className={cn(
+        "fixed left-0 top-0 h-screen bg-card border-r border-border p-4 transition-all duration-500 z-40",
+        isCollapsed ? "w-22" : "w-64", 
+        className
+      )}    
+    >
       <div className="flex items-center gap-2 mb-6 group cursor-pointer">
-        <Link href="/today" className="flex items-center gap-2">
-          {/* Logo claro para modo claro */}
-          <Image
-            src="/unitasker.svg"
-            alt="UniTasker"
-            width={180}
-            height={180}
-            className="block dark:hidden transition-all duration-300"
-            priority
-          />
-          {/* Logo oscuro para modo oscuro */}
-          <Image
-            src="/unitaskerv2.svg"
-            alt="UniTasker dark"
-            width={180}
-            height={180}
-            className="hidden dark:block transition-all duration-300"
-            priority
-          />
+
+        <Link href="/today" className="flex items-center gap-2 relative h-10 w-full">
+          <div className="relative h-10 w-full flex items-center">
+            <Image
+              src="/unitasker.svg"
+              alt="UniTasker"
+              width={180}
+              height={40}
+              className={cn("block dark:hidden absolute left-0", isCollapsed ? "opacity-0" : "opacity-100")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
+                transition: "clip-path 300ms ease, opacity 200ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "200ms" 
+              }}
+              priority
+            />
+
+            <Image
+              src="/unitaskerhide.svg"
+              alt="UniTasker collapsed"
+              width={50}
+              height={50}
+              className={cn("block dark:hidden absolute left-0", isCollapsed ? "opacity-100" : "opacity-0")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+                transition: "clip-path 0ms ease, opacity 0ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "400ms" 
+              }}
+              priority
+            />
+
+            {/* Dark - expanded (barrido hacia la izquierda al ocultar) */}
+            <Image
+              src="/unitaskerv2.svg"
+              alt="UniTasker dark"
+              width={180}
+              height={40}
+              className={cn("hidden dark:block absolute left-0", isCollapsed ? "opacity-0" : "opacity-100")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
+                transition: "clip-path 300ms ease, opacity 200ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "200ms"
+              }}
+              priority
+            />
+
+            {/* Dark - collapsed (aparece con barrido desde la derecha) */}
+            <Image
+              src="/unitaskerv2hide.svg"
+              alt="UniTasker dark collapsed"
+              width={50}
+              height={50}
+              className={cn("hidden dark:block absolute left-0", isCollapsed ? "opacity-100" : "opacity-0")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+                transition: "clip-path 0ms ease, opacity 0ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "400ms"
+              }}
+              priority
+            />
+          </div>
         </Link>
+        <button 
+          onClick={() => (onClose ? onClose() : setIsCollapsed(!isCollapsed))}
+          className="absolute -right-4 top-8 z-50 flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-md hover:bg-secondary transition-all"
+        >
+          <ChevronLeft 
+            className={cn(
+              "h-6 w-6 transition-transform duration-500",
+              isCollapsed && "rotate-180" // Gira si está colapsado
+            )} 
+          />
+        </button>
       </div>
 
       <div className="space-y-4">
@@ -62,15 +128,24 @@ export function Sidebar({ className }: { className?: string }) {
                   onMouseEnter={() => setHoveredItem(item.label)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                    "w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                     hoveredItem === item.label && !isActive && "translate-x-1",
                   )}
                 >
-                  <item.icon className="w-4 h-4" />
-                  <span className="text-sm">{item.label}</span>
+                  <item.icon className="w-5 h-5 ml-2" />
+                  <span
+                    className={cn(
+                      "text-sm overflow-hidden whitespace-nowrap transition-all duration-300",
+                      isCollapsed
+                        ? "max-w-0 opacity-0"
+                        : "max-w-[160px] opacity-100 delay-200"
+                    )}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               )
             })}
@@ -89,15 +164,24 @@ export function Sidebar({ className }: { className?: string }) {
                   onMouseEnter={() => setHoveredItem(item.label)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                    "w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                     hoveredItem === item.label && !isActive && "translate-x-1",
                   )}
                 >
-                  <item.icon className="w-4 h-4" />
-                  <span className="text-sm">{item.label}</span>
+                  <item.icon className="w-5 h-5 ml-2" />
+                  <span
+                    className={cn(
+                      "text-sm overflow-hidden whitespace-nowrap transition-all duration-300",
+                      isCollapsed
+                        ? "max-w-0 opacity-0"
+                        : "max-w-[160px] opacity-100 delay-200"
+                    )}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               )
             })}

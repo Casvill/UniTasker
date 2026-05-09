@@ -13,6 +13,7 @@ export default function ProtectedLayout({
 }) {
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
     const token = getAccessToken()
@@ -30,12 +31,19 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="hidden lg:block">
-        <Sidebar className="fixed inset-y-0 left-0 h-screen" />
-      </div>
+    <div className="flex min-h-screen bg-background">
 
-      <div className="flex-1">{children}</div>
+      <Sidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        className="fixed inset-y-0 left-0 h-screen hidden lg:block"
+      />
+
+      <main className={`flex-1 transition-all duration-500 p-4 lg:p-6 ${isCollapsed ? "lg:ml-22" : "lg:ml-64"}`}>
+        {children}
+      </main>
+
+      {/* <div className="flex-1">{children}</div> */}
     </div>
   )
 }
