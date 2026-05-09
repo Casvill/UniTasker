@@ -4,8 +4,11 @@ import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Sidebar } from "./sidebar"
+import { useState } from "react"
 
 export function MobileNav() {
+  const [isCollapsed, setIsCollapsed] = useState(true)
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -15,7 +18,11 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-64">
-        <Sidebar className="border-none w-full" />
+        <Sidebar 
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          className="border-none w-full" 
+        />
       </SheetContent>
     </Sheet>
   )

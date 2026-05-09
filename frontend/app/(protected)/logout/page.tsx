@@ -13,8 +13,7 @@ export default function LogoutPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <main className="flex-1 p-4 lg:p-6 lg:ml-64">
+      <>
         <div className="flex items-center justify-center min-h-[calc(100vh-100px)]">
           <Card className="p-8 max-w-md w-full text-center space-y-6 animate-fade-in">
             <div className="flex justify-center">
@@ -36,7 +35,6 @@ export default function LogoutPage() {
             </div>
           </Card>
         </div>
-      </main>
-    </div>
+      </>
   )
 }

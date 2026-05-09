@@ -9,8 +9,7 @@ export default function TasksPage() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <main className="flex-1 p-4 lg:p-6 lg:ml-64">
+      <>
         <Header
           title="Actividades"
           description="Crea y edita tus actividades para mantenerte al día con tus responsabilidades académicas."
@@ -24,7 +23,6 @@ export default function TasksPage() {
         <div className="mt-6">
           <TasksContent refreshKey={refreshKey} />
         </div>
-      </main>
-    </div>
+      </>
   )
 }

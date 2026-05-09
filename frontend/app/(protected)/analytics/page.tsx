@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button"
 
 export default function AnalyticsPage() {
   return (
-    <div className="flex min-h-screen bg-background">
-      <main className="flex-1 p-4 lg:p-6 lg:ml-64">
+      <>
         <Header
           title="Analytics"
           description="Track your performance and productivity metrics."
@@ -22,7 +21,6 @@ export default function AnalyticsPage() {
         <div className="mt-6">
           <AnalyticsContent />
         </div>
-      </main>
-    </div>
+      </>
   )
 }

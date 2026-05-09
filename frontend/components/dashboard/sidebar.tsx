@@ -1,6 +1,6 @@
 "use client"
 
-import { ListTodo, Calendar, Settings, HelpCircle, LogOut, BookCheck } from "lucide-react"
+import { ListTodo, Calendar, Settings, HelpCircle, LogOut, BookCheck, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import Link from "next/link"
@@ -20,13 +20,26 @@ const generalItems = [
   { icon: LogOut, label: "Cerrar Sesion", href: "/logout" },
 ]
 
-export function Sidebar({ className }: { className?: string }) {
+interface SidebarProps {
+  isCollapsed: boolean;
+  setIsCollapsed: (value: boolean) => void;
+  className?: string; 
+}
+
+export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
 
   return (
-    <aside className={cn("w-64 bg-card border-r border-border p-4 h-full overflow-y-auto", className)}>
+    <aside 
+      className={cn(
+        "fixed left-0 top-0 h-screen bg-card border-r border-border p-4 transition-all duration-300 z-40",
+        isCollapsed ? "w-20" : "w-64", 
+        className
+      )}    
+    >
       <div className="flex items-center gap-2 mb-6 group cursor-pointer">
+
         <Link href="/today" className="flex items-center gap-2">
           {/* Logo claro para modo claro */}
           <Image
@@ -47,6 +60,17 @@ export function Sidebar({ className }: { className?: string }) {
             priority
           />
         </Link>
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-4 top-8 z-50 flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-md hover:bg-secondary transition-all"
+        >
+          <ChevronLeft 
+            className={cn(
+              "h-6 w-6 transition-transform duration-300",
+              isCollapsed && "rotate-180" // Gira si está colapsado
+            )} 
+          />
+        </button>
       </div>
 
       <div className="space-y-4">
