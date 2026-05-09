@@ -24,9 +24,10 @@ interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (value: boolean) => void;
   className?: string; 
+  onClose?: () => void;
 }
 
-export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps) {
+export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
 
@@ -102,7 +103,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
           </div>
         </Link>
         <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={() => (onClose ? onClose() : setIsCollapsed(!isCollapsed))}
           className="absolute -right-4 top-8 z-50 flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-md hover:bg-secondary transition-all"
         >
           <ChevronLeft 

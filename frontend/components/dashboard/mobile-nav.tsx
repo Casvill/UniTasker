@@ -7,10 +7,11 @@ import { Sidebar } from "./sidebar"
 import { useState } from "react"
 
 export function MobileNav() {
-  const [isCollapsed, setIsCollapsed] = useState(true)
+  const isCollapsed = false
+  const [open, setOpen] = useState(false)
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="lg:hidden hover:bg-secondary transition-all duration-300">
           <Menu className="w-6 h-6" />
@@ -20,7 +21,8 @@ export function MobileNav() {
       <SheetContent side="left" className="p-0 w-64">
         <Sidebar 
           isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
+          setIsCollapsed={() => {}}
+          onClose={() => setOpen(false)}
           className="border-none w-full" 
         />
       </SheetContent>

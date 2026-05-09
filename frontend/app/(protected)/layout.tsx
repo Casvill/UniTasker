@@ -33,7 +33,11 @@ export default function ProtectedLayout({
   return (
     <div className="flex min-h-screen bg-background">
 
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} className="fixed inset-y-0 left-0 h-screen" />
+      <Sidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        className="fixed inset-y-0 left-0 h-screen hidden lg:block"
+      />
 
       <main className={`flex-1 transition-all duration-500 p-4 lg:p-6 ${isCollapsed ? "lg:ml-22" : "lg:ml-64"}`}>
         {children}
