@@ -65,7 +65,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
               style={{
                 clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
                 transition: "clip-path 0ms ease, opacity 0ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "300ms" 
+                transitionDelay: isCollapsed ? "0ms" : "400ms" 
               }}
               priority
             />
@@ -79,7 +79,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
               className={cn("hidden dark:block absolute left-0", isCollapsed ? "opacity-0" : "opacity-100")}
               style={{
                 clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
-                transition: "clip-path 500ms ease, opacity 400ms ease"
+                transition: "clip-path 300ms ease, opacity 200ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "200ms"
               }}
               priority
             />
@@ -88,12 +89,13 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
             <Image
               src="/unitaskerv2hide.svg"
               alt="UniTasker dark collapsed"
-              width={52}
-              height={52}
+              width={50}
+              height={50}
               className={cn("hidden dark:block absolute left-0", isCollapsed ? "opacity-100" : "opacity-0")}
               style={{
-                clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 0 0 100%)",
-                transition: "clip-path 500ms ease, opacity 400ms ease, transform 300ms ease"
+                clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+                transition: "clip-path 0ms ease, opacity 0ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "400ms"
               }}
               priority
             />
@@ -125,15 +127,24 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
                   onMouseEnter={() => setHoveredItem(item.label)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                    "w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                     hoveredItem === item.label && !isActive && "translate-x-1",
                   )}
                 >
-                  <item.icon className="w-4 h-4" />
-                  <span className="text-sm">{item.label}</span>
+                  <item.icon className="w-5 h-5 ml-2" />
+                  <span
+                    className={cn(
+                      "text-sm overflow-hidden whitespace-nowrap transition-all duration-300",
+                      isCollapsed
+                        ? "max-w-0 opacity-0"
+                        : "max-w-[160px] opacity-100 delay-200"
+                    )}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               )
             })}
@@ -152,15 +163,24 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
                   onMouseEnter={() => setHoveredItem(item.label)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                    "w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                     hoveredItem === item.label && !isActive && "translate-x-1",
                   )}
                 >
-                  <item.icon className="w-4 h-4" />
-                  <span className="text-sm">{item.label}</span>
+                  <item.icon className="w-5 h-5 ml-2" />
+                  <span
+                    className={cn(
+                      "text-sm overflow-hidden whitespace-nowrap transition-all duration-300",
+                      isCollapsed
+                        ? "max-w-0 opacity-0"
+                        : "max-w-[160px] opacity-100 delay-200"
+                    )}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               )
             })}
