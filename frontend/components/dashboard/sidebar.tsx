@@ -33,32 +33,71 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
   return (
     <aside 
       className={cn(
-        "fixed left-0 top-0 h-screen bg-card border-r border-border p-4 transition-all duration-300 z-40",
-        isCollapsed ? "w-20" : "w-64", 
+        "fixed left-0 top-0 h-screen bg-card border-r border-border p-4 transition-all duration-500 z-40",
+        isCollapsed ? "w-22" : "w-64", 
         className
       )}    
     >
       <div className="flex items-center gap-2 mb-6 group cursor-pointer">
 
-        <Link href="/today" className="flex items-center gap-2">
-          {/* Logo claro para modo claro */}
-          <Image
-            src="/unitasker.svg"
-            alt="UniTasker"
-            width={180}
-            height={180}
-            className="block dark:hidden transition-all duration-300"
-            priority
-          />
-          {/* Logo oscuro para modo oscuro */}
-          <Image
-            src="/unitaskerv2.svg"
-            alt="UniTasker dark"
-            width={180}
-            height={180}
-            className="hidden dark:block transition-all duration-300"
-            priority
-          />
+        <Link href="/today" className="flex items-center gap-2 relative h-10 w-full">
+          <div className="relative h-10 w-full flex items-center">
+            <Image
+              src="/unitasker.svg"
+              alt="UniTasker"
+              width={180}
+              height={40}
+              className={cn("block dark:hidden absolute left-0", isCollapsed ? "opacity-0" : "opacity-100")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
+                transition: "clip-path 300ms ease, opacity 200ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "200ms" 
+              }}
+              priority
+            />
+
+            <Image
+              src="/unitaskerhide.svg"
+              alt="UniTasker collapsed"
+              width={50}
+              height={50}
+              className={cn("block dark:hidden absolute left-0", isCollapsed ? "opacity-100" : "opacity-0")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+                transition: "clip-path 0ms ease, opacity 0ms ease",
+                transitionDelay: isCollapsed ? "0ms" : "300ms" 
+              }}
+              priority
+            />
+
+            {/* Dark - expanded (barrido hacia la izquierda al ocultar) */}
+            <Image
+              src="/unitaskerv2.svg"
+              alt="UniTasker dark"
+              width={180}
+              height={40}
+              className={cn("hidden dark:block absolute left-0", isCollapsed ? "opacity-0" : "opacity-100")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
+                transition: "clip-path 500ms ease, opacity 400ms ease"
+              }}
+              priority
+            />
+
+            {/* Dark - collapsed (aparece con barrido desde la derecha) */}
+            <Image
+              src="/unitaskerv2hide.svg"
+              alt="UniTasker dark collapsed"
+              width={52}
+              height={52}
+              className={cn("hidden dark:block absolute left-0", isCollapsed ? "opacity-100" : "opacity-0")}
+              style={{
+                clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 0 0 100%)",
+                transition: "clip-path 500ms ease, opacity 400ms ease, transform 300ms ease"
+              }}
+              priority
+            />
+          </div>
         </Link>
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -66,7 +105,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className }: SidebarProps
         >
           <ChevronLeft 
             className={cn(
-              "h-6 w-6 transition-transform duration-300",
+              "h-6 w-6 transition-transform duration-500",
               isCollapsed && "rotate-180" // Gira si está colapsado
             )} 
           />

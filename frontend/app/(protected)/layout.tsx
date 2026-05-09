@@ -35,7 +35,7 @@ export default function ProtectedLayout({
 
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} className="fixed inset-y-0 left-0 h-screen" />
 
-      <main className={`flex-1 transition-all duration-300 p-4 lg:p-6 ${isCollapsed ? "lg:ml-20" : "lg:ml-64"}`}>
+      <main className={`flex-1 transition-all duration-500 p-4 lg:p-6 ${isCollapsed ? "lg:ml-22" : "lg:ml-64"}`}>
         {children}
       </main>
 
