@@ -89,7 +89,9 @@
         const inputRef = useRef<HTMLInputElement>(null)
         const [showActions, setShowActions] = useState(false)
         const [actionsAnim, setActionsAnim] = useState<"fade-in-up" | "fade-out-up" | "fade-in-down">("fade-in-up")
-        const hasNote = Boolean(task.nota?.trim())
+        const [localNote, setLocalNote] = useState(task.nota ?? "")
+        const effectiveNote = localNote.trim()
+        const hasNote = Boolean(effectiveNote)
         const [postponePulse, setPostponePulse] = useState(false)
         const [showPostponeCorner, setShowPostponeCorner] = useState(false)
         const [localPostponed, setLocalPostponed] = useState(false)
@@ -143,7 +145,11 @@
         }, [isPostponed])
 
         useEffect(() => {
-            if (task.status === "pospuesta") {
+            setLocalNote(task.nota ?? "")
+        }, [task.nota])
+
+        useEffect(() => {
+            if (task.status !== "pendiente") {
                 setLocalPostponed(false)
             }
         }, [task.status])
@@ -190,7 +196,7 @@
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" align="center">
-                                        Nota: {task.nota}
+                                        Nota: {effectiveNote}
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
@@ -265,7 +271,7 @@
                                         onChange={e => setPostponeNote(e.target.value)}
                                     />
                                     <div className="flex gap-2 justify-end">
-                                        <Button
+                                        {/* <Button
                                         className="flex-1"
                                         size="sm"
                                         variant="outline"
@@ -275,7 +281,7 @@
                                         }}
                                         >
                                         Cancelar
-                                        </Button>
+                                        </Button> */}
                                         <Button
                                             className="flex-1"
                                             size="sm"
@@ -314,8 +320,10 @@
                                                         }
                                                     )
 
+                                                    const nextNote = postponeNote.trim()
                                                     setIsPostponeOpen(false)
                                                     setPostponeNote("")
+                                                    setLocalNote(nextNote)
                                                     setLocalPostponed(true)
                                                     if (onTaskUpdated) await onTaskUpdated({ silent: true })
                                                 } finally {

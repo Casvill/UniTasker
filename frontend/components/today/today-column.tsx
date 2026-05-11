@@ -118,8 +118,6 @@ export function TodayColumn({
                             variant={variant}
                             onToggle={() => onToggleSubtask(task.id, task.status)}
                             onTaskUpdated={onTaskUpdated}
-                            onTaskUpdateStart={onTaskUpdateStart}
-                            onTaskUpdateEnd={onTaskUpdateEnd}
                         />
                     ))
                 )}
