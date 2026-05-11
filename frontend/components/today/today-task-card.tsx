@@ -69,11 +69,15 @@
         variant,
         onToggle,
         onTaskUpdated,
+        onTaskUpdateStart,
+        onTaskUpdateEnd,
     }: {
         task: Subtask
         variant: Variant
         onToggle: () => void
-        onTaskUpdated: () => Promise<void> | void
+        onTaskUpdated: (options?: { silent?: boolean }) => Promise<void> | void
+        onTaskUpdateStart?: (taskId: number) => void
+        onTaskUpdateEnd?: (taskId: number) => void
     }) {
         const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -86,6 +90,13 @@
         const [showActions, setShowActions] = useState(false)
         const [actionsAnim, setActionsAnim] = useState<"fade-in-up" | "fade-out-up" | "fade-in-down">("fade-in-up")
         const hasNote = Boolean(task.nota?.trim())
+        const [postponePulse, setPostponePulse] = useState(false)
+        const [showPostponeCorner, setShowPostponeCorner] = useState(false)
+        const [localPostponed, setLocalPostponed] = useState(false)
+        const hasMountedRef = useRef(false)
+        const prevPostponedRef = useRef(false)
+
+        const isPostponed = task.status === "pospuesta" || localPostponed
 
         function handleToggleActions() {
             if (showActions) {
@@ -103,6 +114,40 @@
             }
         }, [task.status, showActions])
 
+        useEffect(() => {
+            if (!hasMountedRef.current) {
+                hasMountedRef.current = true
+                prevPostponedRef.current = isPostponed
+                setShowPostponeCorner(isPostponed)
+                return
+            }
+
+            const wasPostponed = prevPostponedRef.current
+            prevPostponedRef.current = isPostponed
+
+            if (!isPostponed) {
+                setShowPostponeCorner(false)
+                return
+            }
+
+            if (!wasPostponed) {
+                setPostponePulse(true)
+                const pulseTimeoutId = setTimeout(() => setPostponePulse(false), 450)
+                const cornerTimeoutId = setTimeout(() => setShowPostponeCorner(true), 300)
+
+                return () => {
+                    clearTimeout(pulseTimeoutId)
+                    clearTimeout(cornerTimeoutId)
+                }
+            }
+        }, [isPostponed])
+
+        useEffect(() => {
+            if (task.status === "pospuesta") {
+                setLocalPostponed(false)
+            }
+        }, [task.status])
+
         return (
             <>
                 <article
@@ -111,8 +156,10 @@
                         variant === "overdue" && "border-destructive/20",
                         variant === "today" && "border-amber-500/20",
                         variant === "upcoming" && "border-blue-500/20",
+                        isPostponed && "rounded-br-none",
                         isChecked && "opacity-75"
                     )}
+                    style={{ transition: "border-radius 300ms ease" }}
                     >
                     <div className="absolute top-3 right-3 flex flex-row-reverse gap-2 z-10">         
                         {task.status !== "finalizado" && (
@@ -178,7 +225,7 @@
                             </Tooltip>
                         </TooltipProvider>
 
-                        {task.status !== "pospuesta" && (
+                        {!isPostponed && (
                             <TooltipProvider>
                                 <Popover open={isPostponeOpen} onOpenChange={setIsPostponeOpen}>
                                     <Tooltip>
@@ -233,40 +280,47 @@
                                             className="flex-1"
                                             size="sm"
                                             onClick={async () => {
-                                                await toast.promise(
-                                                    apiFetch(`/tareas/${task.id}/registrar-avance/`, {
-                                                        method: "PATCH",
-                                                        body: JSON.stringify({
-                                                            estado: "pospuesta",
-                                                            nota: postponeNote,
+                                                onTaskUpdateStart?.(task.id)
+
+                                                try {
+                                                    await toast.promise(
+                                                        apiFetch(`/tareas/${task.id}/registrar-avance/`, {
+                                                            method: "PATCH",
+                                                            body: JSON.stringify({
+                                                                estado: "pospuesta",
+                                                                nota: postponeNote,
+                                                            }),
                                                         }),
-                                                    }),
-                                                    {
-                                                        loading: "Posponiendo subtarea...",
-                                                        success: (data:any) =>
-                                                            data?.mensaje ||
-                                                            data?.message ||
-                                                            "Subtarea pospuesta",
-                                                        error: (err) => {
-                                                            const data = err?.response?.data
+                                                        {
+                                                            loading: "Posponiendo subtarea...",
+                                                            success: (data:any) =>
+                                                                data?.mensaje ||
+                                                                data?.message ||
+                                                                "Subtarea pospuesta",
+                                                            error: (err) => {
+                                                                const data = err?.response?.data
 
-                                                            if (data?.detail) return data.detail
-                                                            if (data?.message) return data.message
-                                                            if (data?.mensaje) return data.mensaje
+                                                                if (data?.detail) return data.detail
+                                                                if (data?.message) return data.message
+                                                                if (data?.mensaje) return data.mensaje
 
-                                                            if (typeof data === "object") {
-                                                                const firstKey = Object.keys(data)[0]
-                                                                return data[firstKey]?.[0]
-                                                            }
+                                                                if (typeof data === "object") {
+                                                                    const firstKey = Object.keys(data)[0]
+                                                                    return data[firstKey]?.[0]
+                                                                }
 
-                                                            return "No se pudo posponer la subtarea"
-                                                        },
-                                                    }
-                                                )
+                                                                return "No se pudo posponer la subtarea"
+                                                            },
+                                                        }
+                                                    )
 
-                                                setIsPostponeOpen(false)
-                                                setPostponeNote("")
-                                                if (onTaskUpdated) await onTaskUpdated()
+                                                    setIsPostponeOpen(false)
+                                                    setPostponeNote("")
+                                                    setLocalPostponed(true)
+                                                    if (onTaskUpdated) await onTaskUpdated({ silent: true })
+                                                } finally {
+                                                    onTaskUpdateEnd?.(task.id)
+                                                }
                                             }}
                                         >
                                             Posponer
@@ -283,7 +337,7 @@
                         <Checkbox
                             checked={isChecked}
                             onCheckedChange={onToggle}
-                            className="mt-0.5 h-5 w-5"
+                            className="mt-0.5 h-6 w-6"
                             aria-label={`Marcar ${task.title} como finalizada`}
                         />
 
@@ -298,7 +352,7 @@
                                     )}
                                 >
                                     {task.title || "Subtarea sin título"}
-                                    {task.status === "pospuesta" && (
+                                    {/* {task.status === "pospuesta" && (
                                         <span
                                             className={cn(
                                                 "ml-2 align-middle rounded px-2 py-0.5 text-xs font-semibold border",
@@ -309,14 +363,14 @@
                                         >
                                             Pospuesta
                                         </span>
-                                    )}
+                                    )} */}
                                 </h4>
 
                                 <p className="text-sm text-muted-foreground pt-1">
                                     {task.actividad_title || "Actividad sin título"}
                                 </p>
 
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground mr-6">
                                     {task.course || "Sin curso"}
                                 </p>
                             </div>
@@ -345,6 +399,36 @@
                             </div>
                         </div>
                     </div>
+
+                    {isPostponed && (
+                        <>
+                            <span
+                                aria-hidden="true"
+                                className={cn(
+                                    "pointer-events-none absolute bottom-0 right-0 h-16 w-16 origin-bottom-right transition-transform duration-300 ease-out transition-opacity",
+                                     variant === "overdue" && "bg-destructive/20",
+                                     variant === "today" && "bg-amber-500/20",
+                                     variant === "upcoming" && "bg-blue-500/20",
+                                    postponePulse && "scale-110",
+                                    showPostponeCorner ? "opacity-100" : "opacity-0"
+                                )}
+                                style={{ clipPath: "polygon(100% 0, 0 100%, 100% 100%)" }}
+                            />
+                            <span
+                                aria-hidden="true"
+                                className={cn(
+                                    "pointer-events-none absolute bottom-1 right-1 transition-transform duration-300 ease-out transition-opacity",
+                                    variant === "overdue" && "text-destructive",
+                                    variant === "today" && "text-amber-700 dark:text-amber-400",
+                                    variant === "upcoming" && "text-blue-700 dark:text-blue-400",
+                                    postponePulse && "rotate-12 scale-110",
+                                    showPostponeCorner ? "opacity-100" : "opacity-0"
+                                )}
+                            >
+                                <RotateCcw className="h-5 w-5 mb-1 mr-1" />
+                            </span>
+                        </>
+                    )}
                 </article>
 
                 <ReprogramTaskDialog

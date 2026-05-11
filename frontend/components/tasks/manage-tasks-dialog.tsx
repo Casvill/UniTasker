@@ -121,7 +121,7 @@ export function ManageTasksDialog({
     defaultValues: { title: "", dueDate: "", estimatedHours: "" },
     mode: "onTouched",
   })
-  const { register, handleSubmit, formState, reset } = form
+  const { register, handleSubmit, formState, reset, watch } = form
 
   React.useEffect(() => {
     if (!open || !activity) {
@@ -130,6 +130,7 @@ export function ManageTasksDialog({
   }, [open, activity, reset])
 
   const { errors, isSubmitting } = formState
+  const titleLength = watch("title")?.length ?? 0
 
   const visibleTasks =
     activity?.tasks?.filter((t: any) => t.title !== "General") ?? []
@@ -638,8 +639,10 @@ export function ManageTasksDialog({
                       <Input
                         id="title"
                         placeholder="Nombre de la subtarea"
+                        maxLength={30}
                         {...register("title")}
                       />
+
                       {errors.title && (
                         <p className="text-xs text-destructive">{errors.title.message}</p>
                       )}
@@ -696,6 +699,7 @@ export function ManageTasksDialog({
                           <Label>Nombre de la subtarea</Label>
                           <Input
                             value={editingTask.title}
+                            maxLength={30}
                             onChange={(e) =>
                               setEditingTask({
                                 ...editingTask,
@@ -703,6 +707,9 @@ export function ManageTasksDialog({
                               })
                             }
                           />
+                          <p className="text-xs text-muted-foreground text-right">
+                            {editingTask.title.length}/30
+                          </p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -771,7 +778,8 @@ export function ManageTasksDialog({
                               className={`text-sm font-semibold ${task.completed
                                 ? "line-through text-muted-foreground"
                                 : "text-foreground"
-                                }`}
+                                } break-words hyphens-auto`}
+                              lang="es"
                             >
                               {task.title}
                             </p>

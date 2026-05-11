@@ -56,23 +56,22 @@ export function TodayColumnsSkeleton() {
               <article
                 key={i}
                 className={cn(
-                  "rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md",
-                  "dark:bg-white/[0.035] dark:border-white/10 dark:shadow-none dark:hover:bg-white/[0.055]",
+                  "relative rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
                   columnVariants[col].border
                 )}
               >
                 <div className="flex items-start gap-3">
                   {/* Checkbox  */}
-                  <Skeleton className="h-5 w-5 mt-1 rounded" />
-                  <div className="min-w-0 flex-1 flex flex-col space-y-2">
+                  <Skeleton className="h-6 w-6 mt-1 rounded" />
+                  <div className="min-w-0 flex-1 flex flex-col space-y-3">
                     {/* Bloque principal */}
                     <div className="space-y-1">
-                      <Skeleton className="h-5 w-3/4 rounded" /> {/* Título */}
-                      <Skeleton className="h-4 w-1/2 rounded" /> {/* Actividad */}
+                      <Skeleton className="mt-1 h-5 w-3/4 rounded" /> {/* Título */}
+                      <Skeleton className="mb-2.5 mt-2 h-4 w-1/2 rounded" /> {/* Actividad */}
                       <Skeleton className="h-3 w-1/4 rounded" /> {/* Curso */}
                     </div>
                     {/* Bloque detalles */}
-                    <div className="flex flex-col gap-2 mt-3">
+                    <div className="flex flex-col gap-2 mt-2">
                       <Skeleton className="h-4 w-1/3 rounded" /> {/* Esfuerzo */}
                       <Skeleton className="h-4 w-1/4 rounded" /> {/* Fecha */}
                     </div>
@@ -86,3 +85,32 @@ export function TodayColumnsSkeleton() {
     </div>
   )
 }
+
+// export function TodayTaskCardSkeleton() {
+//     return (
+//         <article
+//             className={cn(
+//             "relative rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
+//             columnVariants[0].border
+//             )}
+//         >
+//             <div className="flex items-start gap-3">
+//             {/* Checkbox  */}
+//             <Skeleton className="h-5 w-5 mt-1 rounded" />
+//             <div className="min-w-0 flex-1 flex flex-col space-y-2">
+//                 {/* Bloque principal */}
+//                 <div className="space-y-1">
+//                 <Skeleton className="h-5 w-3/4 rounded" /> {/* Título */}
+//                 <Skeleton className="h-4 w-1/2 rounded" /> {/* Actividad */}
+//                 <Skeleton className="h-3 w-1/4 rounded" /> {/* Curso */}
+//                 </div>
+//                 {/* Bloque detalles */}
+//                 <div className="flex flex-col gap-2 mt-3">
+//                 <Skeleton className="h-4 w-1/3 rounded" /> {/* Esfuerzo */}
+//                 <Skeleton className="h-4 w-1/4 rounded" /> {/* Fecha */}
+//                 </div>
+//             </div>
+//             </div>
+//         </article>
+//     )
+// }

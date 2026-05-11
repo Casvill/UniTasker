@@ -56,6 +56,7 @@ export function TodayContent() {
     const [debouncedQuery, setDebouncedQuery] = useState("")
     const [courseFilter, setCourseFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [pendingTaskIds, setPendingTaskIds] = useState<number[]>([])
 
     const isFirstLoad = useRef(true)
 
@@ -142,9 +143,11 @@ export function TodayContent() {
         []
     )
 
-    const fetchTodayData = useCallback(async () => {
+    const fetchTodayData = useCallback(async (options?: { silent?: boolean }) => {
         try {
-            setState("loading")
+            if (!options?.silent) {
+                setState("loading")
+            }
 
             const params = new URLSearchParams()
             if (courseFilter !== "all") params.append("curso", courseFilter)
@@ -170,6 +173,14 @@ export function TodayContent() {
     useEffect(() => {
         fetchTodayData()
     }, [fetchTodayData])
+
+    const handleTaskUpdateStart = useCallback((taskId: number) => {
+        setPendingTaskIds((prev) => (prev.includes(taskId) ? prev : [...prev, taskId]))
+    }, [])
+
+    const handleTaskUpdateEnd = useCallback((taskId: number) => {
+        setPendingTaskIds((prev) => prev.filter((id) => id !== taskId))
+    }, [])
 
     const displayData = useMemo(() => {
         const q = debouncedQuery.toLowerCase().trim()
@@ -215,7 +226,7 @@ export function TodayContent() {
                 <p className="max-w-md text-sm text-muted-foreground">
                     No pudimos cargar las tareas de la vista de hoy.
                 </p>
-                <Button onClick={fetchTodayData}>Reintentar</Button>
+                <Button onClick={() => fetchTodayData()}>Reintentar</Button>
             </div>
         )
     }
@@ -271,6 +282,9 @@ export function TodayContent() {
                         upcomingDays={UPCOMING_DAYS}
                         onToggleSubtask={handleToggleSubtask}
                         onTaskUpdated={fetchTodayData}
+                        onTaskUpdateStart={handleTaskUpdateStart}
+                        onTaskUpdateEnd={handleTaskUpdateEnd}
+                        pendingTaskIds={pendingTaskIds}
                     />
                 </div>
             )}
