@@ -67,7 +67,7 @@ export function TodayColumnsSkeleton() {
                     {/* Bloque principal */}
                     <div className="space-y-1">
                       <Skeleton className="mt-1 h-5 w-3/4 rounded" /> {/* Título */}
-                      <Skeleton className="mb-2.5 mt-2 h-4 w-1/2 rounded" /> {/* Actividad */}
+                      <Skeleton className="mb-2 mt-2 h-4 w-1/2 rounded" /> {/* Actividad */}
                       <Skeleton className="h-3 w-1/4 rounded" /> {/* Curso */}
                     </div>
                     {/* Bloque detalles */}
