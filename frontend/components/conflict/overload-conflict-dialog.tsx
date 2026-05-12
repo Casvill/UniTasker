@@ -109,10 +109,10 @@ export function OverloadConflictDialog({
           <DialogHeader>
               <div className="flex flex-col items-center mb-2">
                 <ClockAlert className="w-8 h-8 text-destructive mb-2" />
-                <DialogTitle className="text-destructive text-center">¿Tiempo para un descanso?</DialogTitle>
+                <DialogTitle className="text-destructive text-center">¿Puede que sea demasiado?</DialogTitle>
               </div>
             <DialogDescription>
-              Quedarías con <b>{scheduledHours} horas </b> programadas para el <b>{day}</b>. Estarías excediendo tu límite diario de <b>{dailyLimit} horas.</b>
+              Con esta subtarea quedarías con <b>{scheduledHours} horas </b> programadas para el <b>{day}</b>. Estarías excediendo tu límite diario de <b>{dailyLimit} horas.</b>
               <span className="inline-block align-middle ml-1">
                 <TooltipProvider>
                   <Tooltip>
@@ -162,7 +162,7 @@ export function OverloadConflictDialog({
           <div className={anim === "out" ? "fade-out-down" : "fade-in-up"}>
             <div className="flex items-center gap-2 mb-4">
               <div className="flex-1 border-t border-border" />
-              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Prueba alguna de estas opciones</span>
+              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Puedes probar cosas como:</span>
               <div className="flex-1 border-t border-border" />
             </div>
             <div className="grid grid-cols-2 gap-3 mb-0.5">

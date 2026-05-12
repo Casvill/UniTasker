@@ -1,12 +1,12 @@
     "use client"
 
     import { useState, useRef, useEffect } from "react"
-    import { CalendarDays, Clock3, CalendarClock, RotateCcw, ChevronDown, ChevronUp, NotepadText } from "lucide-react"
+    import { CalendarDays, Clock3, RotateCcw, ChevronDown, ChevronUp, NotepadText } from "lucide-react"
     import { Checkbox } from "@/components/ui/checkbox"
     import { Button } from "@/components/ui/button"
     import { cn } from "@/lib/utils"
     import type { Subtask } from "@/components/today/today-board"
-    import { ReprogramTaskDialog } from "@/components/today/reprogram-task-dialog"
+    import { ReprogramTaskPopover } from "@/components/today/reprogram-task-dialog"
     import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
     import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
     import { Input } from "@/components/ui/input"
@@ -79,8 +79,6 @@
         onTaskUpdateStart?: (taskId: number) => void
         onTaskUpdateEnd?: (taskId: number) => void
     }) {
-        const [isDialogOpen, setIsDialogOpen] = useState(false)
-
         const dateLabel = getDateLabel(task.target_date, variant)
         const isChecked = task.status === "finalizado"
 
@@ -211,25 +209,14 @@
                             !showActions && "pointer-events-none"
                             )}
                         >
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="text-muted-foreground hover:text-primary"
-                                        onClick={() => setIsDialogOpen(true)}
-                                        aria-label="Reprogramar subtarea"
-                                    >
-                                        <CalendarClock className="h-5 w-5" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="left" align="center">
-                                Reprogramar
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <ReprogramTaskPopover
+                            taskId={task.id}
+                            taskTitle={task.title}
+                            activityTitle={task.actividad_title}
+                            currentDate={task.target_date}
+                            currentEffort={task.estimated_effort ?? 0}
+                            onSaved={onTaskUpdated}
+                        />
 
                         {!isPostponed && (
                             <TooltipProvider>
@@ -254,14 +241,14 @@
                                         </TooltipContent>
                                     </Tooltip>
                                     <PopoverContent
-                                        side="bottom"
+                                        side="right"
                                         align="center"
                                         sideOffset={8}
                                         className="w-64 p-4"
                                         onOpenAutoFocus={() => inputRef.current?.focus()}
                                         onCloseAutoFocus={(e) => e.preventDefault()}
                                     >
-                                    <div className="mb-2 font-medium text-foreground">¿Por qué pospones?</div>
+                                    <div className="mb-2 font-medium text-foreground">¿Algo que debas recordar?</div>
                                     <Input
                                         ref={inputRef}
                                         type="text"
@@ -439,16 +426,6 @@
                     )}
                 </article>
 
-                <ReprogramTaskDialog
-                    open={isDialogOpen}
-                    onOpenChange={setIsDialogOpen}
-                    taskId={task.id}
-                    taskTitle={task.title}
-                    activityTitle={task.actividad_title}
-                    currentDate={task.target_date}
-                    currentEffort={task.estimated_effort ?? 0}
-                    onSaved={onTaskUpdated}
-                />
             </>
         )
     }
