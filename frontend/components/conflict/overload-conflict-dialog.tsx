@@ -41,7 +41,8 @@ export function OverloadConflictDialog({
   const [anim, setAnim] = useState<"in" | "out" | null>(null)
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  
+  const cantReduce = scheduledHours - task.effort >= dailyLimit
   const canSaveReprogram = newDate !== task.date
   const canSaveReduce = !!newEffort && Number(newEffort) > 0 && Number(newEffort) !== task.effort
   const todayString = new Date().toISOString().split("T")[0];
@@ -165,7 +166,7 @@ export function OverloadConflictDialog({
               <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Puedes probar cosas como:</span>
               <div className="flex-1 border-t border-border" />
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-0.5">
+            <div className={`grid ${!cantReduce ? "grid-cols-2" : "grid-cols-1"} gap-3 mb-0.5`}>
               <Button
                 // variant="outline"
                 onClick={() => handleModeChange("reprogram")}
@@ -174,14 +175,18 @@ export function OverloadConflictDialog({
                 <CalendarClock/>
                 Reprogramar la fecha
               </Button>
-              <Button
-                // variant="outline"
-                onClick={() => handleModeChange("reduce")}
-                className="flex items-center py-8.5 text-[16px]"
-              >
-                <ArrowDownCircle/>
-                Reducir el esfuerzo
-              </Button>
+              {!cantReduce ? (
+                <Button
+                  // variant="outline"
+                  onClick={() => handleModeChange("reduce")}
+                  className="flex items-center py-8.5 text-[16px]"
+                >
+                  <ArrowDownCircle/>
+                  Reducir el esfuerzo
+                </Button>
+              ) : (
+                null
+              )}
             </div>
             {/* <Button
               variant="destructive"
