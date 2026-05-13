@@ -88,17 +88,69 @@ export function ManageTasksDialog({
   const [hasInitializedFormOpen, setHasInitializedFormOpen] = React.useState(false);
   const [progress, setProgress] = React.useState<ProgressData | null>(null)
 
-  function ProgressBar({ hechas, pospuestas, pendientes, total }: { hechas: number, pospuestas: number, pendientes: number, total: number }) {
-    if (total === 0) return <div className="h-3 rounded-full bg-muted/40 w-full" />
+  function ProgressBar({
+    hechas,
+    pospuestas,
+    pendientes,
+    total,
+  }: {
+    hechas: number
+    pospuestas: number
+    pendientes: number
+    total: number
+  }) {
+    if (total === 0) {
+      return <div className="h-3 rounded-full bg-muted/40 w-full" />
+    }
+
     const pctHechas = (hechas / total) * 100
     const pctPospuestas = (pospuestas / total) * 100
     const pctPendientes = (pendientes / total) * 100
 
     return (
       <div className="flex w-full h-3 rounded-full overflow-hidden bg-muted/40">
-        <div style={{ width: `${pctHechas}%` }} className="bg-emerald-500 transition-all " />
-        <div style={{ width: `${pctPospuestas}%` }} className="bg-emerald-200 transition-all" />
-        <div style={{ width: `${pctPendientes}%` }} className="bg-muted/70 transition-all" />
+        
+        {/* HECHAS */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              style={{ width: `${pctHechas}%` }}
+              className="bg-emerald-500 transition-all cursor-pointer"
+            />
+          </TooltipTrigger>
+
+          <TooltipContent>
+            <p>{hechas} hechas</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* POSPUESTAS */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              style={{ width: `${pctPospuestas}%` }}
+              className="bg-emerald-200 transition-all cursor-pointer"
+            />
+          </TooltipTrigger>
+
+          <TooltipContent>
+            <p>{pospuestas} pospuestas</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* PENDIENTES */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              style={{ width: `${pctPendientes}%` }}
+              className="bg-muted/70 transition-all cursor-pointer"
+            />
+          </TooltipTrigger>
+
+          <TooltipContent>
+            <p>{pendientes} pendientes</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     )
   }
