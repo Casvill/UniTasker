@@ -120,7 +120,7 @@ export function ManageTasksDialog({
           </TooltipTrigger>
 
           <TooltipContent>
-            <p>{hechas} hechas</p>
+            <p>Hechas: {hechas} de {total}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -134,7 +134,7 @@ export function ManageTasksDialog({
           </TooltipTrigger>
 
           <TooltipContent>
-            <p>{pospuestas} pospuestas</p>
+            <p>Pospuestas: {pospuestas} de {total}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -148,7 +148,7 @@ export function ManageTasksDialog({
           </TooltipTrigger>
 
           <TooltipContent>
-            <p>{pendientes} pendientes</p>
+            <p>Pendientes: {pendientes} de {total}</p>
           </TooltipContent>
         </Tooltip>
       </div>
