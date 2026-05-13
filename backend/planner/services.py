@@ -1,7 +1,6 @@
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from .models import Tarea
 from decimal import Decimal
-
 # ---------------------------------------------------------------------------------------------
 
 
@@ -66,5 +65,74 @@ def detectar_conflicto_reprogramacion(
         "limite_diario": limite_diario,
     }
 
+
+# ---------------------------------------------------------------------------------------------
+
+def detectar_conflicto_dia(usuario, fecha):
+    """
+    Determina si un día ya tiene sobrecarga real (sin simulación).
+    """
+
+    limite_diario = usuario.daily_hour_limit
+
+    horas_del_dia = calcular_horas_planificadas(
+        usuario=usuario,
+        fecha=fecha
+    )
+
+    return horas_del_dia > limite_diario
+
+# ---------------------------------------------------------------------------------------------
+
+
+def obtener_resumen_mensual(usuario, month, year):
+    tareas = Tarea.objects.filter(
+        actividad__usuario=usuario,
+        fecha_objetivo__year=year,
+        fecha_objetivo__month=month,
+        estado="pendiente"
+    ).values("fecha_objetivo__day").annotate(
+        count=Count("id"),
+        total_horas=Sum("horas_estimadas")
+    )
+
+    resultado = []
+
+    for t in tareas:
+        fecha = t["fecha_objetivo__day"]
+
+        resultado.append({
+            "day": fecha,
+            "count": t["count"],
+            "hasConflict": t["total_horas"] > usuario.daily_hour_limit
+        })
+
+    return resultado
+
+# ---------------------------------------------------------------------------------------------
+
+def obtener_detalle_diario(usuario, fecha):
+    tareas = Tarea.objects.filter(
+        actividad__usuario=usuario,
+        fecha_objetivo=fecha,
+        estado="pendiente"
+    ).select_related("actividad__materia")
+
+    total_horas = sum(t.horas_estimadas for t in tareas)
+
+    return {
+        "date": str(fecha),
+        "hasConflict": total_horas > usuario.daily_hour_limit,
+        "items": [
+            {
+                "id": t.id,
+                "name": t.nombre,
+                "activityName": t.actividad.nombre,
+                "subjectName": t.actividad.materia.nombre,
+                "effort": t.horas_estimadas,
+            }
+            for t in tareas
+        ]
+    }
 
 # ---------------------------------------------------------------------------------------------

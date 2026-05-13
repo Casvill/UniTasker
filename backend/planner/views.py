@@ -11,7 +11,12 @@ from .serializers import (
     HoyTareaSerializer,
 )
 from datetime import date, timedelta
-from .services import detectar_conflicto_reprogramacion
+from .services import (
+    detectar_conflicto_reprogramacion,
+    obtener_resumen_mensual,
+    obtener_detalle_diario,
+)
+from datetime import datetime
 
 
 # ------------------------------------------------------------------------------------
@@ -268,6 +273,59 @@ class TareaViewSet(viewsets.ModelViewSet):
         return Response(
             {"conflict": False, "message": "Tarea reprogramada correctamente"}
         )
+    
+# ------------------------------------------------------------------------------------
+    
+    @action(detail=False, methods=["get"], url_path="calendario-mensual")
+    def calendario_mensual(self, request):  
+
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+
+        if not month or not year:
+            return Response(
+                {"error": "month y year son obligatorios"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            month = int(month)
+            year = int(year)
+        except ValueError:
+            return Response(
+                {"error": "month y year deben ser números"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = obtener_resumen_mensual(request.user, month, year)
+        return Response(data)
+
+# ------------------------------------------------------------------------------------
+
+    @action(detail=False, methods=["get"], url_path="calendario-dia")
+    def calendario_dia(self, request):
+        """
+        GET /api/tareas/calendario-dia?date=2026-05-12
+        """
+
+        fecha = request.query_params.get("date")
+
+        if not fecha:
+            return Response(
+                {"error": "date es obligatorio (YYYY-MM-DD)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            fecha_obj = datetime.strptime(fecha, "%Y-%m-%d").date()
+        except ValueError:
+            return Response(
+                {"error": "Formato de fecha inválido (YYYY-MM-DD)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = obtener_detalle_diario(request.user, fecha_obj)
+        return Response(data)
 
 
 # ------------------------------------------------------------------------------------
@@ -289,3 +347,4 @@ class RegistroAvanceViewSet(viewsets.ModelViewSet):
 
 
 # ------------------------------------------------------------------------------------
+
