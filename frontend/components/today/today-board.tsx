@@ -23,13 +23,19 @@ export function TodayBoard({
     upcomingDays,
     onToggleSubtask,
     onTaskUpdated,
+    onTaskUpdateStart,
+    onTaskUpdateEnd,
+    pendingTaskIds,
 }: {
     overdue: Subtask[]
     today: Subtask[]
     upcoming: Subtask[]
     upcomingDays: number
     onToggleSubtask: (id: number, currentStatus: SubtaskStatus) => void
-    onTaskUpdated: () => Promise<void> | void
+    onTaskUpdated: (options?: { silent?: boolean }) => Promise<void> | void
+    onTaskUpdateStart: (taskId: number) => void
+    onTaskUpdateEnd: (taskId: number) => void
+    pendingTaskIds: number[]
 }) {
     return (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
@@ -40,6 +46,9 @@ export function TodayBoard({
                 emptyText="No tienes subtareas vencidas."
                 onToggleSubtask={onToggleSubtask}
                 onTaskUpdated={onTaskUpdated}
+                onTaskUpdateStart={onTaskUpdateStart}
+                onTaskUpdateEnd={onTaskUpdateEnd}
+                pendingTaskIds={pendingTaskIds}
             />
 
             <TodayColumn
@@ -49,6 +58,9 @@ export function TodayBoard({
                 emptyText="No tienes subtareas para hoy."
                 onToggleSubtask={onToggleSubtask}
                 onTaskUpdated={onTaskUpdated}
+                onTaskUpdateStart={onTaskUpdateStart}
+                onTaskUpdateEnd={onTaskUpdateEnd}
+                pendingTaskIds={pendingTaskIds}
             />
 
             <TodayColumn
@@ -58,6 +70,9 @@ export function TodayBoard({
                 emptyText="No tienes subtareas próximas."
                 onToggleSubtask={onToggleSubtask}
                 onTaskUpdated={onTaskUpdated}
+                onTaskUpdateStart={onTaskUpdateStart}
+                onTaskUpdateEnd={onTaskUpdateEnd}
+                pendingTaskIds={pendingTaskIds}
             />
         </div>
     )

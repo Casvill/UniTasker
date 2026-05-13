@@ -67,6 +67,7 @@ export function ManageTasksDialog({
   onRefresh,
 }: ManageTasksDialogProps) {
   const [editingId, setEditingId] = React.useState<number | string | null>(null)
+  const [updatingTaskId, setUpdatingTaskId] = React.useState<number | string | null>(null)
   const [editingTask, setEditingTask] = React.useState({
     title: "",
     dueDate: "",
@@ -121,7 +122,7 @@ export function ManageTasksDialog({
     defaultValues: { title: "", dueDate: "", estimatedHours: "" },
     mode: "onTouched",
   })
-  const { register, handleSubmit, formState, reset } = form
+  const { register, handleSubmit, formState, reset, watch } = form
 
   React.useEffect(() => {
     if (!open || !activity) {
@@ -130,6 +131,7 @@ export function ManageTasksDialog({
   }, [open, activity, reset])
 
   const { errors, isSubmitting } = formState
+  const titleLength = watch("title")?.length ?? 0
 
   const visibleTasks =
     activity?.tasks?.filter((t: any) => t.title !== "General") ?? []
@@ -251,50 +253,56 @@ export function ManageTasksDialog({
 
   const handleUpdateTask = async (id: number | string) => {
     if (!editingTask.title.trim()) return
+    if (updatingTaskId === id) return
+
+    setUpdatingTaskId(id)
+    const toastId = toast.loading("Actualizando tarea...")
 
     try {
-      const result = await reprogramTask(
-        Number(id),
-        editingTask.dueDate,
-        parseFloat(editingTask.estimatedHours)
-      ) as { conflict: boolean; message: string };
+      try {
+        const result = await reprogramTask(
+          Number(id),
+          editingTask.dueDate,
+          parseFloat(editingTask.estimatedHours)
+        ) as { conflict: boolean; message: string };
 
-      if (
-        typeof result === "object" &&
-        result !== null &&
-        "conflict" in result &&
-        "message" in result
-      ) {
-        const { conflict, message } = result;
-        if (conflict) {
-          toast.error(message);
-          return;
+        if (
+          typeof result === "object" &&
+          result !== null &&
+          "conflict" in result &&
+          "message" in result
+        ) {
+          const { conflict, message } = result;
+          if (conflict) {
+            toast.error(message, { id: toastId });
+            return;
+          }
         }
+      } catch (e) {
+        toast.error("No se pudo validar la capacidad diaria.", { id: toastId });
+        return;
       }
-    } catch (e) {
-      toast.error("No se pudo validar la capacidad diaria.");
-      return;
-    }
 
-    const promise = apiFetch<any>(`/tareas/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        nombre: editingTask.title,
-        fecha_objetivo: editingTask.dueDate || null,
-        horas_estimadas: parseFloat(editingTask.estimatedHours) || 0,
-      }),
-    })
+      try {
+        await apiFetch<any>(`/tareas/${id}/`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            nombre: editingTask.title,
+            fecha_objetivo: editingTask.dueDate || null,
+            horas_estimadas: parseFloat(editingTask.estimatedHours) || 0,
+          }),
+        })
 
-    toast.promise(promise, {
-      loading: "Actualizando tarea...",
-      success: () => {
         onRefresh(true)
         refreshProgress();
         setEditingId(null)
-        return "Tarea actualizada"
-      },
-      error: "Error al actualizar la tarea",
-    })
+        toast.success("Tarea actualizada", { id: toastId })
+      } catch {
+        toast.error("Error al actualizar la tarea", { id: toastId })
+      }
+    } finally {
+      setUpdatingTaskId(null)
+    }
   }
 
   const handleDeleteTask = async (id: string | number) => {
@@ -638,8 +646,10 @@ export function ManageTasksDialog({
                       <Input
                         id="title"
                         placeholder="Nombre de la subtarea"
+                        maxLength={30}
                         {...register("title")}
                       />
+
                       {errors.title && (
                         <p className="text-xs text-destructive">{errors.title.message}</p>
                       )}
@@ -675,8 +685,12 @@ export function ManageTasksDialog({
                           </p>
                         )}
                       </div>
-                      <Button type="submit" disabled={isSubmitting} className="sm:self-start">
-                        {isSubmitting ? "Guardando..." : "Guardar"}
+                      <Button type="submit" disabled={isSubmitting} className="sm:self-start w-30">
+                        {isSubmitting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Crear"
+                        )}
                       </Button>
                     </div>
                   </form>
@@ -692,10 +706,25 @@ export function ManageTasksDialog({
                   >
                     {editingId === task.id ? (
                       <div className="space-y-3">
+                        {(() => {
+                          const originalTitle = task.title ?? ""
+                          const originalDueDate = task.dueDate || ""
+                          const originalHours =
+                            task.estimatedHours == null
+                              ? ""
+                              : String(task.estimatedHours)
+                          const isDirty =
+                            editingTask.title !== originalTitle ||
+                            editingTask.dueDate !== originalDueDate ||
+                            editingTask.estimatedHours !== originalHours
+
+                          return (
+                            <>
                         <div className="space-y-2">
                           <Label>Nombre de la subtarea</Label>
                           <Input
                             value={editingTask.title}
+                            maxLength={30}
                             onChange={(e) =>
                               setEditingTask({
                                 ...editingTask,
@@ -703,9 +732,12 @@ export function ManageTasksDialog({
                               })
                             }
                           />
+                          {/* <p className="text-xs text-muted-foreground text-right">
+                            {editingTask.title.length}/30
+                          </p> */}
                         </div>
 
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mb-5">
                           <div className="space-y-2">
                             <Label>Fecha objetivo</Label>
                             <Input
@@ -743,18 +775,29 @@ export function ManageTasksDialog({
                             type="button"
                             size="sm"
                             variant="outline"
+                            className="flex-1"
                             onClick={() => setEditingId(null)}
+                            disabled={updatingTaskId === task.id}
                           >
                             Cancelar
                           </Button>
                           <Button
                             type="button"
                             size="sm"
+                            className="flex-1"
                             onClick={() => handleUpdateTask(task.id)}
+                            disabled={updatingTaskId === task.id || !isDirty}
                           >
-                            Guardar cambios
+                            {updatingTaskId === task.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Guardar"
+                            )}
                           </Button>
                         </div>
+                            </>
+                          )
+                        })()}
                       </div>
                     ) : (
                       <div className="flex items-start justify-between gap-3">
@@ -771,7 +814,8 @@ export function ManageTasksDialog({
                               className={`text-sm font-semibold ${task.completed
                                 ? "line-through text-muted-foreground"
                                 : "text-foreground"
-                                }`}
+                                } break-words hyphens-auto`}
+                              lang="es"
                             >
                               {task.title}
                             </p>

@@ -91,13 +91,16 @@ export function TodayFilters({
 
                     <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem onClick={() => onStatusChange("all")}>
-                            Todos
+                            Todas
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onStatusChange("pendiente")}>
-                            Pendiente
+                            Pendientes
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onStatusChange("hecha")}>
-                            Finalizado
+                            Hechas
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onStatusChange("pospuesta")}>
+                            Pospuestas
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

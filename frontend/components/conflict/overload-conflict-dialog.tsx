@@ -41,7 +41,8 @@ export function OverloadConflictDialog({
   const [anim, setAnim] = useState<"in" | "out" | null>(null)
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  
+  const cantReduce = scheduledHours - task.effort >= dailyLimit
   const canSaveReprogram = newDate !== task.date
   const canSaveReduce = !!newEffort && Number(newEffort) > 0 && Number(newEffort) !== task.effort
   const todayString = new Date().toISOString().split("T")[0];
@@ -109,10 +110,10 @@ export function OverloadConflictDialog({
           <DialogHeader>
               <div className="flex flex-col items-center mb-2">
                 <ClockAlert className="w-8 h-8 text-destructive mb-2" />
-                <DialogTitle className="text-destructive text-center">¿Tiempo para un descanso?</DialogTitle>
+                <DialogTitle className="text-destructive text-center">¿Puede que sea demasiado?</DialogTitle>
               </div>
             <DialogDescription>
-              Quedarías con <b>{scheduledHours} horas </b> programadas para el <b>{day}</b>. Estarías excediendo tu límite diario de <b>{dailyLimit} horas.</b>
+              Con esta subtarea quedarías con <b>{scheduledHours} horas </b> programadas para el <b>{day}</b>. Estarías excediendo tu límite diario de <b>{dailyLimit} horas.</b>
               <span className="inline-block align-middle ml-1">
                 <TooltipProvider>
                   <Tooltip>
@@ -162,26 +163,43 @@ export function OverloadConflictDialog({
           <div className={anim === "out" ? "fade-out-down" : "fade-in-up"}>
             <div className="flex items-center gap-2 mb-4">
               <div className="flex-1 border-t border-border" />
-              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Prueba alguna de estas opciones</span>
+              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Puedes probar cosas como:</span>
               <div className="flex-1 border-t border-border" />
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-0.5">
+            <div className={`grid ${!cantReduce ? "grid-cols-3" : "grid-cols-2"} gap-3 mb-0.5`}>
               <Button
-                // variant="outline"
-                onClick={() => handleModeChange("reprogram")}
-                className="flex items-center py-8.5 text-[16px]"
-              >
-                <CalendarClock/>
-                Reprogramar la fecha
-              </Button>
-              <Button
-                // variant="outline"
-                onClick={() => handleModeChange("reduce")}
-                className="flex items-center py-8.5 text-[16px]"
-              >
-                <ArrowDownCircle/>
-                Reducir el esfuerzo
-              </Button>
+                  // variant="outline"
+                  onClick={() => handleModeChange("reprogram")}
+                  // Cambios: flex-col, items-center (centrado horizontal), justify-center (centrado vertical)
+                  // Ajuste de padding: py-6 (más aire arriba/abajo), px-3 (menos aire a los lados ya que es vertical)
+                  className="flex flex-col items-center justify-center gap-2 py-6 px-3 text-[14px] text-center whitespace-normal leading-tight h-22"
+                >
+                  <CalendarClock className="w-6 h-6 shrink-0" /> {/* Tamaño de icono un poco más controlado */}
+                  <span>Reprogramar la fecha</span>
+                </Button>
+                {/* Botón 2: Reducir (Condicional) */}
+                  {!cantReduce ? (
+                    <Button
+                      // variant="outline"
+                      onClick={() => handleModeChange("reduce")}
+                      className="flex flex-col items-center justify-center gap-3 py-6 px-3 text-[14px] text-center whitespace-normal leading-tight h-22"
+                    >
+                      <ArrowDownCircle className="w-6 h-6 shrink-0" />
+                      <span>Reducir el esfuerzo</span>
+                    </Button>
+                  ) : (
+                    null
+                  )}
+
+                  {/* Botón 3: Detalle */}
+                  <Button
+                    // variant="outline"
+                    // onClick={() => handleModeChange("reprogram")}
+                    className="flex flex-col items-center justify-center gap-2 py-6 px-3 text-[14px] text-center whitespace-normal leading-tight h-22"
+                  >
+                    <CalendarClock className="w-6 h-6 shrink-0" />
+                    <span>Ver programación de ese día</span>
+  </Button>
             </div>
             {/* <Button
               variant="destructive"
@@ -196,7 +214,7 @@ export function OverloadConflictDialog({
         {/* Opcion secundaria: Reprogramar */}
         {pendingMode === "reprogram" && showForm && (
           <div className={anim === "out" ? "fade-out-down" : "fade-in-up"}>
-            <label className="block text-sm font-medium mb-1.5">¿Para cuando reprogramar la subtarea?</label>
+            <label className="block text-m font-medium mb-2.5">¿Para cuando reprogramar la subtarea?</label>
             <Input
               className="mb-1"
               type="date"
@@ -204,7 +222,7 @@ export function OverloadConflictDialog({
               value={newDate}
               onChange={e => setNewDate(e.target.value)}
             />
-            <div className="grid grid-cols-2 gap-2 mt-1">
+            <div className="grid grid-cols-2 gap-2 mt-2 mb-2">
               <Button variant="outline" onClick={handleBack}>Atrás</Button>
               <Button
                 onClick={async () => {
@@ -230,7 +248,7 @@ export function OverloadConflictDialog({
         {/* Opcion secundaria: Reducir esfuerzo */}
         {pendingMode === "reduce" && showForm && (
           <div className={anim === "out" ? "fade-out-down" : "fade-in-up"}>
-            <label className="block text-sm font-medium mb-1.5">¿A cuantas horas reducir la subtarea?</label>
+            <label className="block text-m font-medium mb-2.5">¿A cuantas horas reducir la subtarea?</label>
             <Input
               className="mb-1"
               type="number"
@@ -239,7 +257,7 @@ export function OverloadConflictDialog({
               value={newEffort === 0 ? "" : newEffort}
               onChange={e => setNewEffort(Number(e.target.value))}
             />
-            <div className="grid grid-cols-2 gap-2 mt-1">
+            <div className="grid grid-cols-2 gap-2 mt-2 mb-2">
               <Button variant="outline" onClick={handleBack}>Atrás</Button>
               <Button
                 onClick={async () => {
