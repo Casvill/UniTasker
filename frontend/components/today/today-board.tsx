@@ -44,6 +44,7 @@ export function TodayBoard({
                 variant="overdue"
                 tasks={overdue}
                 emptyText="No tienes subtareas vencidas."
+                emptyImage="/empty-overdue.svg"
                 onToggleSubtask={onToggleSubtask}
                 onTaskUpdated={onTaskUpdated}
                 onTaskUpdateStart={onTaskUpdateStart}
@@ -56,6 +57,8 @@ export function TodayBoard({
                 variant="today"
                 tasks={today}
                 emptyText="No tienes subtareas para hoy."
+                // emptyImage="/empty-today.svg"
+                emptyImage="/empty-today.svg"
                 onToggleSubtask={onToggleSubtask}
                 onTaskUpdated={onTaskUpdated}
                 onTaskUpdateStart={onTaskUpdateStart}
@@ -68,6 +71,7 @@ export function TodayBoard({
                 variant="upcoming"
                 tasks={upcoming}
                 emptyText="No tienes subtareas próximas."
+                emptyImage="/empty-upcoming.svg"
                 onToggleSubtask={onToggleSubtask}
                 onTaskUpdated={onTaskUpdated}
                 onTaskUpdateStart={onTaskUpdateStart}

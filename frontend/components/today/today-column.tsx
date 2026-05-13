@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 import { TodayTaskCard } from "@/components/today/today-task-card"
 // import { TodayTaskCardSkeleton } from "@/components/today/today-columns-skeleton"
 import type { Subtask, SubtaskStatus } from "@/components/today/today-board"
@@ -49,6 +50,7 @@ export function TodayColumn({
     variant,
     tasks,
     emptyText,
+    emptyImage,
     onToggleSubtask,
     onTaskUpdated,
     onTaskUpdateStart,
@@ -59,6 +61,7 @@ export function TodayColumn({
     variant: Variant
     tasks: Subtask[]
     emptyText: string
+    emptyImage: string
     onToggleSubtask: (id: number, currentStatus: SubtaskStatus) => void
     onTaskUpdated: (options?: { silent?: boolean }) => Promise<void> | void
     onTaskUpdateStart: (taskId: number) => void
@@ -101,11 +104,19 @@ export function TodayColumn({
                     <div className="flex h-[220px] items-center justify-center text-center">
                         <div
                             className={cn(
-                                "flex min-h-[140px] w-full items-center justify-center rounded-xl border border-dashed px-6",
+                                "flex min-h-[220px] w-full flex-col items-center justify-center rounded-xl border border-dashed px-6 py-6",
                                 styles.emptyBox
                             )}
                         >
-                            <p className="max-w-[220px] text-sm text-muted-foreground dark:text-muted-foreground/90">
+                            <Image
+                                src={emptyImage}
+                                alt="Estado vacío"
+                                width={170}
+                                height={170}
+                                className="mb-3 object-contain opacity-95"
+                            />
+
+                            <p className="max-w-[220px] text-center text-sm text-muted-foreground dark:text-muted-foreground/90">
                                 {emptyText}
                             </p>
                         </div>
