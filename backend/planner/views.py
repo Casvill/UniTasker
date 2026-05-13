@@ -2,22 +2,21 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from .models import Actividad, Tarea, RegistroAvance
 from django.shortcuts import get_object_or_404
+from datetime import date, timedelta, datetime
+
+from .models import Actividad, Tarea, RegistroAvance
 from .serializers import (
     ActividadSerializer,
     TareaSerializer,
     RegistroAvanceSerializer,
     HoyTareaSerializer,
 )
-from datetime import date, timedelta
 from .services import (
     detectar_conflicto_reprogramacion,
     obtener_resumen_mensual,
     obtener_detalle_diario,
 )
-from datetime import datetime
-
 
 # ------------------------------------------------------------------------------------
 class ActividadViewSet(viewsets.ModelViewSet):
@@ -25,11 +24,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         if getattr(self, "swagger_fake_view", False):
-            print(
-                f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío."
-            )
             return Actividad.objects.none()
 
         return Actividad.objects.filter(usuario=self.request.user)
@@ -37,6 +32,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
+    # -------------------------------------------------------------------
     @action(detail=True, methods=["get"], url_path="progreso")
     def progreso(self, request, pk=None):
         actividad = self.get_object()
@@ -56,8 +52,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
                     "pendientes": 0,
                     "progreso_porcentaje": 0,
                     "mensaje": "No hay subtareas",
-                },
-                status=status.HTTP_200_OK,
+                }
             )
 
         progreso = round((hechas / total) * 100)
@@ -70,8 +65,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
                 "pendientes": pendientes,
                 "progreso_porcentaje": progreso,
                 "mensaje": f"Actividad completada en un {progreso}%",
-            },
-            status=status.HTTP_200_OK,
+            }
         )
 
 
@@ -82,15 +76,10 @@ class TareaViewSet(viewsets.ModelViewSet):
 
     # -------------------------------------------------------------------
     def get_queryset(self):
-
         if getattr(self, "swagger_fake_view", False):
-            print(
-                f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío."
-            )
             return Tarea.objects.none()
 
         actividad_id = self.request.query_params.get("actividad")
-
         queryset = Tarea.objects.filter(actividad__usuario=self.request.user)
 
         if actividad_id:
@@ -105,7 +94,7 @@ class TareaViewSet(viewsets.ModelViewSet):
 
         if not actividad_id:
             return Response(
-                {"actividad": ["Este campo es obligatorio."]},
+                {"detail": "El campo actividad es obligatorio"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -120,20 +109,6 @@ class TareaViewSet(viewsets.ModelViewSet):
     # -------------------------------------------------------------------
     @action(detail=False, methods=["get"], url_path="hoy")
     def hoy(self, request):
-        """
-        GET /api/tareas/hoy/
-
-        Query params opcionales:
-            - curso
-            - estado
-
-        Retorna:
-          {
-            "vencidas": [...],
-            "para_hoy": [...],
-            "proximas": [...]
-          }
-        """
         user = request.user
         today = date.today()
         window_end = today + timedelta(days=7)
@@ -146,10 +121,8 @@ class TareaViewSet(viewsets.ModelViewSet):
         if curso_filter:
             base_qs = base_qs.filter(actividad__curso__icontains=curso_filter)
 
-        if estado_filter:
-            valid_estados = ["pendiente", "hecha", "pospuesta"]
-            if estado_filter in valid_estados:
-                base_qs = base_qs.filter(estado=estado_filter)
+        if estado_filter in ["pendiente", "hecha", "pospuesta"]:
+            base_qs = base_qs.filter(estado=estado_filter)
 
         vencidas_qs = base_qs.filter(fecha_objetivo__lt=today).order_by(
             "fecha_objetivo", "horas_estimadas"
@@ -159,32 +132,11 @@ class TareaViewSet(viewsets.ModelViewSet):
             fecha_objetivo__gt=today, fecha_objetivo__lte=window_end
         ).order_by("fecha_objetivo", "horas_estimadas")
 
-        vencidas = HoyTareaSerializer(
-            vencidas_qs, many=True, context={"request": request}
-        ).data
-        para_hoy = HoyTareaSerializer(
-            para_hoy_qs, many=True, context={"request": request}
-        ).data
-        proximas = HoyTareaSerializer(
-            proximas_qs, many=True, context={"request": request}
-        ).data
-
-        total = len(vencidas) + len(para_hoy) + len(proximas)
-
-        mensaje = None
-        if total == 0:
-            if curso_filter or estado_filter:
-                mensaje = "No se encontraron tareas con los filtros aplicados"
-            else:
-                mensaje = "No tienes tareas programadas"
-
         return Response(
             {
-                "vencidas": vencidas,
-                "para_hoy": para_hoy,
-                "proximas": proximas,
-                "total": total,
-                "mensaje": mensaje,
+                "vencidas": HoyTareaSerializer(vencidas_qs, many=True).data,
+                "para_hoy": HoyTareaSerializer(para_hoy_qs, many=True).data,
+                "proximas": HoyTareaSerializer(proximas_qs, many=True).data,
             }
         )
 
@@ -192,50 +144,31 @@ class TareaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["patch"], url_path="registrar-avance")
     def registrar_avance(self, request, pk=None):
         tarea = self.get_object()
-
         estado = request.data.get("estado")
         nota = request.data.get("nota", None)
 
-        estados_validos = ["pendiente", "hecha", "pospuesta"]
-
-        if not estado:
+        if estado not in ["pendiente", "hecha", "pospuesta"]:
             return Response(
-                {"estado": ["Este campo es obligatorio."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if estado not in estados_validos:
-            return Response(
-                {"estado": ["Estado no válido."]},
+                {"detail": "Estado no válido"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         tarea.estado = estado
 
-        # Solo actualiza la nota si viene en el request
         if nota is not None:
             tarea.nota = nota.strip()
 
         tarea.save()
 
-        # Mensajes UX-02
-        message_map = {
-            "hecha": "Subtarea marcada como completada",
-            "pendiente": "Subtarea marcada como pendiente",
-            "pospuesta": "Subtarea pospuesta correctamente",
-        }
-
-        message = message_map.get(estado, "Tarea actualizada")
-
         return Response(
             {
-                "message": message,
+                "message": "Estado actualizado correctamente",
                 "id": tarea.id,
                 "estado": tarea.estado,
                 "nota": tarea.nota,
-            },
-            status=status.HTTP_200_OK,
+            }
         )
+
     # -------------------------------------------------------------------
     @action(detail=True, methods=["patch"])
     def reprogramar(self, request, pk=None):
@@ -261,9 +194,8 @@ class TareaViewSet(viewsets.ModelViewSet):
                     "conflict": True,
                     "planned_hours": float(resultado["nuevo_total"]),
                     "daily_limit": float(resultado["limite_diario"]),
-                    "message": f"Quedarías con {resultado['nuevo_total']}h planificadas (límite {resultado['limite_diario']}h)",
-                },
-                status=status.HTTP_200_OK,
+                    "message": f"Excedes el límite diario ({resultado['limite_diario']}h)",
+                }
             )
 
         tarea.fecha_objetivo = nueva_fecha
@@ -273,18 +205,16 @@ class TareaViewSet(viewsets.ModelViewSet):
         return Response(
             {"conflict": False, "message": "Tarea reprogramada correctamente"}
         )
-    
-# ------------------------------------------------------------------------------------
-    
-    @action(detail=False, methods=["get"], url_path="calendario-mensual")
-    def calendario_mensual(self, request):  
 
+    # -------------------------------------------------------------------
+    @action(detail=False, methods=["get"], url_path="calendario-mensual")
+    def calendario_mensual(self, request):
         month = request.query_params.get("month")
         year = request.query_params.get("year")
 
         if not month or not year:
             return Response(
-                {"error": "month y year son obligatorios"},
+                {"detail": "month y year son obligatorios"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -293,26 +223,27 @@ class TareaViewSet(viewsets.ModelViewSet):
             year = int(year)
         except ValueError:
             return Response(
-                {"error": "month y year deben ser números"},
+                {"detail": "month y year deben ser números"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not (1 <= month <= 12):
+            return Response(
+                {"detail": "month debe estar entre 1 y 12"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         data = obtener_resumen_mensual(request.user, month, year)
         return Response(data)
 
-# ------------------------------------------------------------------------------------
-
+    # -------------------------------------------------------------------
     @action(detail=False, methods=["get"], url_path="calendario-dia")
     def calendario_dia(self, request):
-        """
-        GET /api/tareas/calendario-dia?date=2026-05-12
-        """
-
         fecha = request.query_params.get("date")
 
         if not fecha:
             return Response(
-                {"error": "date es obligatorio (YYYY-MM-DD)"},
+                {"detail": "date es obligatorio (YYYY-MM-DD)"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -320,7 +251,7 @@ class TareaViewSet(viewsets.ModelViewSet):
             fecha_obj = datetime.strptime(fecha, "%Y-%m-%d").date()
         except ValueError:
             return Response(
-                {"error": "Formato de fecha inválido (YYYY-MM-DD)"},
+                {"detail": "Formato de fecha inválido"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -334,17 +265,9 @@ class RegistroAvanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         if getattr(self, "swagger_fake_view", False):
-            print(
-                f"[Swagger] {self.__class__.__name__}: Generación del esquema, queryset vacío."
-            )
             return RegistroAvance.objects.none()
 
         return RegistroAvance.objects.filter(
             tarea__actividad__usuario=self.request.user
         )
-
-
-# ------------------------------------------------------------------------------------
-
