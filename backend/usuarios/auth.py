@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.utils import timezone
 
 
 class SafeTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -15,10 +16,8 @@ class SafeTokenObtainPairSerializer(TokenObtainPairSerializer):
         email = (attrs.get("email") or "").strip().lower()
         password = attrs.get("password") or ""
 
-        generic_error = AuthenticationFailed("Credenciales inválidas.")
-
         if not email or not password:
-            raise generic_error
+            raise AuthenticationFailed("Credenciales inválidas.")
 
         User = get_user_model()
         try:
@@ -32,22 +31,20 @@ class SafeTokenObtainPairSerializer(TokenObtainPairSerializer):
             username=username,
             password=password,
         )
+
         if not authenticated:
             raise AuthenticationFailed("Credenciales inválidas.")
 
-        # Ajuste: generar refresh UNA sola vez
+        authenticated.last_login = timezone.now()
+        authenticated.save(update_fields=["last_login"])
+
+        # Generar tokens
         refresh = self.get_token(authenticated)
 
         return {
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }
-
-        # pass
-        # try:
-        #     return super().validate(attrs)
-        # except Exception:
-        #     raise AuthenticationFailed("Credenciales inválidas.")
 
 
 class SafeTokenObtainPairView(TokenObtainPairView):
