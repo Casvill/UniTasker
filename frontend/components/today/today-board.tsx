@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { TodayColumn } from "@/components/today/today-column"
 
 export type SubtaskStatus = "pendiente" | "finalizado" | "pospuesta"
@@ -21,6 +22,7 @@ export function TodayBoard({
     today,
     upcoming,
     upcomingDays,
+    todayHeaderAction,
     onToggleSubtask,
     onTaskUpdated,
     onTaskUpdateStart,
@@ -31,6 +33,7 @@ export function TodayBoard({
     today: Subtask[]
     upcoming: Subtask[]
     upcomingDays: number
+    todayHeaderAction?: ReactNode
     onToggleSubtask: (id: number, currentStatus: SubtaskStatus) => void
     onTaskUpdated: (options?: { silent?: boolean }) => Promise<void> | void
     onTaskUpdateStart: (taskId: number) => void
@@ -59,6 +62,7 @@ export function TodayBoard({
                 emptyText="No tienes subtareas para hoy."
                 // emptyImage="/empty-today.svg"
                 emptyImage="/empty-today.svg"
+                headerAction={todayHeaderAction}
                 onToggleSubtask={onToggleSubtask}
                 onTaskUpdated={onTaskUpdated}
                 onTaskUpdateStart={onTaskUpdateStart}

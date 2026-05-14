@@ -59,6 +59,18 @@ function formatDate(date?: string | null) {
   return `${day}/${month}/${year}`
 }
 
+function formatEffortLabel(value: number | string | null | undefined) {
+  if (value == null || value === "") return null
+  const numeric = Number(value)
+  if (Number.isNaN(numeric)) return String(value)
+  return String(numeric)
+}
+
+function formatEffortDisplay(value: number | string | null | undefined) {
+  const label = formatEffortLabel(value)
+  return label === null ? "Sin estimación" : `${label}h`
+}
+
 export function ManageTasksDialog({
   open,
   onOpenChange,
@@ -698,7 +710,7 @@ export function ManageTasksDialog({
                       <Input
                         id="title"
                         placeholder="Nombre de la subtarea"
-                        maxLength={30}
+                        maxLength={60}
                         {...register("title")}
                       />
 
@@ -879,9 +891,7 @@ export function ManageTasksDialog({
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
-                                {task.estimatedHours
-                                  ? `${parseInt(task.estimatedHours)}h`
-                                  : "Sin estimación"}
+                                {formatEffortDisplay(task.estimatedHours)}
                               </span>
                             </div>
                           </div>
@@ -935,12 +945,21 @@ export function ManageTasksDialog({
     <OverloadConflictDialog
       open={!!conflictData}
       onOpenChange={(open) => setConflictData(open ? conflictData : null)}
-      task={conflictData?.task || { title: "", date: "", effort: 1 }}
+      task={
+        conflictData?.task
+          ? { id: conflictData.taskId, ...conflictData.task }
+          : { id: undefined, title: "", date: "", effort: 1 }
+      }
       day={conflictData?.day || ""}
       scheduledHours={conflictData?.scheduledHours || 0}
       dailyLimit={conflictData?.dailyLimit || 0}
       onSave={handleSaveConflict}
       onDelete={handleDeleteConflictTask}
+      onResolved={() => {
+        setConflictData(null)
+        onRefresh(true)
+        refreshProgress()
+      }}
       context="create"
     />
     </>

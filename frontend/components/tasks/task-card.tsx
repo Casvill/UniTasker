@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Tag, Calendar } from "lucide-react"
 import { Activity } from "./task-types"
 
+const formatEffortLabel = (value: number | string | null | undefined) => {
+  if (value == null || value === "") return null
+  const numeric = Number(value)
+  if (Number.isNaN(numeric)) return String(value)
+  return String(numeric)
+}
+
 interface TaskCardProps {
   task: Activity
   index: number
@@ -94,7 +101,9 @@ export function TaskCard({
                   </span>
                 </div>
                 <span className="text-[10px] text-muted-foreground opacity-0 group-hover/sub:opacity-100 transition-opacity">
-                  {t.estimatedHours}h
+                  {formatEffortLabel(t.estimatedHours) === null
+                    ? ""
+                    : `${formatEffortLabel(t.estimatedHours)}h`}
                 </span>
               </div>
             ))}

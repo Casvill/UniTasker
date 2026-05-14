@@ -69,7 +69,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
 
   const handleDeleteActivity = async (e: React.MouseEvent, activityId: number) => {
     e.stopPropagation();
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad?")) return;
+    if (!window.confirm("Si eliminas la actividad todas las subtareas asociadas tambien serán borradas, ¿estás seguro?")) return;
     const toastId = toast.loading("Eliminando actividad...");
     try {
       await apiFetch(`/actividades/${activityId}/`, { method: "DELETE" });

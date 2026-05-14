@@ -5,7 +5,7 @@ export const TaskSchema = z.object({
     .string()
     .nonempty({ message: "Escribe un nombre para la tarea." })
     .min(2, { message: "El nombre es muy corto." })
-    .max(30, { message: "El nombre es muy largo." }),
+    .max(60, { message: "El nombre es muy largo." }),
 
   dueDate: z
     .string()

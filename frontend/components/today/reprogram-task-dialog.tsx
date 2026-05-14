@@ -270,12 +270,21 @@ export function ReprogramTaskPopover({
                     if (!open) handleUndoChange()
                     else setConflictData(conflictData)
                 }}
-                task={conflictData?.task || { title: "", date: "", effort: 1 }}
+                task={
+                    conflictData?.task
+                        ? { id: conflictData.taskId, ...conflictData.task }
+                        : { id: undefined, title: "", date: "", effort: 1 }
+                }
                 day={conflictData?.day || ""}
                 scheduledHours={conflictData?.scheduledHours || 0}
                 dailyLimit={conflictData?.dailyLimit || 0}
                 onSave={handleSaveConflict}
                 onDelete={handleUndoChange}
+                onResolved={() => {
+                    setConflictData(null)
+                    setOpen(false)
+                    onSaved()
+                }}
                 context="reprogram"
             />
         </>
