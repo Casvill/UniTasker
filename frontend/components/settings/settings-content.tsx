@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { apiFetch } from "@/lib/api"
 
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
@@ -133,9 +134,33 @@ export function SettingsContent() {
       const updatedLimit = String(data?.daily_hour_limit ?? dailyLimit)
       setDailyLimit(updatedLimit)
       setSavedDailyLimit(updatedLimit)
+      toast.success("Límite actualizado correctamente")
       setCapacityError("")
 
-      toast.success("Límite actualizado correctamente")
+      window.dispatchEvent(new CustomEvent('dailyLimitUpdated', { 
+        detail: { newLimit: updatedLimit } 
+      }))
+
+      // Verificar conflictos después de cambiar el límite
+      const today = new Date()
+      const month = today.getMonth() + 1
+      const year = today.getFullYear()
+
+      type CalendarDaySummary = {
+        day: number
+        count: number
+        hasConflict: boolean
+      }
+
+      const conflictData = await apiFetch<CalendarDaySummary[]>(
+        `/tareas/calendario-mensual/?month=${month}&year=${year}`
+      )
+
+      const conflictCount = conflictData.filter((day) => day.hasConflict).length
+
+      if (conflictCount > 0) {
+        toast.warning(`Se detectaron ${conflictCount} días con conflicto`)
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -216,7 +241,7 @@ export function SettingsContent() {
                     <TooltipTrigger asChild>
                       <span className="cursor-pointer align-middle"><CircleAlert className="inline w-4 h-4 text-muted-foreground mb-1 ml-0.5" /></span>
                     </TooltipTrigger>
-                    <TooltipContent side="top" align="center" className="xs">
+                    <TooltipContent side="right" align="center" className="xs">
                       Ingresa un valor entre 1 y 16 horas. Si no hay uno guardado, se usa 6 horas por defecto.
                     </TooltipContent>
                   </Tooltip>

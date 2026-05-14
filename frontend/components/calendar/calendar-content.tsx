@@ -226,7 +226,6 @@ export function CalendarContent() {
             {dayDetail.hasConflict ? (
               <Button
                 size="sm"
-                variant="outline"
                 onClick={() => setIsDayScheduleOpen(true)}
                 disabled={!canOpenSchedule}
               >

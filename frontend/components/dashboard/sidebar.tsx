@@ -2,10 +2,11 @@
 
 import { ListTodo, Calendar, Settings, HelpCircle, LogOut, BookCheck, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+import { apiFetch } from "@/lib/api"
 
 const menuItems = [
   { icon: ListTodo, label: "Hoy", href: "/today" },
@@ -26,9 +27,54 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+type CalendarDaySummary = {
+  day: number
+  count: number
+  hasConflict: boolean
+}
+
 export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const [conflictDays, setConflictDays] = useState(0)
   const pathname = usePathname()
+
+  useEffect(() => {
+    let active = true
+
+    async function loadConflictDays() {
+      try {
+        const today = new Date()
+        const month = today.getMonth() + 1
+        const year = today.getFullYear()
+
+        const data = await apiFetch<CalendarDaySummary[]>(
+          `/tareas/calendario-mensual/?month=${month}&year=${year}`
+        )
+
+        if (active) {
+          setConflictDays(data.filter((day) => day.hasConflict).length)
+        }
+      } catch (error) {
+        console.error("No se pudo cargar el resumen de conflictos", error)
+        if (active) setConflictDays(0)
+      }
+    }
+
+    loadConflictDays()
+
+    const handleLimitUpdate = () => {
+      if (active) {
+        loadConflictDays() 
+      }
+    }
+
+    window.addEventListener('dailyLimitUpdated', handleLimitUpdate)
+
+    return () => {
+      active = false
+      window.removeEventListener('dailyLimitUpdated', handleLimitUpdate)
+    }
+  }, [])
 
   return (
     <aside 
@@ -138,13 +184,17 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
                   <span
                     className={cn(
                       "text-sm overflow-hidden whitespace-nowrap transition-all duration-300",
-                      isCollapsed
-                        ? "max-w-0 opacity-0"
-                        : "max-w-[160px] opacity-100 delay-200"
+                      isCollapsed ? "max-w-0 opacity-0" : "max-w-[160px] opacity-100 delay-200"
                     )}
                   >
                     {item.label}
                   </span>
+
+                  {item.label === "Calendario" && conflictDays > 0 && !isCollapsed && (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-destructive-foreground">
+                      {conflictDays}
+                    </span>
+                  )}
                 </Link>
               )
             })}
