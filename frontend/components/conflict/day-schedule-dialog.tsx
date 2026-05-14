@@ -21,6 +21,7 @@ type DayScheduleViewProps = {
   date: string
   dailyLimit: number
   highlightTaskId?: number
+  pendingTask?: { id: number; name: string; effort: number }
   onBack?: () => void
   onResolved?: () => void
 }
@@ -29,6 +30,7 @@ export function DayScheduleView({
   date,
   dailyLimit,
   highlightTaskId,
+  pendingTask,
   onBack,
   onResolved,
 }: DayScheduleViewProps) {
@@ -86,22 +88,55 @@ export function DayScheduleView({
     }
   }, [date])
 
+  // If this is a reprogram conflict the task still has the old date in the DB,
+  // so the API won't return it for the new date. Inject it manually so the user
+  // can see it highlighted alongside the existing tasks for that day.
+  const displayTasks = useMemo(() => {
+    if (!pendingTask) return tasks
+    const alreadyInList = tasks.some((t) => t.id === pendingTask.id)
+    if (alreadyInList) return tasks
+    return [
+      ...tasks,
+      {
+        id: pendingTask.id,
+        name: pendingTask.name,
+        activityName: "",
+        courseName: "",
+        effort: pendingTask.effort,
+      },
+    ]
+  }, [tasks, pendingTask])
+
+  // Seed the effort for the injected pendingTask so the input is pre-filled
+  useEffect(() => {
+    if (!pendingTask) return
+    setEfforts((prev) => {
+      if (pendingTask.id in prev) return prev
+      return { ...prev, [pendingTask.id]: pendingTask.effort }
+    })
+  }, [pendingTask])
+
   const totalEffort = useMemo(() => {
-    return tasks.reduce((total, item) => {
+    return displayTasks.reduce((total, item) => {
       const value = efforts[item.id]
       if (typeof value !== "number" || Number.isNaN(value)) return total + item.effort
       return total + value
     }, 0)
-  }, [efforts, tasks])
+  }, [efforts, displayTasks])
 
-  const canResolve = tasks.length > 0 && totalEffort <= dailyLimit
+  const canResolve = displayTasks.length > 0 && totalEffort <= dailyLimit
 
   const handleResolve = async () => {
     if (!date || !canResolve || isResolving) return
 
     try {
       setIsResolving(true)
-      const updates = tasks.filter((item) => efforts[item.id] !== item.effort)
+      // Only PATCH tasks that exist in the DB with a changed effort.
+      // The injected pendingTask is not yet committed to the new date —
+      // its reprogramming will be handled by the parent conflict flow.
+      const updates = displayTasks.filter(
+        (item) => efforts[item.id] !== item.effort && item.id !== pendingTask?.id
+      )
 
       await Promise.all(
         updates.map((item) =>
@@ -125,84 +160,102 @@ export function DayScheduleView({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <DialogHeader>
         <DialogTitle className="text-center">Programación del {dateLabel}</DialogTitle>
         <DialogDescription>
-          Tú más que nadie conoces tus prioridades, reduce el esfuerzo de las subtareas que consideres necesarias para poder ajustarte a tu tiempo.
+          Tú eres quien más conoce tus prioridades, reduce el esfuerzo de las subtareas que consideres necesarias para ajustar tu día.
         </DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-2">
+      {/* Lista de subtareas — scrollable para que no cubra toda la pantalla */}
+      <div className="max-h-[38vh] overflow-y-auto space-y-2 pr-1">
         {isLoading ? (
-          <div className="text-sm text-muted-foreground">Cargando programación...</div>
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+          </div>
+        ) : displayTasks.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-2">No hay subtareas para este día.</div>
         ) : (
-          <div className="space-y-2">
-            {tasks.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No hay subtareas para este día.</div>
-            ) : (
-              <div className="space-y-3">
-                {tasks.map((item) => {
-                  const isHighlighted = highlightTaskId === item.id
-                  const currentEffort = efforts[item.id]
-                  const safeEffort = typeof currentEffort === "number" && !Number.isNaN(currentEffort)
-                    ? currentEffort
-                    : item.effort
+          <div className="space-y-3">
+            {displayTasks.map((item) => {
+              const isHighlighted = highlightTaskId === item.id
+              const currentEffort = efforts[item.id]
+              const safeEffort =
+                typeof currentEffort === "number" && !Number.isNaN(currentEffort)
+                  ? currentEffort
+                  : item.effort
+              const hasContext = item.activityName || item.courseName
 
-                  return (
-                    <div
-                      key={item.id}
-                      className={`relative rounded-xl border p-3 ${
-                        isHighlighted ? "border-amber-400 bg-amber-50/30" : "border-border"
-                      }`}
-                    >
-                      {isHighlighted ? (
-                        <span className="absolute -top-2 left-3 bg-background px-2 text-xs font-semibold text-amber-600">
-                          Nueva
-                        </span>
-                      ) : null}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-foreground">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.activityName} · {item.courseName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Esfuerzo actual: {item.effort}h</p>
-                        </div>
-                        <div className="min-w-[120px]">
-                          <Input
-                            type="number"
-                            min={0.5}
-                            step={0.5}
-                            max={item.effort}
-                            value={safeEffort}
-                            onChange={(e) => {
-                              const rawValue = e.target.value
-                              const value = rawValue === "" ? item.effort : Number(rawValue)
-                              setEfforts((prev) => ({
-                                ...prev,
-                                [item.id]: value,
-                              }))
-                            }}
-                          />
-                        </div>
-                      </div>
+              return (
+                <div
+                  key={item.id}
+                  className={`relative rounded-xl border p-3 ${
+                    isHighlighted ? "border-amber-400" : "border-border"
+                  }`}
+                >
+                  {isHighlighted && (
+                    <span className="absolute -top-2 left-3 bg-background px-2 text-xs font-semibold text-amber-600">
+                      Nueva
+                    </span>
+                  )}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">{item.name}</p>
+                      {hasContext && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {[item.activityName, item.courseName].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">Esfuerzo actual: {item.effort}h</p>
                     </div>
-                  )
-                })}
-              </div>
-            )}
+                    <div className="min-w-[100px] shrink-0">
+                      <Input
+                        type="number"
+                        min={0.5}
+                        step={0.5}
+                        max={item.effort}
+                        value={safeEffort}
+                        onChange={(e) => {
+                          const rawValue = e.target.value
+                          const value = rawValue === "" ? item.effort : Number(rawValue)
+                          setEfforts((prev) => ({ ...prev, [item.id]: value }))
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
 
-      <div className="rounded-lg border border-dashed border-border p-3 text-sm">
-        <div className="flex items-center justify-between">
-          <span>Esfuerzo de ese día:</span>
-          <span className="font-semibold">{totalEffort}h</span>
+      {/* Resumen del día */}
+      <div className="rounded-lg border border-dashed border-border p-3 text-sm space-y-1.5">
+        <div className="flex items-center justify-between text-muted-foreground">
+          <span>Esfuerzo del día</span>
+          {isLoading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <span className="font-semibold text-foreground">{totalEffort}h</span>
+          )}
         </div>
-        <div className={`mt-1 text-xs font-medium ${canResolve ? "text-emerald-600" : "text-destructive"}`}>
-          {canResolve ? "No hay conflicto" : "Hay conflicto"}
+        <div className="flex items-center justify-between text-muted-foreground">
+          <span>Límite diario</span>
+          <span className="font-semibold text-foreground">{dailyLimit}h</span>
+        </div>
+        <div className="border-t border-border pt-1.5">
+          {isLoading ? (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Calculando...
+            </span>
+          ) : (
+            <span className={`text-xs font-medium ${canResolve ? "text-emerald-600" : "text-destructive"}`}>
+              {canResolve ? "✓ Sin conflicto" : "✗ Hay conflicto"}
+            </span>
+          )}
         </div>
       </div>
 

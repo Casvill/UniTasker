@@ -110,12 +110,13 @@ export function OverloadConflictDialog({
     onOpenChange(nextOpen);
   }
 
-  const handleScheduleResolved = () => {
-    onResolved?.()
-    if (!onResolved) {
-      setSkipDeleteOnClose(true)
-      onOpenChange(false)
-    }
+  const handleScheduleResolved = async () => {
+    // Hours have been freed up in the day view — now retry the actual
+    // reprogram/create so the pending task is committed to its target date.
+    // Mark skipDeleteOnClose first so that if the dialog closes on success
+    // in "create" context, handleDialogClose won't prompt to delete the task.
+    setSkipDeleteOnClose(true)
+    await onSave(task.date, task.effort)
   }
 
   return (
@@ -304,6 +305,11 @@ export function OverloadConflictDialog({
               date={task.date}
               dailyLimit={dailyLimit}
               highlightTaskId={task.id}
+              pendingTask={
+                context !== "create" && task.id != null
+                  ? { id: task.id, name: task.title, effort: task.effort }
+                  : undefined
+              }
               onBack={handleBack}
               onResolved={handleScheduleResolved}
             />

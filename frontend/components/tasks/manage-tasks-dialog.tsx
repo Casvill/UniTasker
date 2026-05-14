@@ -293,6 +293,7 @@ export function ManageTasksDialog({
         setConflictData({
           taskId: createdTask.id,
           task: {
+            id: createdTask.id,
             title: createdTask.nombre,
             date: createdTask.fecha_objetivo,
             effort: parseFloat(createdTask.horas_estimadas),

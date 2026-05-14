@@ -45,7 +45,7 @@ export function ReprogramTaskPopover({
 
     const [conflictData, setConflictData] = useState<null | {
         taskId: number
-        task: { title: string; date: string; effort: number }
+        task: { id: number; title: string; date: string; effort: number }
         day: string
         scheduledHours: number
         dailyLimit: number
@@ -80,6 +80,7 @@ export function ReprogramTaskPopover({
                     ...conflictData,
                     task: {
                         ...conflictData.task,
+                        id: conflictData.taskId,
                         date: newDate,
                         effort: newEffort,
                     },
@@ -142,6 +143,7 @@ export function ReprogramTaskPopover({
                 setConflictData({
                     taskId,
                     task: {
+                        id: taskId,
                         title: taskTitle,
                         date: date,
                         effort: currentEffort,
@@ -272,7 +274,7 @@ export function ReprogramTaskPopover({
                 }}
                 task={
                     conflictData?.task
-                        ? { id: conflictData.taskId, ...conflictData.task }
+                        ? conflictData.task
                         : { id: undefined, title: "", date: "", effort: 1 }
                 }
                 day={conflictData?.day || ""}
