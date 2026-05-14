@@ -16,7 +16,6 @@ const menuItems = [
 
 const generalItems = [
   { icon: Settings, label: "Configuración", href: "/settings" },
-  { icon: HelpCircle, label: "Ayuda", href: "/help" },
   { icon: LogOut, label: "Cerrar Sesion", href: "/logout" },
 ]
 
