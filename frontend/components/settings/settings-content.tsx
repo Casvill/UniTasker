@@ -18,6 +18,16 @@ import { User as UserIcon, Loader2} from "lucide-react"
 import { CircleAlert } from "lucide-react"
 import { toast } from "sonner"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
@@ -28,7 +38,8 @@ export function SettingsContent() {
   const [savedDailyLimit, setSavedDailyLimit] = useState("6")
   const [capacityError, setCapacityError] = useState("")
   const [isSavingCapacity, setIsSavingCapacity] = useState(false)
-  const [isLoadingCapacity, setIsLoadingCapacity] = useState(true)
+  const [isLoadingCapacity, setIsLoadingCapacity] = useState(true) 
+  const [showLimitConfirm, setShowLimitConfirm] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -54,6 +65,31 @@ export function SettingsContent() {
 
     loadData()
   }, [])
+
+  const handleSaveClick = () => {
+    const errorMessage = validateDailyLimit(dailyLimit)
+    setCapacityError(errorMessage)
+
+    if (errorMessage) {
+      toast.error(errorMessage)
+      return
+    }
+
+    const currentLimit = Number(savedDailyLimit)
+    const nextLimit = Number(dailyLimit)
+
+    if (nextLimit < currentLimit) {
+      setShowLimitConfirm(true)
+      return
+    }
+
+    void handleSaveDailyLimit()
+  }
+
+  const handleConfirmSaveDailyLimit = async () => {
+    setShowLimitConfirm(false)
+    await handleSaveDailyLimit()
+  }
 
   const capitalize = (str: string | undefined) => {
     if (!str) return ""
@@ -215,7 +251,7 @@ export function SettingsContent() {
 
           <div className="flex items-center gap-3">
             <Button
-              onClick={handleSaveDailyLimit}
+              onClick={handleSaveClick}
               disabled={isSavingCapacity || isLoadingCapacity || !hasChanges}
             >
               {isSavingCapacity ? (
@@ -227,6 +263,24 @@ export function SettingsContent() {
                 "Guardar cambios"
               )}
             </Button>
+
+            <AlertDialog open={showLimitConfirm} onOpenChange={setShowLimitConfirm}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cambiar el límite de horas por día puede ocasionar conflictos en días donde
+                    ya se supere el nuevo límite. Solo continúa si realmente quieres aplicar este cambio.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleConfirmSaveDailyLimit}>
+                    Sí, cambiar límite
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {isLoadingCapacity ? (
               <p className="text-sm text-muted-foreground">Cargando límite actual...</p>
