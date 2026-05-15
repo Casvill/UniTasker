@@ -27,13 +27,12 @@ const columnVariants = [
 
 export function TodayColumnsSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 h-[calc(100dvh-11rem)]">
       {[0, 1, 2].map((col) => (
         <section
           key={col}
           className={cn(
-            "rounded-2xl border shadow-sm transition-colors dark:shadow-none flex flex-col",
-            columnVariants[col].border,
+            "h-full overflow-hidden rounded-2xl border shadow-sm transition-colors dark:shadow-none flex flex-col",
             columnVariants[col].bg,
             "dark:backdrop-blur-sm"
           )}
@@ -51,28 +50,30 @@ export function TodayColumnsSkeleton() {
             <Skeleton className={cn("h-6 w-10 rounded-full", columnVariants[col].badge)} />
           </div>
           {/* Cards  */}
-          <div className="min-h-[420px] max-h-[72vh] space-y-3 overflow-y-auto p-4">
-            {[1, 2, 3].map((i) => (
+          <div className="flex-1 min-h-0 space-y-3 overflow-hidden p-4">
+            {[0, 1, 2, 3].map((i) => (
               <article
                 key={i}
+                style={{
+                  opacity: i === 2 ? 0.75 : i === 3 ? 0.5 : 1,
+                }}
                 className={cn(
-                  "rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md",
-                  "dark:bg-white/[0.035] dark:border-white/10 dark:shadow-none dark:hover:bg-white/[0.055]",
+                  "relative rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
                   columnVariants[col].border
                 )}
               >
                 <div className="flex items-start gap-3">
                   {/* Checkbox  */}
-                  <Skeleton className="h-5 w-5 mt-1 rounded" />
-                  <div className="min-w-0 flex-1 flex flex-col space-y-2">
+                  <Skeleton className="h-6 w-6 mt-1 rounded" />
+                  <div className="min-w-0 flex-1 flex flex-col space-y-3">
                     {/* Bloque principal */}
                     <div className="space-y-1">
-                      <Skeleton className="h-5 w-3/4 rounded" /> {/* Título */}
-                      <Skeleton className="h-4 w-1/2 rounded" /> {/* Actividad */}
+                      <Skeleton className="mt-1 h-5 w-3/4 rounded" /> {/* Título */}
+                      <Skeleton className="mb-2 mt-2 h-4 w-1/2 rounded" /> {/* Actividad */}
                       <Skeleton className="h-3 w-1/4 rounded" /> {/* Curso */}
                     </div>
                     {/* Bloque detalles */}
-                    <div className="flex flex-col gap-2 mt-3">
+                    <div className="flex flex-col gap-2 mt-2">
                       <Skeleton className="h-4 w-1/3 rounded" /> {/* Esfuerzo */}
                       <Skeleton className="h-4 w-1/4 rounded" /> {/* Fecha */}
                     </div>
@@ -86,3 +87,32 @@ export function TodayColumnsSkeleton() {
     </div>
   )
 }
+
+// export function TodayTaskCardSkeleton() {
+//     return (
+//         <article
+//             className={cn(
+//             "relative rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
+//             columnVariants[0].border
+//             )}
+//         >
+//             <div className="flex items-start gap-3">
+//             {/* Checkbox  */}
+//             <Skeleton className="h-5 w-5 mt-1 rounded" />
+//             <div className="min-w-0 flex-1 flex flex-col space-y-2">
+//                 {/* Bloque principal */}
+//                 <div className="space-y-1">
+//                 <Skeleton className="h-5 w-3/4 rounded" /> {/* Título */}
+//                 <Skeleton className="h-4 w-1/2 rounded" /> {/* Actividad */}
+//                 <Skeleton className="h-3 w-1/4 rounded" /> {/* Curso */}
+//                 </div>
+//                 {/* Bloque detalles */}
+//                 <div className="flex flex-col gap-2 mt-3">
+//                 <Skeleton className="h-4 w-1/3 rounded" /> {/* Esfuerzo */}
+//                 <Skeleton className="h-4 w-1/4 rounded" /> {/* Fecha */}
+//                 </div>
+//             </div>
+//             </div>
+//         </article>
+//     )
+// }

@@ -213,10 +213,17 @@
   animation: fade-in 0.2s ease-out forwards;
 }
 
-/* Animaciones para el modal de conflicto */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(32px);}
   to { opacity: 1; transform: translateY(0);}
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+@keyframes fadeOutUp {
+  from { opacity: 1; transform: translateY(0);}
+  to { opacity: 0; transform: translateY(-10px);}
 }
 @keyframes fadeOutDown {
   from { opacity: 1; transform: translateY(0);}
@@ -225,6 +232,12 @@
 
 .fade-in-up {
   animation: fadeInUp 0.35s cubic-bezier(.4,0,.2,1) both;
+}
+.fade-in-down {
+  animation: fadeInDown 0.35s cubic-bezier(.4,0,.2,1) both;
+}
+.fade-out-up {
+  animation: fadeOutUp 0.35s cubic-bezier(.4,0,.2,1) both;
 }
 .fade-out-down {
   animation: fadeOutDown 0.35s cubic-bezier(.4,0,.2,1) both;

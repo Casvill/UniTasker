@@ -13,6 +13,9 @@ import { ManageTasksDialog } from "./manage-tasks-dialog"
 import { SkeletonTasks } from "./task-skeleton"
 import { TaskCard } from "./task-card"
 import { Activity, normalizePriority, formatDueDate } from "./task-types"
+import { useConflicts } from "@/components/conflict/conflict-context"
+import Image from "next/image"
+import { useTheme } from "next-themes"
 
 type TasksContentProps = {
   refreshKey: number
@@ -31,8 +34,9 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
-
+  const { refreshConflicts } = useConflicts()
   const [showConflict, setShowConflict] = useState(false)
+  const { resolvedTheme } = useTheme()
 
   // --- HANDLERS ---
 
@@ -69,12 +73,13 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
 
   const handleDeleteActivity = async (e: React.MouseEvent, activityId: number) => {
     e.stopPropagation();
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta actividad?")) return;
+    if (!window.confirm("Si eliminas la actividad todas las subtareas asociadas tambien serán borradas, ¿estás seguro?")) return;
     const toastId = toast.loading("Eliminando actividad...");
     try {
       await apiFetch(`/actividades/${activityId}/`, { method: "DELETE" });
       toast.dismiss(toastId);
       toast.success("Actividad eliminada");
+      await refreshConflicts()
       setLoading(true);
       await loadActivities(false); 
     } catch (error) {
@@ -196,7 +201,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       const [actRaw, tasksRaw, regsRaw]: any = await Promise.all([
         apiFetch("/actividades/"),
         apiFetch("/tareas/"),
-        apiFetch("/registros/")
+        // apiFetch("/registros/")
       ]);
 
       const activitiesList = Array.isArray(actRaw) ? actRaw : actRaw?.results ?? [];
@@ -325,7 +330,6 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Cambiado: ahora usamos handleOnCreated en lugar de loadActivities directamente */}
         <CreateActivityDialog onCreated={handleOnCreated} />
         
         <div className="flex-1 relative">
@@ -368,7 +372,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         </div>
       </div>
 
-      {!loading && (
+      {!loading && activities.length > 0 && (
         <div className="flex gap-2">
           <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">
             Todos ({activities.length})
@@ -391,10 +395,25 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (
-        <div className="grid gap-4">
-          {filteredActivities.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay actividades para mostrar.</p>
-          ) : (
+        <div className="grid gap-4 pb-4">
+        {filteredActivities.length === 0 ? (
+            <div className="flex h-[45vh] flex-col items-center justify-center gap-2 text-center">
+                <Image
+                    src={resolvedTheme === "dark" ? "/citydark.svg" : "/city.svg"}
+                    alt="Sin actividades"
+                    width={300}
+                    height={300}
+                    className="mt-30 opacity-80 dark:[filter:brightness(0.75)_contrast(1.4)]"
+                />
+                <p className="text-base font-medium text-foreground">
+                    Las grúas están de vacaciones.
+                </p>
+                <p className=" mb-5 max-w-[400px] text-sm text-muted-foreground">
+                    Aún no tienes actividades. ¿Por dónde empezamos?
+                </p>
+                <CreateActivityDialog onCreated={handleOnCreated} />
+            </div>
+        ) : (
             filteredActivities.map((activity, index) => (
               <TaskCard
                 key={activity.id}

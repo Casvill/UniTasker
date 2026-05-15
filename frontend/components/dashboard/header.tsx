@@ -56,11 +56,11 @@ export function Header({ title, description, actions }: HeaderProps) {
 
       <div className="flex items-center gap-3 shrink-0">
         <div className="flex items-center gap-1 md:gap-1.5">
-          <Button variant="ghost" size="icon" className="h-9 w-9">
+          {/* <Button variant="ghost" size="icon" className="h-9 w-9">
             <Bell className="w-4 h-4" />
-          </Button>
+          </Button> */}
 
-          <div className="flex items-center gap-3 pl-3 border-l border-border h-9 ml-1">
+          <div className="flex items-center gap-3 pl-3h-9 ml-1">
             <Avatar className="w-9 h-9 ring-2 ring-primary/10">
               <AvatarFallback className="text-xs bg-primary/10 text-primary">
                 {user ? getInitials(user.username) : <UserIcon className="w-4 h-4" />}

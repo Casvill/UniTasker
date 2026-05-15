@@ -4,10 +4,14 @@ import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Sidebar } from "./sidebar"
+import { useState } from "react"
 
 export function MobileNav() {
+  const isCollapsed = false
+  const [open, setOpen] = useState(false)
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="lg:hidden hover:bg-secondary transition-all duration-300">
           <Menu className="w-6 h-6" />
@@ -15,7 +19,12 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-64">
-        <Sidebar className="border-none w-full" />
+        <Sidebar 
+          isCollapsed={isCollapsed}
+          setIsCollapsed={() => {}}
+          onClose={() => setOpen(false)}
+          className="border-none w-full" 
+        />
       </SheetContent>
     </Sheet>
   )

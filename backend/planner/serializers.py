@@ -32,7 +32,6 @@ class ActividadSerializer(serializers.ModelSerializer):
 
 # ------------------------------------------------------------------------------------
 
-
 class TareaSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -52,9 +51,12 @@ class TareaSerializer(serializers.ModelSerializer):
                     "required": "La fecha objetivo es obligatoria.",
                 }
             },
+            "nota": {
+                "required": False,
+                "allow_blank": True,
+            },
         }
 
-    # Validar horas_estimadas > 0
     def validate_horas_estimadas(self, value):
         if value <= 0:
             raise serializers.ValidationError(
@@ -64,12 +66,15 @@ class TareaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Las horas no pueden superar 16.")
         return value
 
-    # Validar fecha válida (DRF ya valida formato automáticamente)
     def validate_fecha_objetivo(self, value):
         if not value:
             raise serializers.ValidationError("La fecha objetivo es obligatoria.")
         return value
 
+    def validate_nota(self, value):
+        if not value:
+            return ""
+        return value.strip()
 
 # ------------------------------------------------------------------------------------
 
@@ -101,6 +106,7 @@ class HoyTareaSerializer(serializers.ModelSerializer):
             "fecha_objetivo",
             "horas_estimadas",
             "estado",
+            "nota",
             "actividad",
             "curso",
         ]

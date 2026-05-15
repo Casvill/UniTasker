@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { getAccessToken } from "@/lib/api"
+import { ConflictProvider } from "@/components/conflict/conflict-context"
 
 export default function ProtectedLayout({
   children,
@@ -13,6 +14,7 @@ export default function ProtectedLayout({
 }) {
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   useEffect(() => {
     const token = getAccessToken()
@@ -30,12 +32,21 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="hidden lg:block">
-        <Sidebar className="fixed inset-y-0 left-0 h-screen" />
-      </div>
+    <ConflictProvider>
+      <div className="flex max-h-screen bg-background">
+        
+        <Sidebar
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          className="fixed inset-y-0 left-0 h-screen hidden lg:block"
+        />
 
-      <div className="flex-1">{children}</div>
-    </div>
+        <main className={`flex-1 transition-all duration-500 p-4 lg:p-6 ${isCollapsed ? "lg:ml-22" : "lg:ml-64"}`}>
+          {children}
+        </main>
+
+        {/* <div className="flex-1">{children}</div> */}
+      </div>
+    </ConflictProvider>
   )
 }

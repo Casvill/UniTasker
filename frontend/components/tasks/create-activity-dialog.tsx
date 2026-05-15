@@ -57,19 +57,19 @@ export function CreateActivityDialog({ onCreated, activity, open: controlledOpen
     const selectedType = watch("type")
 
     React.useEffect(() => {
-    if (!open) {
-        reset({
-        title: activity?.title || "",
-        type: activity?.tags?.[0] || "",
-        course: activity?.project || "",
-        dueDate: activity?.dueDate
-            ? (activity.dueDate.includes('/')
-                ? activity.dueDate.split('/').reverse().join('-')
-                : activity.dueDate)
-            : "",
-        description: activity?.description || "",
-        });
-    }
+        if (open) {
+            reset({
+                title: activity?.title || "",
+                type: activity?.tags?.[0] || "",
+                course: activity?.project || "",
+                dueDate: activity?.dueDate
+                    ? (activity.dueDate.includes('/')
+                        ? activity.dueDate.split('/').reverse().join('-')
+                        : activity.dueDate)
+                    : "",
+                description: activity?.description || "",
+            });
+        }
     }, [open, activity, reset]);
 
     const onSubmit = async (values: ActivityFormValues) => {

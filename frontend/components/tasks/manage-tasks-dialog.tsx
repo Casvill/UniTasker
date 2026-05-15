@@ -30,6 +30,9 @@ import { TaskSchema, TaskFormValues } from "./task-schema"
 import { Activity } from "./task-types"
 import { reprogramTask } from "@/lib/api"
 import { OverloadConflictDialog } from "@/components/conflict/overload-conflict-dialog"
+import { Loader2, ChevronDown, ChevronUp, Plus } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 type ManageTasksDialogProps = {
   open: boolean
@@ -37,6 +40,15 @@ type ManageTasksDialogProps = {
   activity: Activity | null
   onActivityUpdate: (updatedActivity: Activity) => void
   onRefresh: (silent?: boolean) => void
+}
+
+type ProgressData = {
+  total_subtareas: number
+  hechas: number
+  pospuestas: number
+  pendientes: number
+  progreso_porcentaje: number
+  mensaje: string
 }
 
 function formatDate(date?: string | null) {
@@ -48,6 +60,18 @@ function formatDate(date?: string | null) {
   return `${day}/${month}/${year}`
 }
 
+function formatEffortLabel(value: number | string | null | undefined) {
+  if (value == null || value === "") return null
+  const numeric = Number(value)
+  if (Number.isNaN(numeric)) return String(value)
+  return String(numeric)
+}
+
+function formatEffortDisplay(value: number | string | null | undefined) {
+  const label = formatEffortLabel(value)
+  return label === null ? "Sin estimación" : `${label}h`
+}
+
 export function ManageTasksDialog({
   open,
   onOpenChange,
@@ -56,6 +80,7 @@ export function ManageTasksDialog({
   onRefresh,
 }: ManageTasksDialogProps) {
   const [editingId, setEditingId] = React.useState<number | string | null>(null)
+  const [updatingTaskId, setUpdatingTaskId] = React.useState<number | string | null>(null)
   const [editingTask, setEditingTask] = React.useState({
     title: "",
     dueDate: "",
@@ -72,6 +97,77 @@ export function ManageTasksDialog({
     dailyLimit: number
     message: string
   }>(null)
+  const [isFormOpen, setIsFormOpen] = React.useState(true)
+  const [hasInitializedFormOpen, setHasInitializedFormOpen] = React.useState(false);
+  const [progress, setProgress] = React.useState<ProgressData | null>(null)
+  const { refreshConflicts } = useConflicts()
+
+  function ProgressBar({
+    hechas,
+    pospuestas,
+    pendientes,
+    total,
+  }: {
+    hechas: number
+    pospuestas: number
+    pendientes: number
+    total: number
+  }) {
+    if (total === 0) {
+      return <div className="h-3 rounded-full bg-muted/40 w-full" />
+    }
+
+    const pctHechas = (hechas / total) * 100
+    const pctPospuestas = (pospuestas / total) * 100
+    const pctPendientes = (pendientes / total) * 100
+
+    return (
+      <div className="flex w-full h-3 rounded-full overflow-hidden bg-muted/40">
+        
+        {/* HECHAS */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              style={{ width: `${pctHechas}%` }}
+              className="bg-emerald-500 transition-all cursor-pointer"
+            />
+          </TooltipTrigger>
+
+          <TooltipContent>
+            <p>Hechas: {hechas} de {total}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* POSPUESTAS */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              style={{ width: `${pctPospuestas}%` }}
+              className="bg-emerald-200 transition-all cursor-pointer"
+            />
+          </TooltipTrigger>
+
+          <TooltipContent>
+            <p>Pospuestas: {pospuestas} de {total}</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* PENDIENTES */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              style={{ width: `${pctPendientes}%` }}
+              className="bg-muted/70 transition-all cursor-pointer"
+            />
+          </TooltipTrigger>
+
+          <TooltipContent>
+            <p>Pendientes: {pendientes} de {total}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    )
+  }
 
   const minDate = React.useMemo(() => {
     const d = new Date()
@@ -92,7 +188,7 @@ export function ManageTasksDialog({
     defaultValues: { title: "", dueDate: "", estimatedHours: "" },
     mode: "onTouched",
   })
-  const { register, handleSubmit, formState, reset } = form
+  const { register, handleSubmit, formState, reset, watch } = form
 
   React.useEffect(() => {
     if (!open || !activity) {
@@ -101,6 +197,7 @@ export function ManageTasksDialog({
   }, [open, activity, reset])
 
   const { errors, isSubmitting } = formState
+  const titleLength = watch("title")?.length ?? 0
 
   const visibleTasks =
     activity?.tasks?.filter((t: any) => t.title !== "General") ?? []
@@ -130,6 +227,36 @@ export function ManageTasksDialog({
     })
   }
 
+  React.useEffect(() => {
+    if (!open || !activity) {
+      setProgress(null)
+      return
+    }
+    apiFetch<ProgressData>(`/actividades/${activity.id}/progreso/`)
+      .then(setProgress)
+      .catch(() => setProgress(null))
+  }, [activity, open])
+
+  React.useEffect(() => {
+    if (open && !hasInitializedFormOpen) {
+      setIsFormOpen(visibleTasks.length === 0);
+      setHasInitializedFormOpen(true);
+    }
+    if (!open) {
+      setHasInitializedFormOpen(false);
+    }
+  }, [open]);
+
+  const refreshProgress = async () => {
+    if (!activity) return
+    try {
+      const data = await apiFetch<ProgressData>(`/actividades/${activity.id}/progreso/`)
+      setProgress(data)
+    } catch {
+      setProgress(null)
+    }
+  }
+  
   const onSubmitTask = async (values: TaskFormValues) => {
     if (!activity) return
 
@@ -168,6 +295,7 @@ export function ManageTasksDialog({
         setConflictData({
           taskId: createdTask.id,
           task: {
+            id: createdTask.id,
             title: createdTask.nombre,
             date: createdTask.fecha_objetivo,
             effort: parseFloat(createdTask.horas_estimadas),
@@ -186,54 +314,63 @@ export function ManageTasksDialog({
     }
 
     onRefresh(true);
+    refreshProgress();
     reset();
   }
 
   const handleUpdateTask = async (id: number | string) => {
     if (!editingTask.title.trim()) return
+    if (updatingTaskId === id) return
+
+    setUpdatingTaskId(id)
+    const toastId = toast.loading("Actualizando tarea...")
 
     try {
-      const result = await reprogramTask(
-        Number(id),
-        editingTask.dueDate,
-        parseFloat(editingTask.estimatedHours)
-      ) as { conflict: boolean; message: string };
+      try {
+        const result = await reprogramTask(
+          Number(id),
+          editingTask.dueDate,
+          parseFloat(editingTask.estimatedHours)
+        ) as { conflict: boolean; message: string };
 
-      if (
-        typeof result === "object" &&
-        result !== null &&
-        "conflict" in result &&
-        "message" in result
-      ) {
-        const { conflict, message } = result;
-        if (conflict) {
-          toast.error(message);
-          return;
+        if (
+          typeof result === "object" &&
+          result !== null &&
+          "conflict" in result &&
+          "message" in result
+        ) {
+          const { conflict, message } = result;
+          if (conflict) {
+            toast.error(message, { id: toastId });
+            return;
+          }
         }
+      } catch (e) {
+        toast.error("No se pudo validar la capacidad diaria.", { id: toastId });
+        return;
       }
-    } catch (e) {
-      toast.error("No se pudo validar la capacidad diaria.");
-      return;
-    }
 
-    const promise = apiFetch<any>(`/tareas/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        nombre: editingTask.title,
-        fecha_objetivo: editingTask.dueDate || null,
-        horas_estimadas: parseFloat(editingTask.estimatedHours) || 0,
-      }),
-    })
+      try {
+        await apiFetch<any>(`/tareas/${id}/`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            nombre: editingTask.title,
+            fecha_objetivo: editingTask.dueDate || null,
+            horas_estimadas: parseFloat(editingTask.estimatedHours) || 0,
+          }),
+        })
 
-    toast.promise(promise, {
-      loading: "Actualizando tarea...",
-      success: () => {
         onRefresh(true)
+        refreshProgress();
         setEditingId(null)
-        return "Tarea actualizada"
-      },
-      error: "Error al actualizar la tarea",
-    })
+        toast.success("Tarea actualizada", { id: toastId })
+        await refreshConflicts()
+      } catch {
+        toast.error("Error al actualizar la tarea", { id: toastId })
+      }
+    } finally {
+      setUpdatingTaskId(null)
+    }
   }
 
   const handleDeleteTask = async (id: string | number) => {
@@ -245,10 +382,13 @@ export function ManageTasksDialog({
       loading: "Eliminando tarea...",
       success: () => {
         onRefresh(true)
+        refreshProgress();
         return "Tarea eliminada"
       },
       error: "Error al eliminar la tarea",
     })
+    
+    await refreshConflicts()
   }
 
   const handleToggleTask = async (id: string | number) => {
@@ -291,7 +431,8 @@ export function ManageTasksDialog({
         toast.success("Tarea completada")
       }
 
-      onRefresh(true)
+      onRefresh(true);
+      refreshProgress();
     } catch {
       toast.dismiss();
       toast.error("No se pudo actualizar el estado de la tarea")
@@ -327,8 +468,9 @@ export function ManageTasksDialog({
         toast.error(result.message)
         return
       }
-      setConflictData(null)
-      onRefresh(true)
+      setConflictData(null);
+      onRefresh(true);
+      refreshProgress();
       reset()
     } catch (e) {
       toast.error("No se pudo reprogramar la tarea.")
@@ -341,7 +483,8 @@ export function ManageTasksDialog({
       await apiFetch(`/tareas/${conflictData.taskId}/`, { method: "DELETE" })
       setConflictData(null)
       toast.success("Tarea eliminada")
-      onRefresh(true)
+      onRefresh(true);
+      refreshProgress();
     } catch (e) {
       toast.error("No se pudo eliminar la tarea")
     }
@@ -394,9 +537,10 @@ export function ManageTasksDialog({
         )
       )
 
-      toast.dismiss()
-      toast.success("Actividad completada")
-      onRefresh(true)
+      toast.dismiss();
+      toast.success("Actividad completada");
+      onRefresh(true);
+      refreshProgress();
     } catch {
       toast.dismiss()
       toast.error("No se pudo completar la actividad")
@@ -409,16 +553,18 @@ export function ManageTasksDialog({
       <DialogContent className="max-h-[90vh] overflow-hidden border border-border bg-card p-0 text-card-foreground shadow-2xl sm:max-w-[620px]">
         <DialogHeader className="border-b border-border px-6 py-3">
           <div className="space-y-1 pr-8">
-            <DialogTitle className="text-2xl font-bold leading-tight text-foreground">
-              {activity?.title || "Actividad sin título"}
-            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <DialogTitle className="text-2xl font-bold leading-tight text-foreground flex items-center gap-2 mt-2">
+                {activity?.title || "Actividad sin título"}
+              </DialogTitle>
+            </div>
             <DialogDescription className="text-sm text-muted-foreground">
               Administra subtareas y detalles principales de esta actividad.
             </DialogDescription>
           </div>
         </DialogHeader>
 
-        <div className="max-h-[calc(90vh-76px)] overflow-y-auto px-6 py-4 space-y-4">
+        <div className="max-h-[calc(90vh-76px)] overflow-y-auto px-6 pt-2 space-y-4">
           <section className="rounded-2xl border border-border bg-background/40 p-4 space-y-3">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <span className="flex items-center gap-2 font-semibold text-foreground">
@@ -489,92 +635,139 @@ export function ManageTasksDialog({
                 </p>
               )}
             </div>
-
-            <div className="flex justify-end">
-              <Button
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                onClick={handleMarkAllAsDone}
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Completar actividad
-              </Button>
-            </div>
-          </section>
-
-          <section className="space-y-2">
-            <h3 className="text-base font-semibold text-foreground">
-              Nueva subtarea
-            </h3>
-
-            <form
-              noValidate
-              onSubmit={handleSubmit(onSubmitTask)}
-              className="space-y-3 rounded-2xl border border-border bg-background/40 p-4"
-            >
-              <div className="space-y-2">
-                <Input
-                  id="title"
-                  placeholder="Nombre de la subtarea"
-                  {...register("title")}
-                />
-                {errors.title && (
-                  <p className="text-xs text-destructive">{errors.title.message}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
-                <div className="space-y-1">
-                  <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
-                  {errors.dueDate && (
-                    <p className="text-xs text-destructive">
-                      {errors.dueDate.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Input
-                        id="estimatedHours"
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        placeholder="Esfuerzo"
-                        {...register("estimatedHours")}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Esfuerzo son las horas estimadas para esta tarea.
-                    </TooltipContent>
-                  </Tooltip>
-                  {errors.estimatedHours && (
-                    <p className="text-xs text-destructive">
-                      {errors.estimatedHours.message}
-                    </p>
-                  )}
-                </div>
-
-                <Button type="submit" disabled={isSubmitting} className="sm:self-start">
-                  {isSubmitting ? "Guardando..." : "Guardar"}
-                </Button>
-              </div>
-            </form>
           </section>
 
           <section className="space-y-3">
             <div>
-              <h3 className="text-base font-semibold text-foreground">
-                Tareas de la actividad
-              </h3>
-              <p className="text-sm text-muted-foreground">
+              <div className="flex items-center gap-3 mb-1"> 
+                <h3 className="text-xl font-semibold text-foreground">
+                  Subtareas 
+                </h3>
+                {visibleTasks.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs flex items-center gap-1 text-emerald-400 border-emerald-600"
+                    onClick={handleMarkAllAsDone}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Completar todas
+                  </Button>
+                )}
+              </div>
+              {/* <p className="text-sm text-muted-foreground">
                 {visibleTasks.length === 0
-                  ? "Aún no has agregado tareas."
+                  ? "Aún no has agregado subtareas"
                   : `${visibleTasks.length} subtarea${visibleTasks.length === 1 ? "" : "s"} registradas.`}
-              </p>
-            </div>
+              </p> */}
+              {progress === null ? (
+                <div className="flex items-center gap-0.5 mb-1 mt-2">
+                  <div className="relative h-3 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-300/40 to-transparent animate-[shimmer_1.5s_infinite]" />
+                  </div>
+                  <span className="text-xs text-muted-foreground min-w-[80px] text-right mr-2">
+                    Cargando
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-0.5 mb-1 mt-2">
+                  <ProgressBar
+                    hechas={progress.hechas}
+                    pospuestas={progress.pospuestas}
+                    pendientes={progress.pendientes}
+                    total={progress.total_subtareas}
+                  />
+                  <span className="text-xs text-muted-foreground min-w-[80px] text-right mr-2">
+                    {progress.progreso_porcentaje}% hecho
+                  </span>
+                </div>
+              )}
+              {/* <p className="text-sm text-muted-foreground">
+                {progress
+                  ? progress.mensaje
+                  : "Cargando progreso..."}
+              </p> */}
+              </div>
+            <Collapsible open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <div className="rounded-2xl border border-border bg-background/40 overflow-hidden">
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-4 py-3 text-base font-semibold text-foreground hover:text-primary transition focus:outline-none rounded-t-2xl bg-transparent"
+                    aria-label={isFormOpen ? "Ocultar formulario" : "Mostrar formulario"}
+                    tabIndex={-1}
+                  >
+                    {isFormOpen ? (
+                      <ChevronUp className="h-5 w-5" />
+                    ) : (
+                      <Plus className="h-5 w-5" />
+                    )}
+                    Crear nueva subtarea
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <form
+                    noValidate
+                    onSubmit={handleSubmit(onSubmitTask)}
+                    className="space-y-3 px-4 pb-4 pt-2"
+                  >
+                    <div className="space-y-2">
+                      <Input
+                        id="title"
+                        placeholder="Nombre de la subtarea"
+                        maxLength={60}
+                        {...register("title")}
+                      />
 
-            <div className="space-y-3 pr-1">
+                      {errors.title && (
+                        <p className="text-xs text-destructive">{errors.title.message}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                      <div className="space-y-1">
+                        <Input id="dueDate" type="date" min={minDate} {...register("dueDate")} />
+                        {errors.dueDate && (
+                          <p className="text-xs text-destructive">
+                            {errors.dueDate.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Input
+                              id="estimatedHours"
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              placeholder="Esfuerzo"
+                              {...register("estimatedHours")}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            ¿Cuantas horas le estimas?
+                          </TooltipContent>
+                        </Tooltip>
+                        {errors.estimatedHours && (
+                          <p className="text-xs text-destructive">
+                            {errors.estimatedHours.message}
+                          </p>
+                        )}
+                      </div>
+                      <Button type="submit" disabled={isSubmitting} className="sm:self-start w-30">
+                        {isSubmitting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Crear"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+            <div className={`space-y-3 ${visibleTasks.length > 0 ? "mb-13" : "mb-7"}`}>
               {visibleTasks.length > 0 ? (
                 visibleTasks.map((task: any) => (
                   <article
@@ -583,10 +776,25 @@ export function ManageTasksDialog({
                   >
                     {editingId === task.id ? (
                       <div className="space-y-3">
+                        {(() => {
+                          const originalTitle = task.title ?? ""
+                          const originalDueDate = task.dueDate || ""
+                          const originalHours =
+                            task.estimatedHours == null
+                              ? ""
+                              : String(task.estimatedHours)
+                          const isDirty =
+                            editingTask.title !== originalTitle ||
+                            editingTask.dueDate !== originalDueDate ||
+                            editingTask.estimatedHours !== originalHours
+
+                          return (
+                            <>
                         <div className="space-y-2">
                           <Label>Nombre de la subtarea</Label>
                           <Input
                             value={editingTask.title}
+                            maxLength={30}
                             onChange={(e) =>
                               setEditingTask({
                                 ...editingTask,
@@ -594,9 +802,12 @@ export function ManageTasksDialog({
                               })
                             }
                           />
+                          {/* <p className="text-xs text-muted-foreground text-right">
+                            {editingTask.title.length}/30
+                          </p> */}
                         </div>
 
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 mb-5">
                           <div className="space-y-2">
                             <Label>Fecha objetivo</Label>
                             <Input
@@ -634,18 +845,29 @@ export function ManageTasksDialog({
                             type="button"
                             size="sm"
                             variant="outline"
+                            className="flex-1"
                             onClick={() => setEditingId(null)}
+                            disabled={updatingTaskId === task.id}
                           >
                             Cancelar
                           </Button>
                           <Button
                             type="button"
                             size="sm"
+                            className="flex-1"
                             onClick={() => handleUpdateTask(task.id)}
+                            disabled={updatingTaskId === task.id || !isDirty}
                           >
-                            Guardar cambios
+                            {updatingTaskId === task.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Guardar"
+                            )}
                           </Button>
                         </div>
+                            </>
+                          )
+                        })()}
                       </div>
                     ) : (
                       <div className="flex items-start justify-between gap-3">
@@ -653,16 +875,17 @@ export function ManageTasksDialog({
                           <Checkbox
                             checked={task.completed}
                             onCheckedChange={() => handleToggleTask(task.id)}
-                            className="mt-1"
+                            className="h-6 w-6 self-center ml-1 mr-1"
                             aria-label={`Cambiar estado de ${task.title}`}
                           />
 
-                          <div className="min-w-0 space-y-2">
+                          <div className="min-w-0 space-y-1">
                             <p
                               className={`text-sm font-semibold ${task.completed
                                 ? "line-through text-muted-foreground"
                                 : "text-foreground"
-                                }`}
+                                } break-words hyphens-auto`}
+                              lang="es"
                             >
                               {task.title}
                             </p>
@@ -674,9 +897,7 @@ export function ManageTasksDialog({
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
-                                {task.estimatedHours
-                                  ? `${parseInt(task.estimatedHours)}h`
-                                  : "Sin estimación"}
+                                {formatEffortDisplay(task.estimatedHours)}
                               </span>
                             </div>
                           </div>
@@ -716,9 +937,9 @@ export function ManageTasksDialog({
                   </article>
                 ))
               ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-background/30 py-8 text-center">
+                <div className="rounded-2xl border border-dashed border-border bg-background/30 py-8 text-center min-h-[115px] flex flex-col justify-center grow" style={{height: '100%'}}>
                   <p className="text-sm text-muted-foreground">
-                    Aún no hay tareas para esta actividad.
+                    Cada plan empieza con un primer paso. Crea una subtarea
                   </p>
                 </div>
               )}
@@ -730,12 +951,21 @@ export function ManageTasksDialog({
     <OverloadConflictDialog
       open={!!conflictData}
       onOpenChange={(open) => setConflictData(open ? conflictData : null)}
-      task={conflictData?.task || { title: "", date: "", effort: 1 }}
+      task={
+        conflictData?.task
+          ? { id: conflictData.taskId, ...conflictData.task }
+          : { id: undefined, title: "", date: "", effort: 1 }
+      }
       day={conflictData?.day || ""}
       scheduledHours={conflictData?.scheduledHours || 0}
       dailyLimit={conflictData?.dailyLimit || 0}
       onSave={handleSaveConflict}
       onDelete={handleDeleteConflictTask}
+      onResolved={() => {
+        setConflictData(null)
+        onRefresh(true)
+        refreshProgress()
+      }}
       context="create"
     />
     </>
