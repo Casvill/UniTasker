@@ -13,18 +13,19 @@ class SafeTokenObtainPairSerializer(TokenObtainPairSerializer):
     }
 
     def validate(self, attrs):
+        error_message = "Verifica tu usuario y contraseña e inténtalo de nuevo."
         email = (attrs.get("email") or "").strip().lower()
         password = attrs.get("password") or ""
 
         if not email or not password:
-            raise AuthenticationFailed("Credenciales inválidas.")
+            raise AuthenticationFailed(error_message)
 
         User = get_user_model()
         try:
             user = User.objects.get(email=email)
             username = user.get_username()
         except User.DoesNotExist:
-            raise AuthenticationFailed("Credenciales inválidas.")
+            raise AuthenticationFailed(error_message)
 
         authenticated = authenticate(
             request=self.context.get("request"),
@@ -33,7 +34,7 @@ class SafeTokenObtainPairSerializer(TokenObtainPairSerializer):
         )
 
         if not authenticated:
-            raise AuthenticationFailed("Credenciales inválidas.")
+            raise AuthenticationFailed(error_message)
 
         authenticated.last_login = timezone.now()
         authenticated.save(update_fields=["last_login"])
