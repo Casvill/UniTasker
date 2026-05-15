@@ -1,5 +1,7 @@
 "use client"
 
+import Image from "next/image"
+import { useTheme } from "next-themes"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -77,6 +79,7 @@ export function CalendarContent() {
   ).padStart(2, "0")}`
   const monthSummaryMap = new Map(monthSummary.map((entry) => [entry.day, entry]))
   const canOpenSchedule = dayDetail.hasConflict && dailyLimit !== null && dayDetail.items.length > 0
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     let isActive = true
@@ -238,7 +241,21 @@ export function CalendarContent() {
           ) : (
             <div className="space-y-3">
               {dayDetail.items.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Sin eventos para este dia.</div>
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <Image
+                        src={resolvedTheme === "dark" ? "/cleandark.svg" : "/clean.svg"}
+                        alt="Sin eventos"
+                        width={230}
+                        height={230}
+                        className=" opacity-75 dark:[filter:brightness(0.75)_contrast(2.1)]"
+                    />
+                    <p className="max-w-[250px] text-lg font-medium text-foreground">
+                        Este día se ve despejado, por ahora...
+                    </p>
+                    {/* <p className="mt-1 text-xs text-muted-foreground">
+                        Sin eventos para este día.
+                    </p> */}
+                </div>
               ) : (
                 dayDetail.items.map((event, index) => (
                   <div

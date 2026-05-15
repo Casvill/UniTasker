@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { Info, Search } from "lucide-react"
@@ -12,6 +13,7 @@ import { TodayBoard, type Subtask, type SubtaskStatus } from "@/components/today
 import { TodayFilters } from "@/components/today/today-filters"
 import { TodayColumnsSkeleton } from "@/components/today/today-columns-skeleton"
 import { DayScheduleDialog } from "@/components/conflict/day-schedule-dialog"
+import { useTheme } from "next-themes"
 
 type TareaBackend = {
     id: number
@@ -71,6 +73,7 @@ export function TodayContent() {
         items: [],
     })
     const [isDayScheduleOpen, setIsDayScheduleOpen] = useState(false)
+    const { resolvedTheme } = useTheme()
 
     const isFirstLoad = useRef(true)
     const todayDateParam = useMemo(() => {
@@ -318,20 +321,35 @@ export function TodayContent() {
                 <TodayColumnsSkeleton />
             ) : isEmpty ? (
                 <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
-                    <div className="mb-2 rounded-full bg-muted/30 p-4">
+                    {/* <div className="mb-2 rounded-full bg-muted/30 p-4">
                         <Search className="h-8 w-8 text-muted-foreground opacity-20" />
-                    </div>
+                    </div> */}
+                    <Image
+                        src={resolvedTheme === "dark" ? "/desertdark.svg" : "/desert.svg"}
+                        alt="Sin resultados"
+                        width={300}
+                        height={300}
+                        className="mt-30 opacity-80 dark:[filter:brightness(0.75)_contrast(1.4)]"
+                    />
 
                     <p className="max-w-[320px] text-base font-medium text-foreground">
-                        {hasActiveFilters ? "No encontramos resultados" : "Nada por aquí, nada por allá..."}
+                        {hasActiveFilters ? "No encontramos resultados" : "No vendría mal una lluvia de tareas..."}
                     </p>
 
                     <div className="mt-2 flex gap-3">
                         {hasActiveFilters && (
-                            <Button onClick={handleClearFilters}>Limpiar filtros</Button>
+                            <Button 
+                            onClick={handleClearFilters}
+                            className="h-9 w-full text-sm bg-primary text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 hover:scale-105 sm:w-auto"
+                            >
+                                Limpiar filtros</Button>
                         )}
 
-                        <Button asChild variant={hasActiveFilters ? "outline" : "default"}>
+                        <Button
+                            asChild
+                            variant={hasActiveFilters ? "outline" : "default"}
+                            className="h-9 w-full text-sm bg-primary text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 hover:scale-105 sm:w-auto"
+                        >
                             <Link href="/tasks">Ir a Actividades</Link>
                         </Button>
                     </div>

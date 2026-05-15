@@ -14,6 +14,8 @@ import { SkeletonTasks } from "./task-skeleton"
 import { TaskCard } from "./task-card"
 import { Activity, normalizePriority, formatDueDate } from "./task-types"
 import { useConflicts } from "@/components/conflict/conflict-context"
+import Image from "next/image"
+import { useTheme } from "next-themes"
 
 type TasksContentProps = {
   refreshKey: number
@@ -34,6 +36,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
   const { refreshConflicts } = useConflicts()
   const [showConflict, setShowConflict] = useState(false)
+  const { resolvedTheme } = useTheme()
 
   // --- HANDLERS ---
 
@@ -369,7 +372,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         </div>
       </div>
 
-      {!loading && (
+      {!loading && activities.length > 0 && (
         <div className="flex gap-2">
           <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">
             Todos ({activities.length})
@@ -393,9 +396,24 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         </Alert>
       ) : (
         <div className="grid gap-4 pb-4">
-          {filteredActivities.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay actividades para mostrar.</p>
-          ) : (
+        {filteredActivities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Image
+                    src={resolvedTheme === "dark" ? "/citydark.svg" : "/city.svg"}
+                    alt="Sin actividades"
+                    width={300}
+                    height={300}
+                    className=" opacity-75 dark:[filter:brightness(0.75)_contrast(2.1)]"
+                />
+                <p className="text-base font-medium text-foreground">
+                    Las grúas están de vacaciones.
+                </p>
+                <p className="mt-1 mb-5 max-w-[260px] text-sm text-muted-foreground">
+                    Aún no tienes actividades. ¿Por dónde empezamos?
+                </p>
+                <CreateActivityDialog onCreated={handleOnCreated} />
+            </div>
+        ) : (
             filteredActivities.map((activity, index) => (
               <TaskCard
                 key={activity.id}
