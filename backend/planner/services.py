@@ -116,7 +116,7 @@ def obtener_detalle_diario(usuario, fecha):
         actividad__usuario=usuario,
         fecha_objetivo=fecha,
         estado="pendiente"
-    ).select_related("actividad__materia")
+    ).select_related("actividad")
 
     total_horas = sum(t.horas_estimadas for t in tareas)
 
@@ -127,8 +127,8 @@ def obtener_detalle_diario(usuario, fecha):
             {
                 "id": t.id,
                 "name": t.nombre,
-                "activityName": t.actividad.nombre,
-                "subjectName": t.actividad.materia.nombre,
+                "activityName": t.actividad.titulo,
+                "courseName": t.actividad.curso,
                 "effort": t.horas_estimadas,
             }
             for t in tareas

@@ -32,6 +32,7 @@ import { reprogramTask } from "@/lib/api"
 import { OverloadConflictDialog } from "@/components/conflict/overload-conflict-dialog"
 import { Loader2, ChevronDown, ChevronUp, Plus } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 type ManageTasksDialogProps = {
   open: boolean
@@ -57,6 +58,18 @@ function formatDate(date?: string | null) {
   if (!year || !month || !day) return date
 
   return `${day}/${month}/${year}`
+}
+
+function formatEffortLabel(value: number | string | null | undefined) {
+  if (value == null || value === "") return null
+  const numeric = Number(value)
+  if (Number.isNaN(numeric)) return String(value)
+  return String(numeric)
+}
+
+function formatEffortDisplay(value: number | string | null | undefined) {
+  const label = formatEffortLabel(value)
+  return label === null ? "Sin estimación" : `${label}h`
 }
 
 export function ManageTasksDialog({
@@ -87,6 +100,7 @@ export function ManageTasksDialog({
   const [isFormOpen, setIsFormOpen] = React.useState(true)
   const [hasInitializedFormOpen, setHasInitializedFormOpen] = React.useState(false);
   const [progress, setProgress] = React.useState<ProgressData | null>(null)
+  const { refreshConflicts } = useConflicts()
 
   function ProgressBar({
     hechas,
@@ -281,6 +295,7 @@ export function ManageTasksDialog({
         setConflictData({
           taskId: createdTask.id,
           task: {
+            id: createdTask.id,
             title: createdTask.nombre,
             date: createdTask.fecha_objetivo,
             effort: parseFloat(createdTask.horas_estimadas),
@@ -349,6 +364,7 @@ export function ManageTasksDialog({
         refreshProgress();
         setEditingId(null)
         toast.success("Tarea actualizada", { id: toastId })
+        await refreshConflicts()
       } catch {
         toast.error("Error al actualizar la tarea", { id: toastId })
       }
@@ -371,6 +387,8 @@ export function ManageTasksDialog({
       },
       error: "Error al eliminar la tarea",
     })
+    
+    await refreshConflicts()
   }
 
   const handleToggleTask = async (id: string | number) => {
@@ -698,7 +716,7 @@ export function ManageTasksDialog({
                       <Input
                         id="title"
                         placeholder="Nombre de la subtarea"
-                        maxLength={30}
+                        maxLength={60}
                         {...register("title")}
                       />
 
@@ -879,9 +897,7 @@ export function ManageTasksDialog({
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3.5 w-3.5" />
-                                {task.estimatedHours
-                                  ? `${parseInt(task.estimatedHours)}h`
-                                  : "Sin estimación"}
+                                {formatEffortDisplay(task.estimatedHours)}
                               </span>
                             </div>
                           </div>
@@ -935,12 +951,21 @@ export function ManageTasksDialog({
     <OverloadConflictDialog
       open={!!conflictData}
       onOpenChange={(open) => setConflictData(open ? conflictData : null)}
-      task={conflictData?.task || { title: "", date: "", effort: 1 }}
+      task={
+        conflictData?.task
+          ? { id: conflictData.taskId, ...conflictData.task }
+          : { id: undefined, title: "", date: "", effort: 1 }
+      }
       day={conflictData?.day || ""}
       scheduledHours={conflictData?.scheduledHours || 0}
       dailyLimit={conflictData?.dailyLimit || 0}
       onSave={handleSaveConflict}
       onDelete={handleDeleteConflictTask}
+      onResolved={() => {
+        setConflictData(null)
+        onRefresh(true)
+        refreshProgress()
+      }}
       context="create"
     />
     </>

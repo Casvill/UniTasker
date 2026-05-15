@@ -1,16 +1,19 @@
 "use client"
 
+import Image from "next/image"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { Info, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { apiFetch } from "@/lib/api"
+import { apiFetch, fetchDailyLimit } from "@/lib/api"
 import { toast } from "sonner"
 import { TodayBoard, type Subtask, type SubtaskStatus } from "@/components/today/today-board"
 import { TodayFilters } from "@/components/today/today-filters"
 import { TodayColumnsSkeleton } from "@/components/today/today-columns-skeleton"
+import { DayScheduleDialog } from "@/components/conflict/day-schedule-dialog"
+import { useTheme } from "next-themes"
 
 type TareaBackend = {
     id: number
@@ -30,6 +33,12 @@ type TodayApiResponse = {
     proximas: TareaBackend[]
     total: number
     mensaje: string | null
+}
+
+type DayConflictResponse = {
+    date: string
+    hasConflict: boolean
+    items: Array<{ id: number }>
 }
 
 type LoadState = "loading" | "error" | "success"
@@ -57,8 +66,22 @@ export function TodayContent() {
     const [courseFilter, setCourseFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("all")
     const [pendingTaskIds, setPendingTaskIds] = useState<number[]>([])
+    const [dailyLimit, setDailyLimit] = useState<number | null>(null)
+    const [todayConflict, setTodayConflict] = useState<DayConflictResponse>({
+        date: "",
+        hasConflict: false,
+        items: [],
+    })
+    const [isDayScheduleOpen, setIsDayScheduleOpen] = useState(false)
+    const { resolvedTheme } = useTheme()
 
     const isFirstLoad = useRef(true)
+    const todayDateParam = useMemo(() => {
+        const today = new Date()
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
+            today.getDate()
+        ).padStart(2, "0")}`
+    }, [])
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -100,6 +123,18 @@ export function TodayContent() {
             console.error("Error fetching courses:", e)
         }
     }, [])
+
+    const loadTodayConflict = useCallback(async () => {
+        try {
+            const data = await apiFetch<DayConflictResponse>(
+                `/tareas/calendario-dia/?date=${todayDateParam}`
+            )
+            setTodayConflict(data)
+        } catch (error) {
+            console.error("Error cargando conflicto del día:", error)
+            setTodayConflict({ date: todayDateParam, hasConflict: false, items: [] })
+        }
+    }, [todayDateParam])
 
     const handleToggleSubtask = useCallback(
         async (id: number, currentStatus: SubtaskStatus) => {
@@ -160,11 +195,12 @@ export function TodayContent() {
             setData(response)
             setState("success")
             isFirstLoad.current = false
+            loadTodayConflict()
         } catch (error) {
             console.error("Error cargando vista Hoy:", error)
             setState("error")
         }
-    }, [courseFilter, statusFilter])
+    }, [courseFilter, statusFilter, loadTodayConflict])
 
     useEffect(() => {
         fetchCourses()
@@ -173,6 +209,20 @@ export function TodayContent() {
     useEffect(() => {
         fetchTodayData()
     }, [fetchTodayData])
+
+    useEffect(() => {
+        let isActive = true
+        fetchDailyLimit()
+            .then((data) => {
+                if (isActive) setDailyLimit(data.daily_hour_limit)
+            })
+            .catch(() => {
+                if (isActive) setDailyLimit(null)
+            })
+        return () => {
+            isActive = false
+        }
+    }, [])
 
     const handleTaskUpdateStart = useCallback((taskId: number) => {
         setPendingTaskIds((prev) => (prev.includes(taskId) ? prev : [...prev, taskId]))
@@ -220,6 +270,22 @@ export function TodayContent() {
         displayData.para_hoy.length === 0 &&
         displayData.proximas.length === 0
 
+    const canOpenSchedule =
+        todayConflict.hasConflict &&
+        dailyLimit !== null &&
+        todayConflict.items.length > 0
+
+    const todayHeaderAction = todayConflict.hasConflict ? (
+        <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsDayScheduleOpen(true)}
+            disabled={!canOpenSchedule}
+        >
+            Solucionar conflicto
+        </Button>
+    ) : null
+
     if (state === "error") {
         return (
             <div className="flex h-[60vh] flex-col items-center justify-center gap-3 text-center">
@@ -255,20 +321,35 @@ export function TodayContent() {
                 <TodayColumnsSkeleton />
             ) : isEmpty ? (
                 <div className="flex h-[45vh] flex-col items-center justify-center gap-3 text-center">
-                    <div className="mb-2 rounded-full bg-muted/30 p-4">
+                    {/* <div className="mb-2 rounded-full bg-muted/30 p-4">
                         <Search className="h-8 w-8 text-muted-foreground opacity-20" />
-                    </div>
+                    </div> */}
+                    <Image
+                        src={resolvedTheme === "dark" ? "/desertdark.svg" : "/desert.svg"}
+                        alt="Sin resultados"
+                        width={300}
+                        height={300}
+                        className="mt-30 opacity-80 dark:[filter:brightness(0.75)_contrast(1.4)]"
+                    />
 
                     <p className="max-w-[320px] text-base font-medium text-foreground">
-                        {hasActiveFilters ? "No encontramos resultados" : "Nada por aquí, nada por allá..."}
+                        {hasActiveFilters ? "No encontramos resultados" : "No vendría mal una lluvia de tareas..."}
                     </p>
 
                     <div className="mt-2 flex gap-3">
                         {hasActiveFilters && (
-                            <Button onClick={handleClearFilters}>Limpiar filtros</Button>
+                            <Button 
+                            onClick={handleClearFilters}
+                            className="h-9 w-full text-sm bg-primary text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 hover:scale-105 sm:w-auto"
+                            >
+                                Limpiar filtros</Button>
                         )}
 
-                        <Button asChild variant={hasActiveFilters ? "outline" : "default"}>
+                        <Button
+                            asChild
+                            variant={hasActiveFilters ? "outline" : "default"}
+                            className="h-9 w-full text-sm bg-primary text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 hover:scale-105 sm:w-auto"
+                        >
                             <Link href="/tasks">Ir a Actividades</Link>
                         </Button>
                     </div>
@@ -280,6 +361,7 @@ export function TodayContent() {
                         today={displayData.para_hoy}
                         upcoming={displayData.proximas}
                         upcomingDays={UPCOMING_DAYS}
+                        todayHeaderAction={todayHeaderAction}
                         onToggleSubtask={handleToggleSubtask}
                         onTaskUpdated={fetchTodayData}
                         onTaskUpdateStart={handleTaskUpdateStart}
@@ -288,6 +370,14 @@ export function TodayContent() {
                     />
                 </div>
             )}
+
+            <DayScheduleDialog
+                open={isDayScheduleOpen}
+                onOpenChange={setIsDayScheduleOpen}
+                date={todayDateParam}
+                dailyLimit={dailyLimit ?? 0}
+                onResolved={() => fetchTodayData({ silent: true })}
+            />
         </div>
     )
 }

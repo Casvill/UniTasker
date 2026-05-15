@@ -2,28 +2,27 @@
 
 import { ListTodo, Calendar, Settings, HelpCircle, LogOut, BookCheck, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 const menuItems = [
   { icon: ListTodo, label: "Hoy", href: "/today" },
   { icon: BookCheck, label: "Actividades", href: "/tasks" },
   { icon: Calendar, label: "Calendario", href: "/calendar" },
-
 ]
 
 const generalItems = [
   { icon: Settings, label: "Configuración", href: "/settings" },
-  { icon: HelpCircle, label: "Ayuda", href: "/help" },
   { icon: LogOut, label: "Cerrar Sesion", href: "/logout" },
 ]
 
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (value: boolean) => void;
-  className?: string; 
+  className?: string;
   onClose?: () => void;
 }
 
@@ -31,16 +30,18 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
 
+  // El estado ahora viene del contexto compartido; no hay fetch local
+  const { conflictDays } = useConflicts()
+
   return (
-    <aside 
+    <aside
       className={cn(
         "fixed left-0 top-0 h-screen bg-card border-r border-border p-4 transition-all duration-500 z-40",
-        isCollapsed ? "w-22" : "w-64", 
+        isCollapsed ? "w-22" : "w-64",
         className
-      )}    
+      )}
     >
       <div className="flex items-center gap-2 mb-6 group cursor-pointer">
-
         <Link href="/today" className="flex items-center gap-2 relative h-10 w-full">
           <div className="relative h-10 w-full flex items-center">
             <Image
@@ -52,11 +53,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
                 transition: "clip-path 300ms ease, opacity 200ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "200ms" 
+                transitionDelay: isCollapsed ? "0ms" : "200ms",
               }}
               priority
             />
-
             <Image
               src="/unitaskerhide.svg"
               alt="UniTasker collapsed"
@@ -66,12 +66,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
                 transition: "clip-path 0ms ease, opacity 0ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "400ms" 
+                transitionDelay: isCollapsed ? "0ms" : "400ms",
               }}
               priority
             />
-
-            {/* Dark - expanded (barrido hacia la izquierda al ocultar) */}
             <Image
               src="/unitaskerv2.svg"
               alt="UniTasker dark"
@@ -81,12 +79,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
                 transition: "clip-path 300ms ease, opacity 200ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "200ms"
+                transitionDelay: isCollapsed ? "0ms" : "200ms",
               }}
               priority
             />
-
-            {/* Dark - collapsed (aparece con barrido desde la derecha) */}
             <Image
               src="/unitaskerv2hide.svg"
               alt="UniTasker dark collapsed"
@@ -96,21 +92,21 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
                 transition: "clip-path 0ms ease, opacity 0ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "400ms"
+                transitionDelay: isCollapsed ? "0ms" : "400ms",
               }}
               priority
             />
           </div>
         </Link>
-        <button 
+        <button
           onClick={() => (onClose ? onClose() : setIsCollapsed(!isCollapsed))}
           className="absolute -right-4 top-8 z-50 flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-md hover:bg-secondary transition-all"
         >
-          <ChevronLeft 
+          <ChevronLeft
             className={cn(
               "h-6 w-6 transition-transform duration-500",
-              isCollapsed && "rotate-180" // Gira si está colapsado
-            )} 
+              isCollapsed && "rotate-180"
+            )}
           />
         </button>
       </div>
@@ -139,13 +135,17 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
                   <span
                     className={cn(
                       "text-sm overflow-hidden whitespace-nowrap transition-all duration-300",
-                      isCollapsed
-                        ? "max-w-0 opacity-0"
-                        : "max-w-[160px] opacity-100 delay-200"
+                      isCollapsed ? "max-w-0 opacity-0" : "max-w-[160px] opacity-100 delay-200"
                     )}
                   >
                     {item.label}
                   </span>
+
+                  {item.label === "Calendario" && conflictDays > 0 && !isCollapsed && (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-destructive-foreground">
+                      {conflictDays}
+                    </span>
+                  )}
                 </Link>
               )
             })}

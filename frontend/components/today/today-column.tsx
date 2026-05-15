@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
 import Image from "next/image"
 import { TodayTaskCard } from "@/components/today/today-task-card"
 // import { TodayTaskCardSkeleton } from "@/components/today/today-columns-skeleton"
@@ -51,6 +52,7 @@ export function TodayColumn({
     tasks,
     emptyText,
     emptyImage,
+    headerAction,
     onToggleSubtask,
     onTaskUpdated,
     onTaskUpdateStart,
@@ -62,6 +64,7 @@ export function TodayColumn({
     tasks: Subtask[]
     emptyText: string
     emptyImage: string
+    headerAction?: ReactNode
     onToggleSubtask: (id: number, currentStatus: SubtaskStatus) => void
     onTaskUpdated: (options?: { silent?: boolean }) => Promise<void> | void
     onTaskUpdateStart: (taskId: number) => void
@@ -73,7 +76,7 @@ export function TodayColumn({
     return (
         <section
             className={cn(
-                "rounded-2xl border shadow-sm transition-colors dark:shadow-none",
+                "flex flex-col h-full rounded-2xl border shadow-smtransition-colors dark:shadow-none overflow-hidden",
                 styles.border,
                 styles.bg,
                 "dark:backdrop-blur-sm"
@@ -89,22 +92,25 @@ export function TodayColumn({
                     {title}
                 </h3>
 
-                <span
-                    className={cn(
-                        "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                        styles.badge
-                    )}
-                >
-                    {tasks.length}
-                </span>
+                <div className="flex items-center gap-2">
+                    {headerAction}
+                    <span
+                        className={cn(
+                            "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                            styles.badge
+                        )}
+                    >
+                        {tasks.length}
+                    </span>
+                </div>
             </div>
 
-            <div className="min-h-[420px] max-h-[72vh] space-y-3 overflow-y-auto p-4">
+            <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4">
                 {tasks.length === 0 ? (
-                    <div className="flex h-[220px] items-center justify-center text-center">
+                    <div className="flex h-full items-center justify-center text-center">
                         <div
                             className={cn(
-                                "flex min-h-[220px] w-full flex-col items-center justify-center rounded-xl border border-dashed px-6 py-6",
+                                "flex h-full w-full flex-col items-center justify-center rounded-xl border border-dashed px-6 py-6",
                                 styles.emptyBox
                             )}
                         >
