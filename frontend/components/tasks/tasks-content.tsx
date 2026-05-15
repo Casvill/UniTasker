@@ -397,18 +397,18 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       ) : (
         <div className="grid gap-4 pb-4">
         {filteredActivities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="flex h-[45vh] flex-col items-center justify-center gap-2 text-center">
                 <Image
                     src={resolvedTheme === "dark" ? "/citydark.svg" : "/city.svg"}
                     alt="Sin actividades"
                     width={300}
                     height={300}
-                    className=" opacity-75 dark:[filter:brightness(0.75)_contrast(2.1)]"
+                    className="mt-30 opacity-80 dark:[filter:brightness(0.75)_contrast(1.4)]"
                 />
                 <p className="text-base font-medium text-foreground">
                     Las grúas están de vacaciones.
                 </p>
-                <p className="mt-1 mb-5 max-w-[260px] text-sm text-muted-foreground">
+                <p className=" mb-5 max-w-[400px] text-sm text-muted-foreground">
                     Aún no tienes actividades. ¿Por dónde empezamos?
                 </p>
                 <CreateActivityDialog onCreated={handleOnCreated} />
