@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { DayScheduleView } from "@/components/conflict/day-schedule-dialog"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 type OverloadConflictDialogProps = {
   open: boolean
@@ -50,6 +51,7 @@ export function OverloadConflictDialog({
   const canSaveReprogram = newDate !== task.date
   const canSaveReduce = !!newEffort && Number(newEffort) > 0 && Number(newEffort) !== task.effort
   const todayString = new Date().toISOString().split("T")[0];
+  const { refreshConflicts } = useConflicts()
 
   useEffect(() => {
     if (!open) {
@@ -111,10 +113,6 @@ export function OverloadConflictDialog({
   }
 
   const handleScheduleResolved = async () => {
-    // Hours have been freed up in the day view — now retry the actual
-    // reprogram/create so the pending task is committed to its target date.
-    // Mark skipDeleteOnClose first so that if the dialog closes on success
-    // in "create" context, handleDialogClose won't prompt to delete the task.
     setSkipDeleteOnClose(true)
     await onSave(task.date, task.effort)
   }
@@ -247,6 +245,7 @@ export function OverloadConflictDialog({
                 onClick={async () => {
                   setIsSaving(true);
                   await onSave(newDate, task.effort);
+                  await refreshConflicts();
                   setIsSaving(false);
                 }}
                 disabled={!canSaveReprogram || isSaving}
@@ -282,6 +281,7 @@ export function OverloadConflictDialog({
                 onClick={async () => {
                   setIsSaving(true);
                   await onSave(task.date, newEffort);
+                  await refreshConflicts();
                   setIsSaving(false);
                 }}
                 disabled={!canSaveReduce || isSaving}

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { OverloadConflictDialog } from "@/components/conflict/overload-conflict-dialog"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 type ReprogramTaskPopoverProps = {
     taskId: number
@@ -53,7 +54,8 @@ export function ReprogramTaskPopover({
     }>(null)
 
     const isDirty = date !== currentDate
-
+    const { refreshConflicts } = useConflicts()
+    
     useEffect(() => {
         if (open) {
             setDate(currentDate)
@@ -160,6 +162,8 @@ export function ReprogramTaskPopover({
 
             setOpen(false)
             await onSaved()
+            await refreshConflicts()
+            
             toast.success("Tarea reprogramada con éxito", { id: toastId })
         } catch (error) {
             console.error("Error reprogramando tarea:", error)
