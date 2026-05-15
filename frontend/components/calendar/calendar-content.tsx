@@ -207,7 +207,7 @@ export function CalendarContent() {
                               : "bg-primary text-primary-foreground"
                           }
                         `}
-                        aria-label="Dia con subtareas"
+                        aria-label="Día con subtareas"
                       >
                         {monthSummaryMap.get(day)?.count}
                       </span>
@@ -223,7 +223,7 @@ export function CalendarContent() {
         <Card className="p-6">
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="space-y-1">
-              <p className="font-semibold text-lg">Eventos del dia</p>
+              <p className="font-semibold text-lg">Eventos del día</p>
               <p className="text-m text-muted-foreground capitalize">{selectedDateLabel}</p>
             </div>
             {dayDetail.hasConflict ? (
