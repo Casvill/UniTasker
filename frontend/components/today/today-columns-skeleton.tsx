@@ -27,13 +27,12 @@ const columnVariants = [
 
 export function TodayColumnsSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 h-[calc(100dvh-11rem)]">
       {[0, 1, 2].map((col) => (
         <section
           key={col}
           className={cn(
-            "rounded-2xl border shadow-sm transition-colors dark:shadow-none flex flex-col",
-            columnVariants[col].border,
+            "h-full overflow-hidden rounded-2xl border shadow-sm transition-colors dark:shadow-none flex flex-col",
             columnVariants[col].bg,
             "dark:backdrop-blur-sm"
           )}
@@ -51,10 +50,13 @@ export function TodayColumnsSkeleton() {
             <Skeleton className={cn("h-6 w-10 rounded-full", columnVariants[col].badge)} />
           </div>
           {/* Cards  */}
-          <div className="min-h-[420px] max-h-[72vh] space-y-3 overflow-y-auto p-4">
-            {[1, 2, 3].map((i) => (
+          <div className="flex-1 min-h-0 space-y-3 overflow-hidden p-4">
+            {[0, 1, 2, 3].map((i) => (
               <article
                 key={i}
+                style={{
+                  opacity: i === 2 ? 0.75 : i === 3 ? 0.5 : 1,
+                }}
                 className={cn(
                   "relative rounded-2xl border bg-background p-4 shadow-sm transition hover:shadow-md",
                   columnVariants[col].border

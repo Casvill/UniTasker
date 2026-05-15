@@ -33,7 +33,7 @@ export default function ProtectedLayout({
 
   return (
     <ConflictProvider>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex max-h-screen bg-background">
         
         <Sidebar
           isCollapsed={isCollapsed}

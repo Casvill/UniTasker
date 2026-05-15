@@ -327,7 +327,6 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Cambiado: ahora usamos handleOnCreated en lugar de loadActivities directamente */}
         <CreateActivityDialog onCreated={handleOnCreated} />
         
         <div className="flex-1 relative">
@@ -393,7 +392,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 pb-4">
           {filteredActivities.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hay actividades para mostrar.</p>
           ) : (

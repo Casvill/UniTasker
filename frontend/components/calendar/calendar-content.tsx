@@ -162,7 +162,7 @@ export function CalendarContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
         <Card className="lg:col-span-2 p-6">
           <div className="grid grid-cols-7 gap-2 mb-1">
             {weekDays.map((day) => (
