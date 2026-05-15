@@ -273,7 +273,7 @@ export function OverloadConflictDialog({
               type="number"
               min={0.5}
               step={0.5}
-              value={newEffort === 0 ? "" : newEffort}
+              value={dailyLimit-(scheduledHours-task.effort)}
               onChange={e => setNewEffort(Number(e.target.value))}
             />
             <div className="grid grid-cols-2 gap-2 mt-2 mb-2">

@@ -5,14 +5,13 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
-import { apiFetch } from "@/lib/api"
+import { useState } from "react"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 const menuItems = [
   { icon: ListTodo, label: "Hoy", href: "/today" },
   { icon: BookCheck, label: "Actividades", href: "/tasks" },
   { icon: Calendar, label: "Calendario", href: "/calendar" },
-
 ]
 
 const generalItems = [
@@ -23,69 +22,26 @@ const generalItems = [
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: (value: boolean) => void;
-  className?: string; 
+  className?: string;
   onClose?: () => void;
-}
-
-type CalendarDaySummary = {
-  day: number
-  count: number
-  hasConflict: boolean
 }
 
 export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
-  const [conflictDays, setConflictDays] = useState(0)
   const pathname = usePathname()
 
-  useEffect(() => {
-    let active = true
-
-    async function loadConflictDays() {
-      try {
-        const today = new Date()
-        const month = today.getMonth() + 1
-        const year = today.getFullYear()
-
-        const data = await apiFetch<CalendarDaySummary[]>(
-          `/tareas/calendario-mensual/?month=${month}&year=${year}`
-        )
-
-        if (active) {
-          setConflictDays(data.filter((day) => day.hasConflict).length)
-        }
-      } catch (error) {
-        console.error("No se pudo cargar el resumen de conflictos", error)
-        if (active) setConflictDays(0)
-      }
-    }
-
-    loadConflictDays()
-
-    const handleLimitUpdate = () => {
-      if (active) {
-        loadConflictDays() 
-      }
-    }
-
-    window.addEventListener('dailyLimitUpdated', handleLimitUpdate)
-
-    return () => {
-      active = false
-      window.removeEventListener('dailyLimitUpdated', handleLimitUpdate)
-    }
-  }, [])
+  // El estado ahora viene del contexto compartido; no hay fetch local
+  const { conflictDays } = useConflicts()
 
   return (
-    <aside 
+    <aside
       className={cn(
         "fixed left-0 top-0 h-screen bg-card border-r border-border p-4 transition-all duration-500 z-40",
-        isCollapsed ? "w-22" : "w-64", 
+        isCollapsed ? "w-22" : "w-64",
         className
-      )}    
+      )}
     >
       <div className="flex items-center gap-2 mb-6 group cursor-pointer">
-
         <Link href="/today" className="flex items-center gap-2 relative h-10 w-full">
           <div className="relative h-10 w-full flex items-center">
             <Image
@@ -97,11 +53,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
                 transition: "clip-path 300ms ease, opacity 200ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "200ms" 
+                transitionDelay: isCollapsed ? "0ms" : "200ms",
               }}
               priority
             />
-
             <Image
               src="/unitaskerhide.svg"
               alt="UniTasker collapsed"
@@ -111,12 +66,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
                 transition: "clip-path 0ms ease, opacity 0ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "400ms" 
+                transitionDelay: isCollapsed ? "0ms" : "400ms",
               }}
               priority
             />
-
-            {/* Dark - expanded (barrido hacia la izquierda al ocultar) */}
             <Image
               src="/unitaskerv2.svg"
               alt="UniTasker dark"
@@ -126,12 +79,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 100% 0 0)" : "inset(0 0 0 0)",
                 transition: "clip-path 300ms ease, opacity 200ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "200ms"
+                transitionDelay: isCollapsed ? "0ms" : "200ms",
               }}
               priority
             />
-
-            {/* Dark - collapsed (aparece con barrido desde la derecha) */}
             <Image
               src="/unitaskerv2hide.svg"
               alt="UniTasker dark collapsed"
@@ -141,21 +92,21 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
               style={{
                 clipPath: isCollapsed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
                 transition: "clip-path 0ms ease, opacity 0ms ease",
-                transitionDelay: isCollapsed ? "0ms" : "400ms"
+                transitionDelay: isCollapsed ? "0ms" : "400ms",
               }}
               priority
             />
           </div>
         </Link>
-        <button 
+        <button
           onClick={() => (onClose ? onClose() : setIsCollapsed(!isCollapsed))}
           className="absolute -right-4 top-8 z-50 flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-md hover:bg-secondary transition-all"
         >
-          <ChevronLeft 
+          <ChevronLeft
             className={cn(
               "h-6 w-6 transition-transform duration-500",
-              isCollapsed && "rotate-180" // Gira si está colapsado
-            )} 
+              isCollapsed && "rotate-180"
+            )}
           />
         </button>
       </div>

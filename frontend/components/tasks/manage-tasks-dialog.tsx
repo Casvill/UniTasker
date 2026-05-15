@@ -32,6 +32,7 @@ import { reprogramTask } from "@/lib/api"
 import { OverloadConflictDialog } from "@/components/conflict/overload-conflict-dialog"
 import { Loader2, ChevronDown, ChevronUp, Plus } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 type ManageTasksDialogProps = {
   open: boolean
@@ -99,6 +100,7 @@ export function ManageTasksDialog({
   const [isFormOpen, setIsFormOpen] = React.useState(true)
   const [hasInitializedFormOpen, setHasInitializedFormOpen] = React.useState(false);
   const [progress, setProgress] = React.useState<ProgressData | null>(null)
+  const { refreshConflicts } = useConflicts()
 
   function ProgressBar({
     hechas,
@@ -362,6 +364,7 @@ export function ManageTasksDialog({
         refreshProgress();
         setEditingId(null)
         toast.success("Tarea actualizada", { id: toastId })
+        await refreshConflicts()
       } catch {
         toast.error("Error al actualizar la tarea", { id: toastId })
       }
@@ -384,6 +387,8 @@ export function ManageTasksDialog({
       },
       error: "Error al eliminar la tarea",
     })
+    
+    await refreshConflicts()
   }
 
   const handleToggleTask = async (id: string | number) => {

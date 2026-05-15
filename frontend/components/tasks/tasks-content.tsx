@@ -13,6 +13,7 @@ import { ManageTasksDialog } from "./manage-tasks-dialog"
 import { SkeletonTasks } from "./task-skeleton"
 import { TaskCard } from "./task-card"
 import { Activity, normalizePriority, formatDueDate } from "./task-types"
+import { useConflicts } from "@/components/conflict/conflict-context"
 
 type TasksContentProps = {
   refreshKey: number
@@ -31,7 +32,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isEditActivityOpen, setIsEditActivityOpen] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
-
+  const { refreshConflicts } = useConflicts()
   const [showConflict, setShowConflict] = useState(false)
 
   // --- HANDLERS ---
@@ -75,6 +76,7 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
       await apiFetch(`/actividades/${activityId}/`, { method: "DELETE" });
       toast.dismiss(toastId);
       toast.success("Actividad eliminada");
+      await refreshConflicts()
       setLoading(true);
       await loadActivities(false); 
     } catch (error) {

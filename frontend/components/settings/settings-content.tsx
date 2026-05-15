@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
@@ -13,8 +12,9 @@ import {
   fetchDailyLimit,
   updateDailyLimit,
   UserProfile,
+  apiFetch,
 } from "@/lib/api"
-import { User as UserIcon, Loader2} from "lucide-react"
+import { User as UserIcon, Loader2 } from "lucide-react"
 import { CircleAlert } from "lucide-react"
 import { toast } from "sonner"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
@@ -28,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { apiFetch } from "@/lib/api"
+import { Switch } from "@/components/ui/switch"
+import { useConflicts } from "@/components/conflict/conflict-context" 
 
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
@@ -39,8 +40,9 @@ export function SettingsContent() {
   const [savedDailyLimit, setSavedDailyLimit] = useState("6")
   const [capacityError, setCapacityError] = useState("")
   const [isSavingCapacity, setIsSavingCapacity] = useState(false)
-  const [isLoadingCapacity, setIsLoadingCapacity] = useState(true) 
+  const [isLoadingCapacity, setIsLoadingCapacity] = useState(true)
   const [showLimitConfirm, setShowLimitConfirm] = useState(false)
+  const { refreshConflicts } = useConflicts()
 
   useEffect(() => {
     async function loadData() {
@@ -137,30 +139,23 @@ export function SettingsContent() {
       toast.success("Límite actualizado correctamente")
       setCapacityError("")
 
-      window.dispatchEvent(new CustomEvent('dailyLimitUpdated', { 
-        detail: { newLimit: updatedLimit } 
-      }))
+      await refreshConflicts()
 
-      // Verificar conflictos después de cambiar el límite
       const today = new Date()
       const month = today.getMonth() + 1
       const year = today.getFullYear()
 
-      type CalendarDaySummary = {
-        day: number
-        count: number
-        hasConflict: boolean
-      }
+      type CalendarDaySummary = { day: number; count: number; hasConflict: boolean }
 
       const conflictData = await apiFetch<CalendarDaySummary[]>(
         `/tareas/calendario-mensual/?month=${month}&year=${year}`
       )
-
       const conflictCount = conflictData.filter((day) => day.hasConflict).length
 
       if (conflictCount > 0) {
         toast.warning(`Se detectaron ${conflictCount} días con conflicto`)
       }
+
     } catch (error) {
       const message =
         error instanceof Error
@@ -181,21 +176,6 @@ export function SettingsContent() {
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-6">Tu perfil</h3>
         <div className="space-y-6">
-          {/* <div className="flex items-center gap-4">
-            <Avatar className="w-20 h-20">
-              <AvatarImage src="" alt={user?.username || "Usuario"} />
-              <AvatarFallback className="text-xl bg-primary/10 text-primary">
-                {user ? getInitials(user.username) : <UserIcon className="w-8 h-8" />}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <Button variant="outline">Actualizar foto</Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                JPG, PNG o GIF. Tamaño máx. 2MB
-              </p>
-            </div>
-          </div> */}
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre de Usuario</Label>
@@ -239,7 +219,9 @@ export function SettingsContent() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="cursor-pointer align-middle"><CircleAlert className="inline w-4 h-4 text-muted-foreground mb-1 ml-0.5" /></span>
+                      <span className="cursor-pointer align-middle">
+                        <CircleAlert className="inline w-4 h-4 text-muted-foreground mb-1 ml-0.5" />
+                      </span>
                     </TooltipTrigger>
                     <TooltipContent side="right" align="center" className="xs">
                       Ingresa un valor entre 1 y 16 horas. Si no hay uno guardado, se usa 6 horas por defecto.
@@ -262,7 +244,6 @@ export function SettingsContent() {
                 }}
                 disabled={isSavingCapacity || isLoadingCapacity}
                 aria-invalid={!!capacityError}
-                // className={isLoadingCapacity ? "pr-10" : ""}
               />
               {isLoadingCapacity && (
                 <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground pointer-events-none" />
@@ -317,31 +298,6 @@ export function SettingsContent() {
           </div>
         </div>
       </Card>
-
-      {/*
-      <Card className="p-6">
-        <h3 className="font-semibold text-lg mb-6">Notificaciones</h3>
-        <div className="space-y-4">
-          {[
-            { label: "Notificaciones por email", description: "Recibe correos sobre la actividad de tu cuenta" },
-            { label: "Notificaciones push", description: "Recibe notificaciones en tu navegador" },
-            { label: "Recordatorios de tareas", description: "Avisos sobre fechas límite próximas" },
-            { label: "Actualizaciones de equipo", description: "Notificaciones sobre actividades de miembros" },
-          ].map((item, index) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between py-3 border-b border-border last:border-0"
-            >
-              <div>
-                <p className="font-medium">{item.label}</p>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
-              </div>
-              <Switch defaultChecked={index < 2} />
-            </div>
-          ))}
-        </div>
-      </Card>
-      */}
 
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-6">Apariencia</h3>

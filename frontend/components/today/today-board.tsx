@@ -41,7 +41,7 @@ export function TodayBoard({
     pendingTaskIds: number[]
 }) {
     return (
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 h-[calc(100vh-8rem)]">
             <TodayColumn
                 title="Vencidas"
                 variant="overdue"

@@ -76,7 +76,7 @@ export function TodayColumn({
     return (
         <section
             className={cn(
-                "rounded-2xl border shadow-sm transition-colors dark:shadow-none overflow-hidden",
+                "flex flex-col h-full rounded-2xl border shadow-smtransition-colors dark:shadow-none overflow-hidden",
                 styles.border,
                 styles.bg,
                 "dark:backdrop-blur-sm"
@@ -105,7 +105,7 @@ export function TodayColumn({
                 </div>
             </div>
 
-            <div className="h-full max-h-[72vh] space-y-3 overflow-y-auto p-4">
+            <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4">
                 {tasks.length === 0 ? (
                     <div className="flex h-full items-center justify-center text-center">
                         <div

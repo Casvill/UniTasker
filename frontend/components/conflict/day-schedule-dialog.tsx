@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { ConflictProvider, useConflicts } from "@/components/conflict/conflict-context"
 
 type DayTaskItem = {
   id: number
@@ -38,6 +39,7 @@ export function DayScheduleView({
   const [isResolving, setIsResolving] = useState(false)
   const [tasks, setTasks] = useState<DayTaskItem[]>([])
   const [efforts, setEfforts] = useState<Record<number, number>>({})
+  const { refreshConflicts } = useConflicts()
 
   const dateLabel = useMemo(() => {
     if (!date) return ""
@@ -150,6 +152,7 @@ export function DayScheduleView({
       )
 
       toast.success("Programación actualizada.")
+      await refreshConflicts()
       onResolved?.()
     } catch (error) {
       console.error("Error resolving schedule:", error)

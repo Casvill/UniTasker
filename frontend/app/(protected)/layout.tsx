@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { getAccessToken } from "@/lib/api"
+import { ConflictProvider } from "@/components/conflict/conflict-context"
 
 export default function ProtectedLayout({
   children,
@@ -31,19 +32,21 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <ConflictProvider>
+      <div className="flex min-h-screen bg-background">
+        
+        <Sidebar
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          className="fixed inset-y-0 left-0 h-screen hidden lg:block"
+        />
 
-      <Sidebar
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        className="fixed inset-y-0 left-0 h-screen hidden lg:block"
-      />
+        <main className={`flex-1 transition-all duration-500 p-4 lg:p-6 ${isCollapsed ? "lg:ml-22" : "lg:ml-64"}`}>
+          {children}
+        </main>
 
-      <main className={`flex-1 transition-all duration-500 p-4 lg:p-6 ${isCollapsed ? "lg:ml-22" : "lg:ml-64"}`}>
-        {children}
-      </main>
-
-      {/* <div className="flex-1">{children}</div> */}
-    </div>
+        {/* <div className="flex-1">{children}</div> */}
+      </div>
+    </ConflictProvider>
   )
 }
