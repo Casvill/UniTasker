@@ -310,6 +310,11 @@ export function SettingsContent() {
             <Switch
               checked={theme === "dark"}
               onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+              aria-label={
+                            theme === "dark"
+                              ? "Activar modo claro"
+                              : "Activar modo oscuro"
+                          }
             />
           </div>
         </div>

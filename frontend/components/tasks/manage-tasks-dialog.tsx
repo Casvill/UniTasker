@@ -587,6 +587,7 @@ export function ManageTasksDialog({
                 {!isEditingDescription ? (
                   <Button
                     type="button"
+                    aria-label="Editar descripción de la actividad"
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsEditingDescription(true)}

@@ -26,6 +26,7 @@ type DayTaskItem = {
   activityName: string
   courseName: string
   effort: number
+  status: string
 }
 
 type DayTaskResponse = {
@@ -125,6 +126,7 @@ export function CalendarContent() {
         const data = await apiFetch<DayTaskResponse>(
           `/tareas/calendario-dia/?date=${selectedDateParam}`
         )
+        console.log("hola: ",data.items)
         if (isActive) setDayDetail(data)
       } catch (error) {
         console.error("Error loading calendar day:", error)
@@ -273,6 +275,13 @@ export function CalendarContent() {
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs">
                             {event.effort} h
+                          </Badge>
+
+                          <Badge
+                            variant={event.status === "hecha" ? "default" : "outline"}
+                            className="text-xs capitalize ml-auto"
+                          >
+                            {event.status === "hecha" ? "Completada" : "Pendiente"}
                           </Badge>
                         </div>
                       </div>

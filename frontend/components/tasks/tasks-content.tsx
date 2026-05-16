@@ -338,7 +338,8 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
         </div>
         <div className="flex gap-2">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[165px] bg-transparent border-input">
+            <SelectTrigger className="w-[165px] bg-transparent border-input"
+                           aria-label="Filtrar por tipo">
               <div className="flex items-center gap-2 truncate">
                 <Filter className="w-4 h-4 shrink-0" />
                 <SelectValue placeholder="Tipo" />
@@ -354,7 +355,8 @@ export function TasksContent({ refreshKey }: TasksContentProps) {
             </SelectContent>
           </Select>
           <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="w-[185px] bg-transparent border-input">
+            <SelectTrigger className="w-[185px] bg-transparent border-input"
+                           aria-label="Filtrar por fecha">
               <div className="flex items-center gap-2 truncate">
                 <Calendar className="w-4 h-4 shrink-0" />
                 <SelectValue placeholder="Fecha" />

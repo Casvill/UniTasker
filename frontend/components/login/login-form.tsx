@@ -174,6 +174,7 @@ export function LoginForm() {
             <div className="flex items-center gap-2">
               <Checkbox
                 id="remember"
+                aria-label="Mantener sesión iniciada por 30 días"
                 checked={remember}
                 onCheckedChange={(checked) => setRemember(checked === true)}
               />
