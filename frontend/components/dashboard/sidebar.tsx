@@ -99,6 +99,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, className, onClose }: Sid
           </div>
         </Link>
         <button
+          aria-label={isCollapsed ? "Mostrar menú lateral" : "Ocultar menú lateral"}
           onClick={() => (onClose ? onClose() : setIsCollapsed(!isCollapsed))}
           className="absolute -right-4 top-8 z-50 flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-md hover:bg-secondary transition-all"
         >

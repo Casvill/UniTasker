@@ -40,6 +40,11 @@ export function TaskCard({
       <div className="flex items-start gap-2 ">
         <Checkbox 
           checked={task.completed} 
+           aria-label={
+                        task.completed
+                          ? "Marcar actividad como no completada"
+                          : "Marcar actividad como completada"
+                      }
           onCheckedChange={() => onToggleActivity(task)}
           onClick={(e) => e.stopPropagation()}
           className="mt-1 h-5 w-5" 
@@ -52,6 +57,7 @@ export function TaskCard({
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
+                aria-label="Editar actividad"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground "
                 onClick={(e) => onOpenEdit(e, task)}
@@ -60,6 +66,7 @@ export function TaskCard({
               </Button>
               <Button
                 variant="ghost"
+                aria-label="Eliminar actividad"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground "
                 onClick={(e) => onDelete(e, task.id)}
